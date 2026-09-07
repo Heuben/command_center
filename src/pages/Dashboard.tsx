@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   ClipboardCheckIcon,
@@ -15,6 +16,7 @@ import { EmergencyQueue, type QueueRow } from '../components/dispatch/EmergencyQ
 import { DispatchPanel } from '../components/dispatch/DispatchPanel';
 import { LiveMap } from '../components/dispatch/LiveMap';
 import { EmptyState } from '../components/ui/primitives';
+import { DUR, EASE } from '../lib/motion';
 
 export function Dashboard() {
   const { scopeCenterId, isSuperadmin, now } = useSession();
@@ -164,7 +166,13 @@ export function Dashboard() {
           aria-label="Dispatch panel"
           className="flex w-96 shrink-0 flex-col border-l border-line bg-canvas">
           {selected ?
-          <DispatchPanel alert={selected.alert} response={selected.response} /> :
+          <motion.div
+            key={`${selected.alert.id}:${selected.response.command_center_id}`}
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0, transition: { duration: DUR.base, ease: EASE.out } }}
+            className="flex min-h-0 flex-1">
+              <DispatchPanel alert={selected.alert} response={selected.response} />
+            </motion.div> :
 
           <EmptyState
             title="No incident selected"

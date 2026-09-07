@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDownIcon } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import type { Alert, AlertBranchResponse, BranchResponseStatus } from '../../types';
 import { alertTypeLabel, alertTypeShort, branchStatusLabel } from '../../utils/labels';
 import { distanceKm, elapsedSince, formatDistance } from '../../utils/time';
 import { centerById, centerName } from '../../data/commandCenters';
+import { fadeUp } from '../../lib/motion';
 
 export type QueueRow = {
   response: AlertBranchResponse;
@@ -85,7 +87,7 @@ export function EmergencyQueue({
 
             {isOpen &&
             <ul>
-                {group.map((row) => {
+                {group.map((row, i) => {
                 const key = `${row.alert.id}:${row.response.command_center_id}`;
                 const active = key === selectedKey;
                 const center = centerById(row.response.command_center_id);
@@ -94,10 +96,16 @@ export function EmergencyQueue({
                 '—';
                 const urgent = status === 'pending';
                 return (
-                  <li key={key}>
+                  <motion.li
+                    key={key}
+                    initial="hidden"
+                    animate="show"
+                    variants={fadeUp}
+                    custom={i}
+                    className="overflow-hidden">
                       <button
                       onClick={() => onSelect(row)}
-                      aria-current={active}
+                      aria-current={active ? 'true' : undefined}
                       className={twMerge(
                         'w-full border-l-2 px-4 py-3 text-left transition-colors duration-150 ease-out',
                         active ?
@@ -141,7 +149,7 @@ export function EmergencyQueue({
                         }
                         </div>
                       </button>
-                    </li>);
+                    </motion.li>);
 
               })}
                 {group.length === 0 &&

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CogIcon, DownloadIcon, UserSearchIcon, XIcon } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
 import { useDispatchData } from '../contexts/DispatchContext';
@@ -21,6 +22,7 @@ import { Button, Card, EmptyState, Input, Label, PageHeader } from '../component
 import { Drawer } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import { downloadCsv, rowsToCsv } from '../utils/csv';
+import { DUR, EASE } from '../lib/motion';
 
 const categoryTone: Record<
   AuditCategory,
@@ -322,38 +324,46 @@ export function AuditLogs() {
           </div>
         </div>
 
-        {filterCount > 0 &&
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-            {categories.map((c) =>
-          <Chip
-            key={`c-${c}`}
-            label={`Category: ${categoryLabel[c as AuditCategory]}`}
-            onRemove={() => setCategories(categories.filter((v) => v !== c))} />
+        <AnimatePresence initial={false}>
+          {filterCount > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto', transition: { duration: DUR.base, ease: EASE.out } }}
+              exit={{ opacity: 0, height: 0, transition: { duration: DUR.fast, ease: EASE.in } }}
+              className="overflow-hidden">
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                {categories.map((c) =>
+                  <Chip
+                    key={`c-${c}`}
+                    label={`Category: ${categoryLabel[c as AuditCategory]}`}
+                    onRemove={() => setCategories(categories.filter((v) => v !== c))} />
 
-          )}
-            {actions.map((a) =>
-          <Chip
-            key={`a-${a}`}
-            label={`Action: ${actionLabel[a as AuditAction]}`}
-            onRemove={() => setActions(actions.filter((v) => v !== a))} />
+                )}
+                {actions.map((a) =>
+                  <Chip
+                    key={`a-${a}`}
+                    label={`Action: ${actionLabel[a as AuditAction]}`}
+                    onRemove={() => setActions(actions.filter((v) => v !== a))} />
 
-          )}
-            {actors.map((a) =>
-          <Chip
-            key={`u-${a}`}
-            label={`Actor: ${a === ACTOR_SYSTEM ? 'System' : userName(a)}`}
-            onRemove={() => setActors(actors.filter((v) => v !== a))} />
+                )}
+                {actors.map((a) =>
+                  <Chip
+                    key={`u-${a}`}
+                    label={`Actor: ${a === ACTOR_SYSTEM ? 'System' : userName(a)}`}
+                    onRemove={() => setActors(actors.filter((v) => v !== a))} />
 
+                )}
+                {from && <Chip label={`From: ${from}`} onRemove={() => setFrom('')} />}
+                {to && <Chip label={`To: ${to}`} onRemove={() => setTo('')} />}
+                <button
+                  onClick={clearAll}
+                  className="ml-1 text-[12px] font-medium text-primary transition-colors duration-150 ease-out hover:underline">
+                  Clear all
+                </button>
+              </div>
+            </motion.div>
           )}
-            {from && <Chip label={`From: ${from}`} onRemove={() => setFrom('')} />}
-            {to && <Chip label={`To: ${to}`} onRemove={() => setTo('')} />}
-            <button
-            onClick={clearAll}
-            className="ml-1 text-[12px] font-medium text-primary transition-colors duration-150 ease-out hover:underline">
-              Clear all
-            </button>
-          </div>
-        }
+        </AnimatePresence>
       </Card>
 
       <Card className="overflow-hidden">
@@ -444,7 +454,11 @@ export function AuditLogs() {
 
 function Chip({ label, onRemove }: {label: string;onRemove: () => void;}) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-canvas py-1 pl-2.5 pr-1.5 text-[12px] text-ink">
+    <motion.span
+      initial={{ opacity: 0, scale: 0.88 }}
+      animate={{ opacity: 1, scale: 1, transition: { duration: 0.15, ease: [0.23, 1, 0.32, 1] } }}
+      exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.1, ease: [0.4, 0, 1, 1] } }}
+      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-canvas py-1 pl-2.5 pr-1.5 text-[12px] text-ink">
       {label}
       <button
         onClick={onRemove}
@@ -452,7 +466,7 @@ function Chip({ label, onRemove }: {label: string;onRemove: () => void;}) {
         className="rounded-full p-0.5 text-ink-faint transition-colors duration-150 ease-out hover:bg-ink/[0.08] hover:text-ink">
         <XIcon className="h-3 w-3" />
       </button>
-    </span>);
+    </motion.span>);
 
 }
 
