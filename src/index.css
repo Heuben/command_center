@@ -1,0 +1,241 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+@import 'leaflet/dist/leaflet.css';
+
+:root {
+  --canvas: 244 246 250;
+  --surface: 255 255 255;
+  --elevated: 255 255 255;
+  --line: 220 226 236;
+  --line-strong: 200 210 224;
+  --ink: 11 17 32;
+  --ink-muted: 88 102 121;
+  --ink-faint: 142 156 174;
+  --primary: 24 92 232;
+  --primary-soft: 232 240 254;
+  --urgent: 217 119 6;
+  --urgent-soft: 254 243 216;
+  --success: 16 138 70;
+  --success-soft: 220 248 230;
+  --danger: 202 32 40;
+  --danger-soft: 254 228 229;
+  /* Data-viz accents */
+  --accent: 236 72 153;
+  --accent-soft: 254 226 240;
+  --cyan: 14 165 233;
+  --cyan-soft: 224 242 254;
+  --violet: 124 58 237;
+  --violet-soft: 237 233 254;
+  /* Glow halos for live indicators, status dots, and chart strokes */
+  --glow-primary: 0 0 0 1px rgba(24, 92, 232, 0.18), 0 8px 24px -8px rgba(24, 92, 232, 0.35);
+  --glow-success: 0 0 0 1px rgba(16, 138, 70, 0.2), 0 8px 24px -8px rgba(16, 138, 70, 0.4);
+  --glow-danger: 0 0 0 1px rgba(202, 32, 40, 0.2), 0 8px 24px -8px rgba(202, 32, 40, 0.45);
+  --glow-accent: 0 0 0 1px rgba(236, 72, 153, 0.22), 0 8px 24px -8px rgba(236, 72, 153, 0.45);
+}
+.dark {
+  --canvas: 10 15 28;
+  --surface: 17 24 39;
+  --elevated: 24 32 50;
+  --line: 32 42 62;
+  --line-strong: 46 58 82;
+  --ink: 241 245 249;
+  --ink-muted: 148 163 184;
+  --ink-faint: 100 116 139;
+  --primary: 96 165 250;
+  --primary-soft: 30 41 59;
+  --urgent: 245 158 11;
+  --urgent-soft: 60 45 16;
+  --success: 52 211 122;
+  --success-soft: 19 52 34;
+  --danger: 248 113 113;
+  --danger-soft: 68 25 27;
+  --accent: 244 114 182;
+  --accent-soft: 76 16 46;
+  --cyan: 56 189 248;
+  --cyan-soft: 8 47 73;
+  --violet: 167 139 250;
+  --violet-soft: 39 24 76;
+  --glow-primary: 0 0 0 1px rgba(96, 165, 250, 0.3), 0 8px 28px -8px rgba(96, 165, 250, 0.45);
+  --glow-success: 0 0 0 1px rgba(52, 211, 122, 0.3), 0 8px 28px -8px rgba(52, 211, 122, 0.45);
+  --glow-danger: 0 0 0 1px rgba(248, 113, 113, 0.3), 0 8px 28px -8px rgba(248, 113, 113, 0.5);
+  --glow-accent: 0 0 0 1px rgba(244, 114, 182, 0.3), 0 8px 28px -8px rgba(244, 114, 182, 0.5);
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  background-color: rgb(var(--canvas));
+  color: rgb(var(--ink));
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'tnum';
+  -webkit-font-smoothing: antialiased;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+/* Dark-mode shadow overrides — deeper contrast against near-black canvas */
+.dark .shadow-panel {
+  box-shadow: 0 12px 36px -8px rgb(0 0 0 / 0.65);
+}
+.dark .shadow-card {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+}
+.dark .shadow-lift {
+  box-shadow: 0 12px 32px -8px rgb(0 0 0 / 0.55);
+}
+/* Dark-mode scrollbar — lighter thumb for contrast against dark track */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgb(var(--ink-faint));
+  background-clip: content-box;
+  border: 2px solid transparent;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--line-strong));
+}
+.dark * {
+  scrollbar-color: rgb(var(--ink-faint)) transparent;
+}
+.leaflet-container {
+  background: rgb(var(--elevated));
+  font-family: inherit;
+}
+.leaflet-control-attribution {
+  font-size: 10px !important;
+  background: rgb(var(--surface) / 0.8) !important;
+  color: rgb(var(--ink-faint)) !important;
+}
+.leaflet-control-attribution a {
+  color: rgb(var(--ink-muted)) !important;
+}
+.leaflet-bar a {
+  background: rgb(var(--surface)) !important;
+  color: rgb(var(--ink)) !important;
+  border-color: rgb(var(--line)) !important;
+}
+/* ---------- Clickability guardrails ---------- */
+button,
+[role='tab'],
+[role='menuitem'],
+[role='button'],
+[aria-haspopup='menu'] {
+  cursor: pointer;
+  pointer-events: auto;
+}
+button:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+/* ---------- Global scrollbar control ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--line-strong));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--ink-faint));
+  background-clip: content-box;
+  border: 2px solid transparent;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--line-strong)) transparent;
+}
+.scrollbar-none {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+/* ---------- Live status pulse ---------- */
+@keyframes ops-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.18);
+  }
+}
+.animate-ops-pulse {
+  animation: ops-pulse 1.6s ease-in-out infinite;
+}
+/* ---------- Hero metric glow ring (used by KPI cards) ---------- */
+.glow-ring-primary {
+  box-shadow: var(--glow-primary);
+}
+.glow-ring-success {
+  box-shadow: var(--glow-success);
+}
+.glow-ring-danger {
+  box-shadow: var(--glow-danger);
+}
+.glow-ring-accent {
+  box-shadow: var(--glow-accent);
+}
+/* ---------- Skeleton shimmer ---------- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background-image: linear-gradient(
+    90deg,
+    rgb(var(--ink) / 0.04) 0%,
+    rgb(var(--ink) / 0.10) 50%,
+    rgb(var(--ink) / 0.04) 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+.dark .skeleton {
+  background-image: linear-gradient(
+    90deg,
+    rgb(var(--ink) / 0.05) 0%,
+    rgb(var(--ink) / 0.14) 50%,
+    rgb(var(--ink) / 0.05) 100%
+  );
+}
+/* ---------- Subtle focus-visible ring for non-button interactive elements ---------- */
+:where(a, [role='link'], [tabindex]):focus-visible {
+  outline: 2px solid rgb(var(--primary) / 0.55);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* ---------- Reduced motion: disable non-essential transitions & animations ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
