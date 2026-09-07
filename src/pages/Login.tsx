@@ -31,7 +31,9 @@ const demoAccounts = [
 ];
 
 const REMEMBER_KEY = 'bantai-remember-email';
-const SHOW_DEMO = import.meta.env.DEV;
+// TODO: hide demo accounts once the real auth/database is wired up.
+// For now they're always visible so the Figma review can use them.
+const SHOW_DEMO = true;
 
 /* -------------------------------------------------------------------------- */
 /* Email format validation                                                     */
@@ -551,7 +553,7 @@ export function Login() {
             <FadeIn reduced={reduced} delay={0.46} className="mt-8 rounded-xl border border-dashed border-line bg-surface p-4">
               <p className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
                 Demo Accounts
-                <span className="rounded bg-urgent-soft px-1.5 py-0.5 text-[9px] font-bold uppercase text-urgent">Dev</span>
+                <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">Quick Fill</span>
               </p>
               <ul className="space-y-2">
                 {demoAccounts.map((a) => (
