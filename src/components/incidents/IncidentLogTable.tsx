@@ -15,9 +15,25 @@ export type IncidentLogRow = {
   response: AlertBranchResponse;
 };
 
+/**
+ * All cell renderers wrap their content in `.cellStack` so every row is
+ * exactly two uniform lines tall. The second <p> is a transparent spacer
+ * for cells that only have a single meaningful line (e.g. a status badge
+ * or a date). This keeps badges and dates visually aligned with the
+ * second line (the address / role / submitted-at line) of multi-line
+ * cells in the same row.
+ */
+const cellStack = 'flex flex-col gap-0.5 leading-[1.25]';
+const spacer = (
+  <p className="text-[12px] text-transparent select-none" aria-hidden>
+    &nbsp;
+  </p>
+);
+
 export function IncidentLogTable({
   rows,
   showBranch
+
 
 
 
@@ -32,18 +48,27 @@ export function IncidentLogTable({
     width: '96px',
     sortValue: (r) => r.alert.id,
     render: (r) =>
-    <span className="font-mono text-[12px] text-ink">#{r.alert.id.replace('a-', '')}</span>
+    <div className={cellStack}>
+        <p className="font-mono text-[12px] leading-[1.25] text-ink">
+          #{r.alert.id.replace('a-', '')}
+        </p>
+        {spacer}
+      </div>
 
   },
   {
     key: 'datetime',
     header: 'Date / Time',
     sortable: true,
+    width: '190px',
     sortValue: (r) => r.response.triggered_at,
     render: (r) =>
-    <span className="text-[13px] tabular-nums text-ink-muted">
+    <div className={cellStack}>
+        <p className="whitespace-nowrap text-[13px] leading-[1.25] tabular-nums text-ink-muted">
           {formatDateTime(r.response.triggered_at)}
-        </span>
+        </p>
+        {spacer}
+      </div>
 
   },
   {
@@ -52,10 +77,14 @@ export function IncidentLogTable({
     sortable: true,
     sortValue: (r) => alertTypeLabel[r.alert.alert_type],
     render: (r) =>
-    <div>
-          <p className="font-medium text-ink">{alertTypeLabel[r.alert.alert_type]}</p>
-          <p className="truncate text-[12px] text-ink-muted">{r.alert.address}</p>
-        </div>
+    <div className={cellStack}>
+        <p className="truncate text-[13px] leading-[1.25] font-medium text-ink">
+          {alertTypeLabel[r.alert.alert_type]}
+        </p>
+        <p className="truncate text-[12px] leading-[1.25] text-ink-muted">
+          {r.alert.address}
+        </p>
+      </div>
 
   },
   {
@@ -68,14 +97,28 @@ export function IncidentLogTable({
     new Date(r.response.arrived_at).getTime() -
     new Date(r.response.triggered_at).getTime() :
     Number.MAX_SAFE_INTEGER,
-    render: (r) => durationBetween(r.response.triggered_at, r.response.arrived_at)
+    render: (r) =>
+    <div className={cellStack + ' items-end'}>
+        <p className="tabular-nums text-[13px] leading-[1.25] text-ink">
+          {durationBetween(r.response.triggered_at, r.response.arrived_at)}
+        </p>
+        {spacer}
+      </div>
+
   },
   {
     key: 'branch_status',
     header: 'Branch Response',
     sortable: true,
     sortValue: (r) => r.response.status,
-    render: (r) => <BranchStatusBadge status={r.response.status} />
+    render: (r) =>
+    <div className={cellStack}>
+        <div>
+          <BranchStatusBadge status={r.response.status} />
+        </div>
+        {spacer}
+      </div>
+
   },
   ...(showBranch ?
   [
@@ -85,9 +128,12 @@ export function IncidentLogTable({
     sortable: true,
     sortValue: (r: IncidentLogRow) => centerName(r.response.command_center_id),
     render: (r: IncidentLogRow) =>
-    <span className="text-[13px] text-ink-muted">
-                {centerName(r.response.command_center_id)}
-              </span>
+    <div className={cellStack}>
+        <p className="truncate text-[13px] leading-[1.25] text-ink-muted">
+          {centerName(r.response.command_center_id)}
+        </p>
+        {spacer}
+      </div>
 
   }] :
 
@@ -97,7 +143,14 @@ export function IncidentLogTable({
     header: 'Final Outcome',
     sortable: true,
     sortValue: (r) => r.alert.outcome,
-    render: (r) => <OutcomeBadge outcome={r.alert.outcome} />
+    render: (r) =>
+    <div className={cellStack}>
+        <div>
+          <OutcomeBadge outcome={r.alert.outcome} />
+        </div>
+        {spacer}
+      </div>
+
   }];
 
 
@@ -115,7 +168,7 @@ export function IncidentLogTable({
           description="Alerts broadcast to this branch will appear here once triggered." />
 
         } />
-      
+
 
       <IncidentLogDrawer row={active} onClose={() => setActive(null)} />
     </>);

@@ -88,7 +88,7 @@ export function DataTable<T>({
                   scope="col"
                   style={{ width: c.width }}
                   className={twMerge(
-                    'px-4 py-2.5 text-[12px] font-semibold uppercase tracking-wide text-ink-muted',
+                    'whitespace-nowrap px-4 py-2.5 text-[12px] font-semibold uppercase tracking-wide text-ink-muted',
                     c.align === 'right' ? 'text-right' : 'text-left'
                   )}>
                   {c.sortable ?
@@ -175,11 +175,18 @@ export function DataTable<T>({
               <td
                 key={c.key}
                 className={twMerge(
-                  'px-4 py-3 text-ink',
+                  'px-4 py-3 align-middle text-ink',
                   c.align === 'right' && 'text-right tabular-nums'
-                )}>
-                    {c.render(row)}
-                  </td>
+                )}
+                style={{ verticalAlign: 'middle' }}>
+                <div
+                  className={twMerge(
+                    'flex min-h-[2.75rem] flex-col justify-center leading-[1.25]',
+                    c.align === 'right' ? 'items-end' : 'items-start'
+                  )}>
+                  {c.render(row)}
+                </div>
+              </td>
               )}
               </motion.tr>
             )}

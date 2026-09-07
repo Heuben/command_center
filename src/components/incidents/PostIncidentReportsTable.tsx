@@ -155,7 +155,7 @@ export function PostIncidentReportsTable({
     sortable: true,
     sortValue: (r) => r.summary,
     render: (r) =>
-    <div className="max-w-md">
+    <div className="max-w-md leading-tight">
           <p className="truncate font-medium text-ink">{r.summary}</p>
           <p className="truncate text-[12px] text-ink-muted">
             {alertById(r.alert_id) ? alertTypeLabel[alertById(r.alert_id)!.alert_type] : '—'}
@@ -177,9 +177,9 @@ export function PostIncidentReportsTable({
     sortValue: (r) => r.submitted_by_id ? userName(r.submitted_by_id) : '',
     render: (r) =>
     r.submitted_by_id ?
-    <div>
-            <p className="text-ink">{userName(r.submitted_by_id)}</p>
-            <p className="text-[12px] tabular-nums text-ink-muted">
+    <div className="leading-tight">
+            <p className="truncate text-ink">{userName(r.submitted_by_id)}</p>
+            <p className="truncate text-[12px] tabular-nums text-ink-muted">
               {r.submitted_at ? formatDateTime(r.submitted_at) : ''}
             </p>
           </div> :

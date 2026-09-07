@@ -160,10 +160,10 @@ export function AuditLogs() {
     key: 'timestamp',
     header: 'Timestamp',
     sortable: true,
-    width: '190px',
+    width: '200px',
     sortValue: (l) => l.created_at,
     render: (l) =>
-    <span className="text-[13px] tabular-nums text-ink-muted">
+    <span className="whitespace-nowrap text-[13px] tabular-nums text-ink-muted">
           {formatDateTime(l.created_at)}
         </span>
 
@@ -184,11 +184,10 @@ export function AuditLogs() {
 
       }
       return (
-        <span className="font-medium text-ink">
-            {userName(l.actor_id)}
-            <span className="font-normal text-ink-muted"> — {roleLabel[actor.role]}</span>
-          </span>);
-
+        <div className="min-w-0">
+          <p className="truncate font-medium text-ink">{userName(l.actor_id)}</p>
+          <p className="truncate text-[12px] text-ink-muted">{roleLabel[actor.role]}</p>
+        </div>);
     }
   },
   {
@@ -196,7 +195,12 @@ export function AuditLogs() {
     header: 'Action',
     sortable: true,
     sortValue: (l) => actionLabel[l.action],
-    render: (l) => <span className="text-ink">{actionLabel[l.action]}</span>
+    render: (l) =>
+    <div className="leading-tight">
+        <p className="truncate text-[13px] text-ink">{actionLabel[l.action]}</p>
+        <p className="truncate text-[12px] text-transparent select-none" aria-hidden>—</p>
+      </div>
+
   },
   {
     key: 'category',
@@ -205,9 +209,12 @@ export function AuditLogs() {
     width: '160px',
     sortValue: (l) => categoryLabel[actionCategory[l.action]],
     render: (l) =>
-    <Badge tone={categoryTone[actionCategory[l.action]]} variant="dot">
+    <div className="leading-tight">
+        <Badge tone={categoryTone[actionCategory[l.action]]} variant="dot">
           {categoryLabel[actionCategory[l.action]]}
         </Badge>
+        <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+      </div>
 
   },
   {
@@ -216,7 +223,10 @@ export function AuditLogs() {
     sortable: true,
     sortValue: (l) => targetEntityLabel[l.target_entity],
     render: (l) =>
-    <span className="text-[13px] text-ink-muted">{targetEntityLabel[l.target_entity]}</span>
+    <div className="leading-tight">
+        <p className="truncate text-[13px] text-ink-muted">{targetEntityLabel[l.target_entity]}</p>
+        <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+      </div>
 
   },
   {
@@ -225,7 +235,12 @@ export function AuditLogs() {
     sortable: true,
     width: '120px',
     sortValue: (l) => l.reference,
-    render: (l) => <span className="font-mono text-[12px] text-ink">{l.reference}</span>
+    render: (l) =>
+    <div className="leading-tight">
+        <p className="font-mono text-[12px] text-ink">{l.reference}</p>
+        <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+      </div>
+
   },
   ...(isSuperadmin && !scopeCenterId ?
   [
@@ -235,9 +250,12 @@ export function AuditLogs() {
     sortable: true,
     sortValue: (l: SystemAuditLog) => centerName(l.command_center_id),
     render: (l: SystemAuditLog) =>
-    <span className="text-[13px] text-ink-muted">
-                {l.command_center_id ? centerName(l.command_center_id) : 'System-wide'}
-              </span>
+    <div className="leading-tight">
+        <p className="truncate text-[13px] text-ink-muted">
+          {l.command_center_id ? centerName(l.command_center_id) : 'System-wide'}
+        </p>
+        <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+      </div>
 
   }] :
 

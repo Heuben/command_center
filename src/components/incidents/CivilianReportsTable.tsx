@@ -50,9 +50,9 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r) => r.civilian_name,
     render: (r) =>
-    <div>
-          <p className="font-medium text-ink">{r.civilian_name}</p>
-          <p className="text-[12px] tabular-nums text-ink-muted">
+    <div className="leading-tight">
+          <p className="truncate font-medium text-ink">{r.civilian_name}</p>
+          <p className="truncate text-[12px] tabular-nums text-ink-muted">
             {formatDateTime(r.submitted_at)}
           </p>
         </div>
@@ -64,9 +64,9 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r) => r.human_location,
     render: (r) =>
-    <div className="max-w-xs">
+    <div className="max-w-xs leading-tight">
           <p className="truncate text-[13px] text-ink">{r.human_location}</p>
-          <p className="text-[11px] tabular-nums text-ink-faint">
+          <p className="truncate text-[11px] tabular-nums text-ink-faint">
             {r.raw_location.lat.toFixed(4)}, {r.raw_location.lng.toFixed(4)}
           </p>
         </div>
