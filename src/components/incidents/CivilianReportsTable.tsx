@@ -12,6 +12,13 @@ import { Badge } from '../ui/Badge';
 import { Button, EmptyState } from '../ui/primitives';
 import { Drawer } from '../ui/Modal';
 
+const cellStack = 'flex flex-col gap-0.5 leading-[1.25]';
+const spacer = (
+  <p className="text-[12px] text-transparent select-none" aria-hidden>
+    &nbsp;
+  </p>
+);
+
 export function CivilianReportsTable({
   rows,
   showBranch
@@ -29,7 +36,10 @@ export function CivilianReportsTable({
     width: '96px',
     sortValue: (r) => r.id,
     render: (r) =>
-    <span className="font-mono text-[12px] text-ink">#{r.id.replace('cr-', '')}</span>
+    <div className={cellStack}>
+        <span className="font-mono text-[12px] text-ink">#{r.id.replace('cr-', '')}</span>
+        {spacer}
+      </div>
 
   },
   {
@@ -37,10 +47,13 @@ export function CivilianReportsTable({
     header: 'Media',
     width: '92px',
     render: (r) =>
-    <img
-      src={r.media_url}
-      alt={`Media for civilian report ${r.id.toUpperCase()}`}
-      className="h-11 w-16 rounded border border-line object-cover" />
+    <div className={cellStack}>
+        <img
+          src={r.media_url}
+          alt={`Media for civilian report ${r.id.toUpperCase()}`}
+          className="h-11 w-16 rounded border border-line object-cover" />
+        {spacer}
+      </div>
 
 
   },
@@ -50,12 +63,15 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r) => r.civilian_name,
     render: (r) =>
-    <div className="leading-tight">
-          <p className="truncate font-medium text-ink">{r.civilian_name}</p>
-          <p className="truncate text-[12px] tabular-nums text-ink-muted">
-            {formatDateTime(r.submitted_at)}
-          </p>
-        </div>
+    <div className={cellStack}>
+        <div className="leading-tight">
+              <p className="truncate font-medium text-ink">{r.civilian_name}</p>
+              <p className="truncate text-[12px] tabular-nums text-ink-muted">
+                {formatDateTime(r.submitted_at)}
+              </p>
+            </div>
+        {spacer}
+      </div>
 
   },
   {
@@ -64,12 +80,15 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r) => r.human_location,
     render: (r) =>
-    <div className="max-w-xs leading-tight">
-          <p className="truncate text-[13px] text-ink">{r.human_location}</p>
-          <p className="truncate text-[11px] tabular-nums text-ink-faint">
-            {r.raw_location.lat.toFixed(4)}, {r.raw_location.lng.toFixed(4)}
-          </p>
-        </div>
+    <div className={cellStack}>
+        <div className="max-w-xs leading-tight">
+              <p className="truncate text-[13px] text-ink">{r.human_location}</p>
+              <p className="truncate text-[11px] tabular-nums text-ink-faint">
+                {r.raw_location.lat.toFixed(4)}, {r.raw_location.lng.toFixed(4)}
+              </p>
+            </div>
+        {spacer}
+      </div>
 
   },
   ...(showBranch ?
@@ -80,7 +99,10 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r: CivilianReport) => centerName(r.command_center_id),
     render: (r: CivilianReport) =>
-    <span className="text-[13px] text-ink-muted">{centerName(r.command_center_id)}</span>
+    <div className={cellStack}>
+        <span className="text-[13px] text-ink-muted">{centerName(r.command_center_id)}</span>
+        {spacer}
+      </div>
 
   }] :
 
@@ -91,11 +113,14 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r) => r.status,
     render: (r) =>
-    <Badge
-      tone={r.status === 'pending' ? 'urgent' : 'success'}
-      variant={r.status === 'pending' ? 'solid' : 'soft'}>
-          {r.status === 'pending' ? 'Pending' : 'Acknowledged'}
-        </Badge>
+    <div className={cellStack}>
+        <Badge
+          tone={r.status === 'pending' ? 'urgent' : 'success'}
+          variant={r.status === 'pending' ? 'solid' : 'soft'}>
+              {r.status === 'pending' ? 'Pending' : 'Acknowledged'}
+            </Badge>
+        {spacer}
+      </div>
 
   }];
 

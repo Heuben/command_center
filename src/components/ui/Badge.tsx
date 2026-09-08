@@ -122,7 +122,10 @@ const branchTone: Record<BranchResponseStatus, Tone> = {
 
 export function BranchStatusBadge({ status }: {status: BranchResponseStatus;}) {
   return (
-    <Badge tone={branchTone[status]} variant={status === 'pending' ? 'solid' : 'soft'}>
+    <Badge
+      tone={branchTone[status]}
+      variant={status === 'pending' ? 'solid' : 'soft'}
+      className="min-w-[7.25rem] justify-center">
       {branchStatusLabel[status]}
     </Badge>);
 

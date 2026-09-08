@@ -25,9 +25,7 @@ export type IncidentLogRow = {
  */
 const cellStack = 'flex flex-col gap-0.5 leading-[1.25]';
 const spacer = (
-  <p className="text-[12px] text-transparent select-none" aria-hidden>
-    &nbsp;
-  </p>
+  <span className="block h-[15px]" aria-hidden />
 );
 
 export function IncidentLogTable({
@@ -75,6 +73,7 @@ export function IncidentLogTable({
     key: 'type',
     header: 'Classification',
     sortable: true,
+    width: '220px',
     sortValue: (r) => alertTypeLabel[r.alert.alert_type],
     render: (r) =>
     <div className={cellStack}>
@@ -92,6 +91,7 @@ export function IncidentLogTable({
     header: 'Response Time',
     sortable: true,
     align: 'right',
+    width: '140px',
     sortValue: (r) =>
     r.response.arrived_at ?
     new Date(r.response.arrived_at).getTime() -
@@ -110,6 +110,7 @@ export function IncidentLogTable({
     key: 'branch_status',
     header: 'Branch Response',
     sortable: true,
+    width: '170px',
     sortValue: (r) => r.response.status,
     render: (r) =>
     <div className={cellStack}>
@@ -126,6 +127,7 @@ export function IncidentLogTable({
     key: 'branch',
     header: 'Branch',
     sortable: true,
+    width: '170px',
     sortValue: (r: IncidentLogRow) => centerName(r.response.command_center_id),
     render: (r: IncidentLogRow) =>
     <div className={cellStack}>
@@ -142,6 +144,7 @@ export function IncidentLogTable({
     key: 'outcome',
     header: 'Final Outcome',
     sortable: true,
+    width: '160px',
     sortValue: (r) => r.alert.outcome,
     render: (r) =>
     <div className={cellStack}>
