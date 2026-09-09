@@ -1,7 +1,6 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
-  ShieldIcon,
   Radio,
   AlertTriangle,
   Users,
@@ -12,6 +11,7 @@ import {
   LockIcon,
   CheckIcon
 } from 'lucide-react';
+import bantaiLogo from '../bantai_logo_pic_icons/bantai_logo.png';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from '../contexts/SessionContext';
 import { Button, Input, Label } from '../components/ui/primitives';
@@ -110,7 +110,7 @@ function GradientOrbs() {
     <>
       <div
         className="pointer-events-none absolute -left-20 -top-20 h-80 w-80 rounded-full opacity-30 blur-3xl dark:opacity-25"
-        style={{ background: 'rgb(24 92 232 / 1)' }}
+        style={{}}
         aria-hidden="true"
       />
       <div
@@ -301,11 +301,9 @@ export function Login() {
         <GradientOrbs />
 
         <FadeIn reduced={reduced} delay={0.05} className="relative z-10">
-          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl shadow-lg"
-            style={{ background: 'rgb(24 92 232 / 1)' }}>
-            <ShieldIcon className="h-6 w-6 text-white" aria-hidden="true" />
+          <div className="mb-4">
+            <img src={bantaiLogo} alt="BANTAI Logo" className="h-20 w-auto object-contain mix-blend-screen" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">B.A.N.T.A.I.</h1>
           <p className="mt-1 text-sm font-medium text-white/60">
             Barangay Analytics &amp; Tactical<br />Action Intelligence
           </p>
@@ -349,8 +347,8 @@ export function Login() {
       <main className="flex w-full flex-col items-center justify-center bg-canvas px-6 py-12 lg:w-1/2 lg:px-16">
         {/* Mobile logo */}
         <FadeIn reduced={reduced} delay={0.05} className="mb-8 flex flex-col items-center lg:hidden">
-          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white">
-            <ShieldIcon className="h-5 w-5" aria-hidden="true" />
+          <div className="mb-3 flex h-40 w-40 items-center justify-center rounded-2xl shadow-lg overflow-hidden">
+            <img src={bantaiLogo} alt="BANTAI Logo" className="h-full w-full object-contain p-8" />
           </div>
           <h1 className="text-lg font-bold tracking-tight text-ink">B.A.N.T.A.I.</h1>
           <p className="text-[13px] text-ink-muted">Command Center</p>
