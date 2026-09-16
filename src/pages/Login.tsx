@@ -306,15 +306,15 @@ export function Login() {
 
         <div className="w-full max-w-[400px]">
           <FadeIn reduced={reduced} delay={0.1} className="mb-4">
-            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-danger">
+              <span className="h-1.5 w-1.5 rounded-full bg-danger" aria-hidden="true" />
               Secure operations access
             </div>
             <h2 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Welcome back</h2>
             <p className="mt-1.5 text-sm text-ink-muted">
               Sign in to access your command center.
             </p>
-            <div className="mt-4 h-px bg-gradient-to-r from-primary/40 via-line to-transparent" aria-hidden="true" />
+            <div className="mt-4 h-px bg-gradient-to-r from-danger/40 via-line to-transparent" aria-hidden="true" />
           </FadeIn>
 
           <form onSubmit={submit} noValidate className="space-y-3.5" aria-describedby={formError ? errorId : undefined}>
@@ -357,7 +357,7 @@ export function Login() {
                   <Label htmlFor={passwordId}>Password</Label>
                   <button
                     type="button"
-                    className="text-[12px] font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas rounded px-1"
+                    className="rounded px-1 text-[12px] font-medium text-danger hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas"
                   >
                     Forgot password?
                   </button>
@@ -389,7 +389,7 @@ export function Login() {
                     type="button"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas rounded"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded text-ink-faint transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas"
                   >
                     {showPassword ? (
                       <EyeOffIcon className="h-4 w-4" aria-hidden="true" />
@@ -443,7 +443,7 @@ export function Login() {
                     checked={remember}
                     onChange={(e) => setRemember(e.target.checked)}
                     disabled={busy}
-                    className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none rounded border border-line bg-surface transition-colors checked:border-primary checked:bg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-50"
+                    className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none rounded border border-line bg-surface transition-colors checked:border-danger checked:bg-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <CheckIcon
                     className="pointer-events-none relative z-10 h-3 w-3 stroke-[3] text-white opacity-0 transition-opacity peer-checked:opacity-100"
@@ -478,8 +478,8 @@ export function Login() {
             <FadeIn reduced={reduced} delay={0.34}>
               <Button
                 type="submit"
-                variant="primary"
-                className="h-10 w-full text-sm font-semibold"
+                variant="danger"
+                className="h-10 w-full text-sm font-semibold focus-visible:ring-danger/50"
                 disabled={busy}
                 aria-busy={busy}
               >
@@ -506,7 +506,7 @@ export function Login() {
             <FadeIn reduced={reduced} delay={0.46} className="mt-4 rounded-xl border border-dashed border-line bg-white p-4">
               <p className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
                 Demo Accounts
-                <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">Quick Fill</span>
+                <span className="rounded bg-danger-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-danger">Quick Fill</span>
               </p>
               <ul className="grid gap-2 sm:grid-cols-2 sm:gap-4">
                 {demoAccounts.map((a) => (
@@ -518,9 +518,9 @@ export function Login() {
                         setPassword(a.password);
                         setFormError(null);
                       }}
-                      className="flex w-full min-w-0 flex-col items-start rounded-lg border border-transparent px-3 py-2.5 text-left transition-all duration-150 hover:border-line hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
+                      className="flex w-full min-w-0 flex-col items-start rounded-lg border border-transparent px-3 py-2.5 text-left transition-all duration-150 hover:border-line hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
                     >
-                      <span className="text-[13px] font-medium leading-snug text-primary">{a.label}</span>
+                      <span className="text-[13px] font-medium leading-snug text-danger">{a.label}</span>
                       <span className="mt-1 break-all text-[12px] leading-snug text-ink-faint">{a.email}</span>
                     </button>
                   </li>
