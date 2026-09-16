@@ -503,14 +503,14 @@ export function Login() {
 
           {/* Demo accounts (dev only) */}
           {SHOW_DEMO && (
-            <FadeIn reduced={reduced} delay={0.46} className="mt-4 rounded-xl border border-dashed border-line bg-white p-3">
-              <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
+            <FadeIn reduced={reduced} delay={0.46} className="mt-4 rounded-xl border border-dashed border-line bg-white p-4">
+              <p className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
                 Demo Accounts
                 <span className="rounded bg-primary-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary">Quick Fill</span>
               </p>
-              <ul className="grid gap-1 sm:grid-cols-2 sm:gap-2">
+              <ul className="grid gap-2 sm:grid-cols-2 sm:gap-4">
                 {demoAccounts.map((a) => (
-                  <li key={a.email}>
+                  <li key={a.email} className="min-w-0">
                     <button
                       type="button"
                       onClick={() => {
@@ -518,10 +518,10 @@ export function Login() {
                         setPassword(a.password);
                         setFormError(null);
                       }}
-                      className="flex w-full flex-col items-start rounded-lg border border-transparent px-2.5 py-2 text-left transition-all duration-150 hover:border-line hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
+                      className="flex w-full min-w-0 flex-col items-start rounded-lg border border-transparent px-3 py-2.5 text-left transition-all duration-150 hover:border-line hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
                     >
-                      <span className="text-[13px] font-medium text-primary">{a.label}</span>
-                      <span className="mt-0.5 text-[12px] text-ink-faint">{a.email}</span>
+                      <span className="text-[13px] font-medium leading-snug text-primary">{a.label}</span>
+                      <span className="mt-1 break-all text-[12px] leading-snug text-ink-faint">{a.email}</span>
                     </button>
                   </li>
                 ))}
