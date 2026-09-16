@@ -24,6 +24,16 @@ import { Badge } from '../components/ui/Badge';
 import { downloadCsv, rowsToCsv } from '../utils/csv';
 import { DUR, EASE } from '../lib/motion';
 
+<<<<<<< HEAD
+=======
+const cellStack = 'flex flex-col gap-0.5 leading-[1.25]';
+const spacer = (
+  <p className="text-[12px] text-transparent select-none" aria-hidden>
+    &nbsp;
+  </p>
+);
+
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
 const categoryTone: Record<
   AuditCategory,
   'primary' | 'neutral' | 'urgent' | 'success' | 'danger'> =
@@ -163,9 +173,18 @@ export function AuditLogs() {
     width: '200px',
     sortValue: (l) => l.created_at,
     render: (l) =>
+<<<<<<< HEAD
     <span className="whitespace-nowrap text-[13px] tabular-nums text-ink-muted">
           {formatDateTime(l.created_at)}
         </span>
+=======
+    <div className={cellStack}>
+        <span className="whitespace-nowrap text-[13px] tabular-nums text-ink-muted">
+              {formatDateTime(l.created_at)}
+            </span>
+        {spacer}
+      </div>
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
 
   },
   {
@@ -177,6 +196,7 @@ export function AuditLogs() {
       const actor = userById(l.actor_id);
       if (!actor) {
         return (
+<<<<<<< HEAD
           <span className="inline-flex items-center gap-1.5 text-[13px] italic text-ink-muted">
               <CogIcon className="h-3.5 w-3.5 text-ink-faint" aria-hidden />
               System
@@ -188,6 +208,25 @@ export function AuditLogs() {
           <p className="truncate font-medium text-ink">{userName(l.actor_id)}</p>
           <p className="truncate text-[12px] text-ink-muted">{roleLabel[actor.role]}</p>
         </div>);
+=======
+          <div className={cellStack}>
+              <span className="inline-flex items-center gap-1.5 text-[13px] italic text-ink-muted">
+                  <CogIcon className="h-3.5 w-3.5 text-ink-faint" aria-hidden />
+                  System
+                </span>
+              {spacer}
+            </div>);
+
+      }
+      return (
+        <div className={cellStack}>
+            <div className="min-w-0">
+              <p className="truncate font-medium text-ink">{userName(l.actor_id)}</p>
+              <p className="truncate text-[12px] text-ink-muted">{roleLabel[actor.role]}</p>
+            </div>
+            {spacer}
+          </div>);
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
     }
   },
   {
@@ -196,9 +235,18 @@ export function AuditLogs() {
     sortable: true,
     sortValue: (l) => actionLabel[l.action],
     render: (l) =>
+<<<<<<< HEAD
     <div className="leading-tight">
         <p className="truncate text-[13px] text-ink">{actionLabel[l.action]}</p>
         <p className="truncate text-[12px] text-transparent select-none" aria-hidden>—</p>
+=======
+    <div className={cellStack}>
+        <div className="leading-tight">
+            <p className="truncate text-[13px] text-ink">{actionLabel[l.action]}</p>
+            <p className="truncate text-[12px] text-transparent select-none" aria-hidden>—</p>
+          </div>
+        {spacer}
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   },
@@ -209,11 +257,22 @@ export function AuditLogs() {
     width: '160px',
     sortValue: (l) => categoryLabel[actionCategory[l.action]],
     render: (l) =>
+<<<<<<< HEAD
     <div className="leading-tight">
         <Badge tone={categoryTone[actionCategory[l.action]]} variant="dot">
           {categoryLabel[actionCategory[l.action]]}
         </Badge>
         <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+=======
+    <div className={cellStack}>
+        <div className="leading-tight">
+            <Badge tone={categoryTone[actionCategory[l.action]]} variant="dot">
+              {categoryLabel[actionCategory[l.action]]}
+            </Badge>
+            <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+          </div>
+        {spacer}
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   },
@@ -223,9 +282,18 @@ export function AuditLogs() {
     sortable: true,
     sortValue: (l) => targetEntityLabel[l.target_entity],
     render: (l) =>
+<<<<<<< HEAD
     <div className="leading-tight">
         <p className="truncate text-[13px] text-ink-muted">{targetEntityLabel[l.target_entity]}</p>
         <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+=======
+    <div className={cellStack}>
+        <div className="leading-tight">
+            <p className="truncate text-[13px] text-ink-muted">{targetEntityLabel[l.target_entity]}</p>
+            <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+          </div>
+        {spacer}
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   },
@@ -236,9 +304,18 @@ export function AuditLogs() {
     width: '120px',
     sortValue: (l) => l.reference,
     render: (l) =>
+<<<<<<< HEAD
     <div className="leading-tight">
         <p className="font-mono text-[12px] text-ink">{l.reference}</p>
         <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+=======
+    <div className={cellStack}>
+        <div className="leading-tight">
+            <p className="font-mono text-[12px] text-ink">{l.reference}</p>
+            <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+          </div>
+        {spacer}
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   },
@@ -250,11 +327,22 @@ export function AuditLogs() {
     sortable: true,
     sortValue: (l: SystemAuditLog) => centerName(l.command_center_id),
     render: (l: SystemAuditLog) =>
+<<<<<<< HEAD
     <div className="leading-tight">
         <p className="truncate text-[13px] text-ink-muted">
           {l.command_center_id ? centerName(l.command_center_id) : 'System-wide'}
         </p>
         <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+=======
+    <div className={cellStack}>
+        <div className="leading-tight">
+            <p className="truncate text-[13px] text-ink-muted">
+              {l.command_center_id ? centerName(l.command_center_id) : 'System-wide'}
+            </p>
+            <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
+          </div>
+        {spacer}
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   }] :
@@ -499,7 +587,11 @@ function DiffBlock({
 }: {title: string;value: Record<string, unknown> | null;tone: 'danger' | 'success';}) {
   if (!value) {
     return (
+<<<<<<< HEAD
       <div>
+=======
+      <div className={cellStack}>
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
         <p className="mb-1.5 text-[11px] uppercase tracking-wide text-ink-faint">{title}</p>
         <div
           className={
@@ -510,12 +602,20 @@ function DiffBlock({
           }>
           No data
         </div>
+<<<<<<< HEAD
+=======
+        {spacer}
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>);
 
   }
 
   return (
+<<<<<<< HEAD
     <div>
+=======
+    <div className={cellStack}>
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       <p className="mb-1.5 text-[11px] uppercase tracking-wide text-ink-faint">{title}</p>
       <div
         className={
@@ -549,6 +649,10 @@ function DiffBlock({
           )}
         </dl>
       </div>
+<<<<<<< HEAD
+=======
+      {spacer}
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
     </div>);
 
 }

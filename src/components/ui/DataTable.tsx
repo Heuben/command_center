@@ -91,6 +91,7 @@ export function DataTable<T>({
                     'whitespace-nowrap px-4 py-2.5 text-[12px] font-semibold uppercase tracking-wide text-ink-muted',
                     c.align === 'right' ? 'text-right' : 'text-left'
                   )}>
+<<<<<<< HEAD
                   {c.sortable ?
                   <button
                     type="button"
@@ -117,6 +118,41 @@ export function DataTable<T>({
 
                   c.header
                   }
+=======
+                  <div
+                    className={twMerge(
+                      'flex min-h-[2.75rem] flex-col justify-center leading-[1.25]',
+                      c.align === 'right' ? 'items-end' : 'items-start'
+                    )}>
+                    {c.sortable ?
+                    <button
+                      type="button"
+                      onClick={() => toggle(c.key)}
+                      aria-sort={
+                      active ? sort!.dir === 'asc' ? 'ascending' : 'descending' : 'none'
+                      }
+                      className={twMerge(
+                        'flex w-full items-center gap-1 rounded transition-colors duration-150 ease-out hover:text-ink',
+                        active && 'text-ink',
+                        c.align === 'right' ? 'justify-end' : 'justify-start',
+                        c.align === 'right' && 'flex-row-reverse'
+                      )}>
+                        {c.header}
+                        {active ?
+                      sort!.dir === 'asc' ?
+                      <ChevronUpIcon className="h-3.5 w-3.5" /> :
+
+                      <ChevronDownIcon className="h-3.5 w-3.5" /> :
+
+
+                      <ChevronsUpDownIcon className="h-3.5 w-3.5 opacity-40" />
+                      }
+                      </button> :
+
+                    c.header
+                    }
+                  </div>
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
                 </th>);
 
             })}
@@ -165,12 +201,25 @@ export function DataTable<T>({
                 onRowClick &&
                 'cursor-pointer hover:bg-primary-soft/60 focus-visible:bg-primary-soft/60 focus-visible:outline-none'
               )}>
+<<<<<<< HEAD
                 {onRowClick && (
+=======
+                {columns.map((c, ci) =>
+              <td
+                key={c.key}
+                className={twMerge(
+                  'relative px-4 py-3 align-middle text-ink',
+                  c.align === 'right' && 'text-right tabular-nums'
+                )}
+                style={{ verticalAlign: 'middle' }}>
+                {ci === 0 && onRowClick && (
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
                   <span
                     aria-hidden
                     className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-primary opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100"
                   />
                 )}
+<<<<<<< HEAD
                 {columns.map((c) =>
               <td
                 key={c.key}
@@ -179,6 +228,8 @@ export function DataTable<T>({
                   c.align === 'right' && 'text-right tabular-nums'
                 )}
                 style={{ verticalAlign: 'middle' }}>
+=======
+>>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
                 <div
                   className={twMerge(
                     'flex min-h-[2.75rem] flex-col justify-center leading-[1.25]',
