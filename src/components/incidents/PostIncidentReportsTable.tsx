@@ -13,22 +13,24 @@ import { Drawer, Modal } from '../ui/Modal';
 import { useSession } from '../../contexts/SessionContext';
 import { useDispatchData } from '../../contexts/DispatchContext';
 
-<<<<<<< HEAD
-=======
+/**
+ * All cell renderers wrap their content in `.cellStack` so every row is
+ * exactly two uniform lines tall. The second <p> is a transparent spacer
+ * for cells that only have a single meaningful line (e.g. a status badge
+ * or a date). This keeps badges and dates visually aligned with the
+ * second line (the address / role / submitted-at line) of multi-line
+ * cells in the same row.
+ */
 const cellStack = 'flex flex-col gap-0.5 leading-[1.25]';
 const spacer = (
-  <p className="text-[12px] text-transparent select-none" aria-hidden>
+  <p className="text-[12px] leading-[1.25] text-transparent select-none" aria-hidden>
     &nbsp;
   </p>
 );
 
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
 export function PostIncidentReportsTable({
   rows,
   showBranch
-
-
-
 }: {rows: IncidentReport[];showBranch: boolean;}) {
   const { user } = useSession();
   const { updateReport } = useDispatchData();
@@ -145,15 +147,11 @@ export function PostIncidentReportsTable({
     sortable: true,
     width: '100px',
     sortValue: (r) => r.id,
-<<<<<<< HEAD
-    render: (r) => <span className="font-mono text-[12px] text-ink">{r.id.toUpperCase()}</span>
-=======
     render: (r) =>
     <div className={cellStack}>
         <span className="font-mono text-[12px] text-ink">{r.id.toUpperCase()}</span>
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
   },
   {
     key: 'alert',
@@ -162,19 +160,12 @@ export function PostIncidentReportsTable({
     width: '96px',
     sortValue: (r) => r.alert_id,
     render: (r) =>
-<<<<<<< HEAD
-    <span className="font-mono text-[12px] text-ink-muted">
-          #{r.alert_id.replace('a-', '')}
-        </span>
-=======
     <div className={cellStack}>
         <span className="font-mono text-[12px] text-ink-muted">
           #{r.alert_id.replace('a-', '')}
         </span>
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-
   },
   {
     key: 'summary',
@@ -182,40 +173,26 @@ export function PostIncidentReportsTable({
     sortable: true,
     sortValue: (r) => r.summary,
     render: (r) =>
-<<<<<<< HEAD
-    <div className="max-w-md leading-tight">
+    <div className={cellStack}>
+        <div className="max-w-md leading-tight">
           <p className="truncate font-medium text-ink">{r.summary}</p>
           <p className="truncate text-[12px] text-ink-muted">
             {alertById(r.alert_id) ? alertTypeLabel[alertById(r.alert_id)!.alert_type] : '—'}
           </p>
         </div>
-=======
-    <div className={cellStack}>
-        <div className="max-w-md leading-tight">
-              <p className="truncate font-medium text-ink">{r.summary}</p>
-              <p className="truncate text-[12px] text-ink-muted">
-                {alertById(r.alert_id) ? alertTypeLabel[alertById(r.alert_id)!.alert_type] : '—'}
-              </p>
-            </div>
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-
   },
   {
     key: 'reporter',
     header: 'Assigned Reporter',
     sortable: true,
     sortValue: (r) => userName(r.assigned_reporter_id),
-<<<<<<< HEAD
-    render: (r) => userName(r.assigned_reporter_id)
-=======
     render: (r) =>
     <div className={cellStack}>
         <span>{userName(r.assigned_reporter_id)}</span>
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
   },
   {
     key: 'submitted_by',
@@ -223,31 +200,19 @@ export function PostIncidentReportsTable({
     sortable: true,
     sortValue: (r) => r.submitted_by_id ? userName(r.submitted_by_id) : '',
     render: (r) =>
-<<<<<<< HEAD
-    r.submitted_by_id ?
-    <div className="leading-tight">
+    <div className={cellStack}>
+        {r.submitted_by_id ?
+        <div className="leading-tight">
             <p className="truncate text-ink">{userName(r.submitted_by_id)}</p>
             <p className="truncate text-[12px] tabular-nums text-ink-muted">
               {r.submitted_at ? formatDateTime(r.submitted_at) : ''}
             </p>
           </div> :
 
-    <span className="text-ink-muted">Not yet submitted</span>
-
-=======
-    <div className={cellStack}>
-        r.submitted_by_id ?
-        <div className="leading-tight">
-                <p className="truncate text-ink">{userName(r.submitted_by_id)}</p>
-                <p className="truncate text-[12px] tabular-nums text-ink-muted">
-                  {r.submitted_at ? formatDateTime(r.submitted_at) : ''}
-                </p>
-              </div> :
-
         <span className="text-ink-muted">Not yet submitted</span>
+        }
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
   },
   ...(showBranch ?
   [
@@ -257,32 +222,22 @@ export function PostIncidentReportsTable({
     sortable: true,
     sortValue: (r: IncidentReport) => centerName(r.command_center_id),
     render: (r: IncidentReport) =>
-<<<<<<< HEAD
-    <span className="text-[13px] text-ink-muted">{centerName(r.command_center_id)}</span>
-=======
     <div className={cellStack}>
         <span className="text-[13px] text-ink-muted">{centerName(r.command_center_id)}</span>
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-
   }] :
-
   []),
   {
     key: 'status',
     header: 'Report Status',
     sortable: true,
     sortValue: (r) => r.status,
-<<<<<<< HEAD
-    render: (r) => <ReportStatusBadge status={r.status} />
-=======
     render: (r) =>
     <div className={cellStack}>
         <ReportStatusBadge status={r.status} />
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
   }];
 
 
@@ -298,9 +253,7 @@ export function PostIncidentReportsTable({
         <EmptyState
           title="No post-incident reports"
           description="Written reports filed after an incident appear here." />
-
         } />
-      
 
       <Drawer
         open={!!active}
@@ -311,8 +264,7 @@ export function PostIncidentReportsTable({
         `Alert #${active.alert_id.replace('a-', '')} · ${centerName(
           active.command_center_id
         )}` :
-        ''
-        }>
+        ''}>
         {active &&
         <div className="space-y-5">
             {notice &&
@@ -348,7 +300,7 @@ export function PostIncidentReportsTable({
               id="report-summary"
               value={summary}
               onChange={(e) => setSummary(e.target.value)} />
-            
+
             </div>
 
             <div>
@@ -359,7 +311,7 @@ export function PostIncidentReportsTable({
               value={detailedNarrative}
               onChange={(e) => setDetailedNarrative(e.target.value)}
               placeholder="Describe what the responder observed and did on scene." />
-            
+
             </div>
 
             <div>
@@ -373,7 +325,6 @@ export function PostIncidentReportsTable({
                 src={url}
                 alt={`Evidence attached to report ${active.id.toUpperCase()}`}
                 className="h-24 w-36 rounded-md border border-line object-cover" />
-
               )}
               </div>
             </div>
@@ -420,8 +371,7 @@ export function PostIncidentReportsTable({
         `${active.id.toUpperCase()} will be sent back to ${userName(
           active.assigned_reporter_id
         )} for rework.` :
-        ''
-        }
+        ''}
         footer={
         <>
             <Button onClick={() => setRevisionOpen(false)} disabled={saving}>
@@ -443,12 +393,11 @@ export function PostIncidentReportsTable({
             value={revisionReason}
             onChange={(e) => setRevisionReason(e.target.value)}
             placeholder="e.g. The report submitted is lacking in detail and the wording is confusing." />
-          
+
           <p className="mt-2 text-[12px] text-ink-muted">
             These notes are sent to the assigned reporter and recorded in the audit log.
           </p>
         </div>
       </Modal>
     </>);
-
 }

@@ -12,22 +12,24 @@ import { Badge } from '../ui/Badge';
 import { Button, EmptyState } from '../ui/primitives';
 import { Drawer } from '../ui/Modal';
 
-<<<<<<< HEAD
-=======
+/**
+ * All cell renderers wrap their content in `.cellStack` so every row is
+ * exactly two uniform lines tall. The second <p> is a transparent spacer
+ * for cells that only have a single meaningful line (e.g. a status badge
+ * or a date). This keeps badges and dates visually aligned with the
+ * second line (the address / role / submitted-at line) of multi-line
+ * cells in the same row.
+ */
 const cellStack = 'flex flex-col gap-0.5 leading-[1.25]';
 const spacer = (
-  <p className="text-[12px] text-transparent select-none" aria-hidden>
+  <p className="text-[12px] leading-[1.25] text-transparent select-none" aria-hidden>
     &nbsp;
   </p>
 );
 
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
 export function CivilianReportsTable({
   rows,
   showBranch
-
-
-
 }: {rows: CivilianReport[];showBranch: boolean;}) {
   const [active, setActive] = useState<CivilianReport | null>(null);
 
@@ -39,27 +41,16 @@ export function CivilianReportsTable({
     width: '96px',
     sortValue: (r) => r.id,
     render: (r) =>
-<<<<<<< HEAD
-    <span className="font-mono text-[12px] text-ink">#{r.id.replace('cr-', '')}</span>
-=======
     <div className={cellStack}>
         <span className="font-mono text-[12px] text-ink">#{r.id.replace('cr-', '')}</span>
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-
   },
   {
     key: 'media',
     header: 'Media',
     width: '92px',
     render: (r) =>
-<<<<<<< HEAD
-    <img
-      src={r.media_url}
-      alt={`Media for civilian report ${r.id.toUpperCase()}`}
-      className="h-11 w-16 rounded border border-line object-cover" />
-=======
     <div className={cellStack}>
         <img
           src={r.media_url}
@@ -67,9 +58,6 @@ export function CivilianReportsTable({
           className="h-11 w-16 rounded border border-line object-cover" />
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-
-
   },
   {
     key: 'civilian',
@@ -77,25 +65,15 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r) => r.civilian_name,
     render: (r) =>
-<<<<<<< HEAD
-    <div className="leading-tight">
+    <div className={cellStack}>
+        <div className="leading-tight">
           <p className="truncate font-medium text-ink">{r.civilian_name}</p>
           <p className="truncate text-[12px] tabular-nums text-ink-muted">
             {formatDateTime(r.submitted_at)}
           </p>
         </div>
-=======
-    <div className={cellStack}>
-        <div className="leading-tight">
-              <p className="truncate font-medium text-ink">{r.civilian_name}</p>
-              <p className="truncate text-[12px] tabular-nums text-ink-muted">
-                {formatDateTime(r.submitted_at)}
-              </p>
-            </div>
-        {spacer}
-      </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-
+      {spacer}
+    </div>
   },
   {
     key: 'location',
@@ -103,25 +81,15 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r) => r.human_location,
     render: (r) =>
-<<<<<<< HEAD
-    <div className="max-w-xs leading-tight">
+    <div className={cellStack}>
+        <div className="max-w-xs leading-tight">
           <p className="truncate text-[13px] text-ink">{r.human_location}</p>
           <p className="truncate text-[11px] tabular-nums text-ink-faint">
             {r.raw_location.lat.toFixed(4)}, {r.raw_location.lng.toFixed(4)}
           </p>
         </div>
-=======
-    <div className={cellStack}>
-        <div className="max-w-xs leading-tight">
-              <p className="truncate text-[13px] text-ink">{r.human_location}</p>
-              <p className="truncate text-[11px] tabular-nums text-ink-faint">
-                {r.raw_location.lat.toFixed(4)}, {r.raw_location.lng.toFixed(4)}
-              </p>
-            </div>
-        {spacer}
-      </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-
+      {spacer}
+    </div>
   },
   ...(showBranch ?
   [
@@ -131,17 +99,11 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r: CivilianReport) => centerName(r.command_center_id),
     render: (r: CivilianReport) =>
-<<<<<<< HEAD
-    <span className="text-[13px] text-ink-muted">{centerName(r.command_center_id)}</span>
-=======
     <div className={cellStack}>
         <span className="text-[13px] text-ink-muted">{centerName(r.command_center_id)}</span>
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-
   }] :
-
   []),
   {
     key: 'status',
@@ -149,23 +111,14 @@ export function CivilianReportsTable({
     sortable: true,
     sortValue: (r) => r.status,
     render: (r) =>
-<<<<<<< HEAD
-    <Badge
-      tone={r.status === 'pending' ? 'urgent' : 'success'}
-      variant={r.status === 'pending' ? 'solid' : 'soft'}>
-          {r.status === 'pending' ? 'Pending' : 'Acknowledged'}
-        </Badge>
-=======
     <div className={cellStack}>
         <Badge
           tone={r.status === 'pending' ? 'urgent' : 'success'}
           variant={r.status === 'pending' ? 'solid' : 'soft'}>
-              {r.status === 'pending' ? 'Pending' : 'Acknowledged'}
-            </Badge>
+            {r.status === 'pending' ? 'Pending' : 'Acknowledged'}
+          </Badge>
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-
   }];
 
 
@@ -182,21 +135,15 @@ export function CivilianReportsTable({
         <EmptyState
           title="No civilian reports"
           description="Reports submitted by civilians will appear here." />
-
         } />
-      
 
       <CivilianReportDrawer report={active} onClose={() => setActive(null)} />
     </>);
-
 }
 
 function CivilianReportDrawer({
   report,
   onClose
-
-
-
 }: {report: CivilianReport | null;onClose: () => void;}) {
   const { user } = useSession();
   const { acknowledgeCivilianReport } = useDispatchData();
@@ -229,7 +176,7 @@ function CivilianReportDrawer({
             src={report.media_url}
             alt={`Media submitted with report ${report.id.toUpperCase()}`}
             className="w-full rounded-lg border border-line object-cover" />
-          
+
           <p className="mt-2 flex items-center gap-1.5 text-[12px] tabular-nums text-ink-muted">
             <MapPinIcon className="h-3.5 w-3.5" />
             {report.raw_location.lat.toFixed(4)}, {report.raw_location.lng.toFixed(4)}
@@ -263,11 +210,11 @@ function CivilianReportDrawer({
               acknowledgeCivilianReport(report.id, user.id);
               onClose();
             }}>
-              Acknowledge Report
-            </Button>
+            Acknowledge Report
+          </Button>
           }
         </div>
       </div>
-    </Drawer>);
-
+    </Drawer>
+  );
 }

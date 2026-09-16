@@ -22,7 +22,6 @@ import {
 '../../utils/labels';
 
 type Tone = 'neutral' | 'primary' | 'urgent' | 'success' | 'danger';
-type Variant = 'soft' | 'solid' | 'dot' | 'tag';
 
 const soft: Record<Tone, string> = {
   neutral: 'bg-ink/[0.06] text-ink-muted',
@@ -61,11 +60,6 @@ export function Badge({
   variant = 'soft',
   children,
   className
-
-
-
-
-
 }: {tone?: Tone;variant?: Variant;children: React.ReactNode;className?: string;}) {
   const base =
   'inline-flex items-center gap-1.5 whitespace-nowrap text-[12px] font-medium leading-none';
@@ -108,7 +102,6 @@ export function Badge({
       )}>
       {children}
     </span>);
-
 }
 
 /* --- Branch response (Incident Log / dispatch queue) --- */
@@ -122,14 +115,10 @@ const branchTone: Record<BranchResponseStatus, Tone> = {
 
 export function BranchStatusBadge({ status }: {status: BranchResponseStatus;}) {
   return (
-<<<<<<< HEAD
-    <Badge tone={branchTone[status]} variant={status === 'pending' ? 'solid' : 'soft'}>
-=======
     <Badge
       tone={branchTone[status]}
       variant={status === 'pending' ? 'solid' : 'soft'}
       className="min-w-[7.25rem] justify-center">
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       {branchStatusLabel[status]}
     </Badge>);
 
@@ -190,6 +179,12 @@ const outcomeTone: Record<AlertOutcome, Tone> = {
   unresolved: 'urgent'
 };
 
+const availabilityTone: Record<Availability, Tone> = {
+  on_duty: 'success',
+  off_duty: 'neutral',
+  dispatched: 'primary'
+};
+
 export function OutcomeBadge({ outcome }: {outcome: AlertOutcome;}) {
   return (
     <Badge tone={outcomeTone[outcome]} variant="soft">
@@ -198,43 +193,10 @@ export function OutcomeBadge({ outcome }: {outcome: AlertOutcome;}) {
 
 }
 
-/* --- Alert classification --- */
-const armed: AlertType[] = ['threat_gun', 'threat_blade'];
-
-export function AlertTypeBadge({ type }: {type: AlertType;}) {
-  return (
-    <Badge tone={armed.includes(type) ? 'danger' : 'urgent'} variant="soft">
-      {alertTypeLabel[type]}
-    </Badge>);
-
-}
-
-/* --- Duty / device --- */
-const dutyTone: Record<Availability, Tone> = {
-  on_duty: 'success',
-  dispatched: 'primary',
-  off_duty: 'neutral'
-};
-
 export function DutyBadge({ availability }: {availability: Availability;}) {
   return (
-    <Badge tone={dutyTone[availability]} variant="dot">
+    <Badge tone={availabilityTone[availability]} variant="dot">
       {availabilityLabel[availability]}
-    </Badge>);
-
-}
-
-const deviceTone: Record<DeviceStatus, Tone> = {
-  paired: 'success',
-  unpaired: 'neutral',
-  lost: 'danger',
-  damaged: 'danger'
-};
-
-export function DeviceStatusBadge({ status }: {status: DeviceStatus;}) {
-  return (
-    <Badge tone={deviceTone[status]} variant="soft">
-      {deviceStatusLabel[status]}
-    </Badge>);
-
+    </Badge>
+  );
 }

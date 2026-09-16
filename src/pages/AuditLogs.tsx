@@ -24,16 +24,20 @@ import { Badge } from '../components/ui/Badge';
 import { downloadCsv, rowsToCsv } from '../utils/csv';
 import { DUR, EASE } from '../lib/motion';
 
-<<<<<<< HEAD
-=======
+/**
+ * All cell renderers wrap their content in `.cellStack` so every row is
+ * exactly two uniform lines tall. The second <p> is a transparent spacer
+ * for cells that only have a single meaningful line (e.g. a status badge
+ * or a date). This keeps badges and dates visually aligned with the
+ * second line of multi-line cells in the same row.
+ */
 const cellStack = 'flex flex-col gap-0.5 leading-[1.25]';
 const spacer = (
-  <p className="text-[12px] text-transparent select-none" aria-hidden>
+  <p className="text-[12px] leading-[1.25] text-transparent select-none" aria-hidden>
     &nbsp;
   </p>
 );
 
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
 const categoryTone: Record<
   AuditCategory,
   'primary' | 'neutral' | 'urgent' | 'success' | 'danger'> =
@@ -173,18 +177,12 @@ export function AuditLogs() {
     width: '200px',
     sortValue: (l) => l.created_at,
     render: (l) =>
-<<<<<<< HEAD
-    <span className="whitespace-nowrap text-[13px] tabular-nums text-ink-muted">
+    <div className={cellStack}>
+        <span className="whitespace-nowrap text-[13px] leading-[1.25] tabular-nums text-ink-muted">
           {formatDateTime(l.created_at)}
         </span>
-=======
-    <div className={cellStack}>
-        <span className="whitespace-nowrap text-[13px] tabular-nums text-ink-muted">
-              {formatDateTime(l.created_at)}
-            </span>
         {spacer}
       </div>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
 
   },
   {
@@ -196,37 +194,21 @@ export function AuditLogs() {
       const actor = userById(l.actor_id);
       if (!actor) {
         return (
-<<<<<<< HEAD
-          <span className="inline-flex items-center gap-1.5 text-[13px] italic text-ink-muted">
+          <div className={cellStack}>
+            <span className="inline-flex items-center gap-1.5 text-[13px] leading-[1.25] italic text-ink-muted">
               <CogIcon className="h-3.5 w-3.5 text-ink-faint" aria-hidden />
               System
-            </span>);
-
-      }
-      return (
-        <div className="min-w-0">
-          <p className="truncate font-medium text-ink">{userName(l.actor_id)}</p>
-          <p className="truncate text-[12px] text-ink-muted">{roleLabel[actor.role]}</p>
-        </div>);
-=======
-          <div className={cellStack}>
-              <span className="inline-flex items-center gap-1.5 text-[13px] italic text-ink-muted">
-                  <CogIcon className="h-3.5 w-3.5 text-ink-faint" aria-hidden />
-                  System
-                </span>
-              {spacer}
-            </div>);
-
+            </span>
+            {spacer}
+          </div>);
       }
       return (
         <div className={cellStack}>
-            <div className="min-w-0">
-              <p className="truncate font-medium text-ink">{userName(l.actor_id)}</p>
-              <p className="truncate text-[12px] text-ink-muted">{roleLabel[actor.role]}</p>
-            </div>
-            {spacer}
-          </div>);
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
+          <div className="min-w-0">
+            <p className="truncate text-[13px] leading-[1.25] font-medium text-ink">{userName(l.actor_id)}</p>
+            <p className="truncate text-[12px] leading-[1.25] text-ink-muted">{roleLabel[actor.role]}</p>
+          </div>
+        </div>);
     }
   },
   {
@@ -235,18 +217,9 @@ export function AuditLogs() {
     sortable: true,
     sortValue: (l) => actionLabel[l.action],
     render: (l) =>
-<<<<<<< HEAD
-    <div className="leading-tight">
-        <p className="truncate text-[13px] text-ink">{actionLabel[l.action]}</p>
-        <p className="truncate text-[12px] text-transparent select-none" aria-hidden>—</p>
-=======
     <div className={cellStack}>
-        <div className="leading-tight">
-            <p className="truncate text-[13px] text-ink">{actionLabel[l.action]}</p>
-            <p className="truncate text-[12px] text-transparent select-none" aria-hidden>—</p>
-          </div>
+        <p className="truncate text-[13px] leading-[1.25] text-ink">{actionLabel[l.action]}</p>
         {spacer}
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   },
@@ -257,22 +230,13 @@ export function AuditLogs() {
     width: '160px',
     sortValue: (l) => categoryLabel[actionCategory[l.action]],
     render: (l) =>
-<<<<<<< HEAD
-    <div className="leading-tight">
-        <Badge tone={categoryTone[actionCategory[l.action]]} variant="dot">
-          {categoryLabel[actionCategory[l.action]]}
-        </Badge>
-        <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
-=======
     <div className={cellStack}>
-        <div className="leading-tight">
-            <Badge tone={categoryTone[actionCategory[l.action]]} variant="dot">
-              {categoryLabel[actionCategory[l.action]]}
-            </Badge>
-            <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
-          </div>
+        <div>
+          <Badge tone={categoryTone[actionCategory[l.action]]} variant="dot">
+            {categoryLabel[actionCategory[l.action]]}
+          </Badge>
+        </div>
         {spacer}
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   },
@@ -282,18 +246,9 @@ export function AuditLogs() {
     sortable: true,
     sortValue: (l) => targetEntityLabel[l.target_entity],
     render: (l) =>
-<<<<<<< HEAD
-    <div className="leading-tight">
-        <p className="truncate text-[13px] text-ink-muted">{targetEntityLabel[l.target_entity]}</p>
-        <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
-=======
     <div className={cellStack}>
-        <div className="leading-tight">
-            <p className="truncate text-[13px] text-ink-muted">{targetEntityLabel[l.target_entity]}</p>
-            <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
-          </div>
+        <p className="truncate text-[13px] leading-[1.25] text-ink-muted">{targetEntityLabel[l.target_entity]}</p>
         {spacer}
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   },
@@ -304,18 +259,9 @@ export function AuditLogs() {
     width: '120px',
     sortValue: (l) => l.reference,
     render: (l) =>
-<<<<<<< HEAD
-    <div className="leading-tight">
-        <p className="font-mono text-[12px] text-ink">{l.reference}</p>
-        <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
-=======
     <div className={cellStack}>
-        <div className="leading-tight">
-            <p className="font-mono text-[12px] text-ink">{l.reference}</p>
-            <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
-          </div>
+        <p className="font-mono text-[12px] leading-[1.25] text-ink">{l.reference}</p>
         {spacer}
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   },
@@ -325,24 +271,13 @@ export function AuditLogs() {
     key: 'branch',
     header: 'Branch',
     sortable: true,
-    sortValue: (l: SystemAuditLog) => centerName(l.command_center_id),
+    sortValue: (l: SystemAuditLog) => l.command_center_id ? centerName(l.command_center_id) : 'System-wide',
     render: (l: SystemAuditLog) =>
-<<<<<<< HEAD
-    <div className="leading-tight">
-        <p className="truncate text-[13px] text-ink-muted">
+    <div className={cellStack}>
+        <p className="truncate text-[13px] leading-[1.25] text-ink-muted">
           {l.command_center_id ? centerName(l.command_center_id) : 'System-wide'}
         </p>
-        <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
-=======
-    <div className={cellStack}>
-        <div className="leading-tight">
-            <p className="truncate text-[13px] text-ink-muted">
-              {l.command_center_id ? centerName(l.command_center_id) : 'System-wide'}
-            </p>
-            <p className="text-[12px] text-transparent select-none" aria-hidden>—</p>
-          </div>
         {spacer}
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>
 
   }] :
@@ -361,7 +296,7 @@ export function AuditLogs() {
         'Every recorded action across all command centers' :
         `Every recorded action at ${centerName(scopeCenterId)}`
         } />
-      
+
 
       <Card className="mb-4 p-4">
         <div className="flex flex-wrap items-end gap-3">
@@ -373,7 +308,7 @@ export function AuditLogs() {
               options={categoryOptions}
               selected={categories}
               onChange={setCategories} />
-            
+
           </div>
 
           <div className="w-[220px]">
@@ -385,7 +320,7 @@ export function AuditLogs() {
               selected={actions}
               onChange={setActions}
               searchable />
-            
+
           </div>
 
           <div>
@@ -396,7 +331,7 @@ export function AuditLogs() {
               value={from}
               onChange={(e) => setFrom(e.target.value)}
               className="w-44" />
-            
+
           </div>
 
           <div>
@@ -407,7 +342,7 @@ export function AuditLogs() {
               value={to}
               onChange={(e) => setTo(e.target.value)}
               className="w-44" />
-            
+
           </div>
 
           <div className="ml-auto flex items-end gap-2">
@@ -422,7 +357,7 @@ export function AuditLogs() {
               searchable
               className="w-[190px]"
               panelClassName="min-w-[280px]" />
-            
+
             <Button onClick={exportVisible} disabled={visible.length === 0}>
               <DownloadIcon className="h-4 w-4" />
               Export CSV ({visible.length})
@@ -492,7 +427,7 @@ export function AuditLogs() {
             description="Try clearing a facet or widening the date range." />
 
           } />
-        
+
       </Card>
 
       <Drawer
@@ -580,18 +515,10 @@ function DiffBlock({
   title,
   value,
   tone
-
-
-
-
 }: {title: string;value: Record<string, unknown> | null;tone: 'danger' | 'success';}) {
   if (!value) {
     return (
-<<<<<<< HEAD
       <div>
-=======
-      <div className={cellStack}>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
         <p className="mb-1.5 text-[11px] uppercase tracking-wide text-ink-faint">{title}</p>
         <div
           className={
@@ -602,20 +529,12 @@ function DiffBlock({
           }>
           No data
         </div>
-<<<<<<< HEAD
-=======
-        {spacer}
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       </div>);
 
   }
 
   return (
-<<<<<<< HEAD
     <div>
-=======
-    <div className={cellStack}>
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
       <p className="mb-1.5 text-[11px] uppercase tracking-wide text-ink-faint">{title}</p>
       <div
         className={
@@ -649,10 +568,6 @@ function DiffBlock({
           )}
         </dl>
       </div>
-<<<<<<< HEAD
-=======
-      {spacer}
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
     </div>);
 
 }

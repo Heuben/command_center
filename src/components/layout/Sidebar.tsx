@@ -6,19 +6,12 @@ import {
   LayoutDashboardIcon,
   ScrollTextIcon,
   SettingsIcon,
-<<<<<<< HEAD
-  ShieldIcon,
-=======
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
-  UsersIcon } from
-'lucide-react';
+  UsersIcon
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { twMerge } from 'tailwind-merge';
 import { useSession } from '../../contexts/SessionContext';
-<<<<<<< HEAD
-=======
 import bantaiIcon2 from '../../bantai_logo_pic_icons/bantai_icon2.png';
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
 
 type NavItem = {
   to: string;
@@ -29,19 +22,6 @@ type NavItem = {
 };
 
 const items: NavItem[] = [
-<<<<<<< HEAD
-{ to: '/', label: 'Dashboard', icon: LayoutDashboardIcon },
-{ to: '/personnel', label: 'Personnel', icon: UsersIcon },
-{ to: '/audit', label: 'Audit Logs', icon: ScrollTextIcon },
-{
-  to: '/incidents',
-  label: 'Incident History & Reports',
-  adminLabel: 'Incidents & Reporting',
-  icon: FileTextIcon
-},
-{ to: '/branches', label: 'Branch Management', icon: BuildingIcon, superadminOnly: true },
-{ to: '/settings', label: 'Settings', icon: SettingsIcon }];
-=======
   { to: '/', label: 'Dashboard', icon: LayoutDashboardIcon },
   { to: '/personnel', label: 'Personnel', icon: UsersIcon },
   { to: '/audit', label: 'Audit Logs', icon: ScrollTextIcon },
@@ -54,7 +34,6 @@ const items: NavItem[] = [
   { to: '/branches', label: 'Branch Management', icon: BuildingIcon, superadminOnly: true },
   { to: '/settings', label: 'Settings', icon: SettingsIcon }
 ];
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
 
 
 export function Sidebar({ collapsed, onToggle }: {collapsed: boolean;onToggle: () => void;}) {
@@ -84,21 +63,14 @@ export function Sidebar({ collapsed, onToggle }: {collapsed: boolean;onToggle: (
           )}>
           <span
             className={twMerge(
-<<<<<<< HEAD
-              'flex items-center justify-center rounded-xl bg-primary text-white glow-ring-primary',
-              collapsed ? 'h-8 w-8 shrink-0' : 'h-9 w-9 shrink-0'
-            )}>
-            <ShieldIcon className="h-4 w-4" />
-=======
               'flex items-center justify-center rounded-xl overflow-hidden',
               collapsed ? 'h-8 w-8 shrink-0' : 'h-9 w-9 shrink-0'
             )}>
             <img src={bantaiIcon2} alt="BANTAI Icon" className="h-full w-full object-contain" />
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
           </span>
 
           {!collapsed &&
-          <div className="min-w-0 leading-tight">
+            <div className="min-w-0 leading-tight">
               <p className="text-[13px] font-semibold tracking-tight text-ink">B.A.N.T.A.I.</p>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
                 Command Center
@@ -153,26 +125,14 @@ export function Sidebar({ collapsed, onToggle }: {collapsed: boolean;onToggle: (
         })}
       </ul>
 
-<<<<<<< HEAD
-      {!collapsed &&
-      <div className="border-t border-line px-4 py-3">
-=======
       {!collapsed && (
         <div className="border-t border-line px-4 py-3">
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
           <p className="text-[11px] text-ink-faint">
             {isSuperadmin ? 'System-wide access' : 'Branch-scoped access'}
           </p>
           <p className="text-[11px] text-ink-faint">Desktop client 2.4.1</p>
         </div>
-<<<<<<< HEAD
-      }
-    </nav>);
-
-}
-=======
       )}
     </nav>
   );
 }
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da

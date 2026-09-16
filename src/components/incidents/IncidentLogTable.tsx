@@ -25,22 +25,14 @@ export type IncidentLogRow = {
  */
 const cellStack = 'flex flex-col gap-0.5 leading-[1.25]';
 const spacer = (
-<<<<<<< HEAD
-  <p className="text-[12px] text-transparent select-none" aria-hidden>
+  <p className="text-[12px] leading-[1.25] text-transparent select-none" aria-hidden>
     &nbsp;
   </p>
-=======
-  <span className="block h-[15px]" aria-hidden />
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
 );
 
 export function IncidentLogTable({
   rows,
   showBranch
-
-
-
-
 }: {rows: IncidentLogRow[];showBranch: boolean;}) {
   const [active, setActive] = useState<IncidentLogRow | null>(null);
 
@@ -58,7 +50,6 @@ export function IncidentLogTable({
         </p>
         {spacer}
       </div>
-
   },
   {
     key: 'datetime',
@@ -73,16 +64,12 @@ export function IncidentLogTable({
         </p>
         {spacer}
       </div>
-
   },
   {
     key: 'type',
     header: 'Classification',
     sortable: true,
-<<<<<<< HEAD
-=======
     width: '220px',
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
     sortValue: (r) => alertTypeLabel[r.alert.alert_type],
     render: (r) =>
     <div className={cellStack}>
@@ -93,17 +80,13 @@ export function IncidentLogTable({
           {r.alert.address}
         </p>
       </div>
-
   },
   {
     key: 'response_time',
     header: 'Response Time',
     sortable: true,
     align: 'right',
-<<<<<<< HEAD
-=======
     width: '140px',
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
     sortValue: (r) =>
     r.response.arrived_at ?
     new Date(r.response.arrived_at).getTime() -
@@ -116,16 +99,12 @@ export function IncidentLogTable({
         </p>
         {spacer}
       </div>
-
   },
   {
     key: 'branch_status',
     header: 'Branch Response',
     sortable: true,
-<<<<<<< HEAD
-=======
     width: '170px',
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
     sortValue: (r) => r.response.status,
     render: (r) =>
     <div className={cellStack}>
@@ -134,7 +113,6 @@ export function IncidentLogTable({
         </div>
         {spacer}
       </div>
-
   },
   ...(showBranch ?
   [
@@ -142,10 +120,7 @@ export function IncidentLogTable({
     key: 'branch',
     header: 'Branch',
     sortable: true,
-<<<<<<< HEAD
-=======
     width: '170px',
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
     sortValue: (r: IncidentLogRow) => centerName(r.response.command_center_id),
     render: (r: IncidentLogRow) =>
     <div className={cellStack}>
@@ -154,18 +129,13 @@ export function IncidentLogTable({
         </p>
         {spacer}
       </div>
-
   }] :
-
   []),
   {
     key: 'outcome',
     header: 'Final Outcome',
     sortable: true,
-<<<<<<< HEAD
-=======
     width: '160px',
->>>>>>> 9e5382bb07c6c3ab01116c99a5ab09310d9730da
     sortValue: (r) => r.alert.outcome,
     render: (r) =>
     <div className={cellStack}>
@@ -174,9 +144,7 @@ export function IncidentLogTable({
         </div>
         {spacer}
       </div>
-
   }];
-
 
   return (
     <>
@@ -190,13 +158,10 @@ export function IncidentLogTable({
         <EmptyState
           title="No incidents in this range"
           description="Alerts broadcast to this branch will appear here once triggered." />
-
         } />
-
 
       <IncidentLogDrawer row={active} onClose={() => setActive(null)} />
     </>);
-
 }
 
 function IncidentLogDrawer({ row, onClose }: {row: IncidentLogRow | null;onClose: () => void;}) {
@@ -229,7 +194,6 @@ function IncidentLogDrawer({ row, onClose }: {row: IncidentLogRow | null;onClose
               alt={`Alert ${row.alert.id}`}
               className="w-full rounded-lg border border-line object-cover" /> :
 
-
             <div className="rounded-lg border border-line bg-canvas p-4 text-[13px] text-ink-muted">
                 No snapshot available.
               </div>
@@ -259,7 +223,6 @@ function IncidentLogDrawer({ row, onClose }: {row: IncidentLogRow | null;onClose
         </div>
       </div>
     </Drawer>);
-
 }
 
 function DetailRow({ label, children }: {label: string;children: React.ReactNode;}) {
@@ -268,5 +231,4 @@ function DetailRow({ label, children }: {label: string;children: React.ReactNode
       <p className="mb-1 text-[11px] uppercase tracking-wide text-ink-faint">{label}</p>
       <p className="text-[13px] text-ink">{children}</p>
     </div>);
-
 }
