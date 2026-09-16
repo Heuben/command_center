@@ -284,10 +284,6 @@ export function Login() {
         </FadeIn>
 
         <FadeIn reduced={reduced} delay={0.18} className="relative z-10">
-          <div className="mb-5 flex max-w-xs items-center gap-3 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/70">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" aria-hidden="true" />
-            System online
-          </div>
           <p className="text-[15px] font-medium leading-relaxed text-white/80 max-w-xs">
             Real-time emergency response coordination, incident tracking, and resource dispatch — all in one command center.
           </p>
