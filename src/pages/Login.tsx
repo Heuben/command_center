@@ -1,9 +1,6 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
-  Radio,
-  AlertTriangle,
-  Users,
   EyeIcon,
   EyeOffIcon,
   AlertCircleIcon,
@@ -124,30 +121,6 @@ style={{ background: 'rgb(24 92 232 / 1)' }}
         aria-hidden="true"
       />
     </>
-  );
-}
-
-function StatBadge({
-  icon: Icon,
-  label,
-  value,
-  colorClass
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  colorClass: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm">
-      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${colorClass}`}>
-        <Icon className="h-4 w-4 text-white" aria-hidden="true" />
-      </div>
-      <div>
-        <p className="text-[11px] font-medium uppercase tracking-widest text-white/40">{label}</p>
-        <p className="text-sm font-semibold text-white">{value}</p>
-      </div>
-    </div>
   );
 }
 
@@ -301,8 +274,8 @@ export function Login() {
         <GradientOrbs />
 
         <FadeIn reduced={reduced} delay={0.05} className="relative z-10">
-<div className="mb-4">
-            <img src={bantaiLogo} alt="BANTAI Logo" className="h-20 w-auto object-contain mix-blend-screen" />
+          <div className="mb-5 inline-flex items-center justify-center rounded-2xl p-2">
+            <img src={bantaiLogo} alt="BANTAI Logo" className="h-28 w-auto object-contain drop-shadow-[0_0_18px_rgba(96,165,250,0.7)]" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-white">B.A.N.T.A.I.</h1>
           <p className="mt-1 text-sm font-medium text-white/60">
@@ -311,33 +284,16 @@ export function Login() {
         </FadeIn>
 
         <FadeIn reduced={reduced} delay={0.18} className="relative z-10">
+          <div className="mb-5 flex max-w-xs items-center gap-3 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.22em] text-white/70">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]" aria-hidden="true" />
+            System online
+          </div>
           <p className="text-[15px] font-medium leading-relaxed text-white/80 max-w-xs">
             Real-time emergency response coordination, incident tracking, and resource dispatch — all in one command center.
           </p>
         </FadeIn>
 
-        <FadeIn reduced={reduced} delay={0.32} className="relative z-10 grid grid-cols-3 gap-3">
-          <StatBadge
-            icon={Radio}
-            label="Active Units"
-            value="24 / 7"
-            colorClass="bg-[rgb(24_92_232_/_1)]"
-          />
-          <StatBadge
-            icon={AlertTriangle}
-            label="Alerts Today"
-            value="127"
-            colorClass="bg-[rgb(217_119_6_/_1)]"
-          />
-          <StatBadge
-            icon={Users}
-            label="Personnel"
-            value="1,840"
-            colorClass="bg-[rgb(16_138_70_/_1)]"
-          />
-        </FadeIn>
-
-        <FadeIn reduced={reduced} delay={0.42} className="relative z-10 border-t border-white/10 pt-6">
+        <FadeIn reduced={reduced} delay={0.32} className="relative z-10 border-t border-white/10 pt-6">
           <p className="text-[11px] text-white/30">
             © 2026 Bantai Government. All systems operational.
           </p>
