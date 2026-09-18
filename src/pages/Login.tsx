@@ -16,12 +16,12 @@ import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 
 const demoAccounts = [
   {
-    email: 'r.alcantara@bantai.gov.ph',
+    email: 'heuben.clyde.b.dagami@bantai.gov.ph',
     label: 'Superadmin — System-wide',
     password: 'superadmin-2026'
   },
   {
-    email: 'e.reyes@brgy171.bantai.gov.ph',
+    email: 'christian.dwight.lumanog@brgy171.bantai.gov.ph',
     label: 'Admin — Barangay 171',
     password: 'admin-171-2026'
   }
@@ -263,16 +263,16 @@ export function Login() {
   };
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden bg-white">
+    <div className="grid min-h-screen w-full grid-cols-1 bg-white lg:h-[100dvh] lg:grid-cols-[30%_70%] lg:overflow-hidden">
       {/* ── Left branding panel ───────────────────────────────────────── */}
       <aside
-        className="relative hidden flex-col justify-between overflow-hidden border-r border-line bg-white p-10 text-ink lg:flex lg:w-1/2 xl:p-14"
+        className="relative hidden flex-col justify-between overflow-hidden border-r border-slate-100 bg-slate-50/50 p-8 text-ink lg:flex xl:p-12"
         style={{ minHeight: '100dvh' }}
         aria-hidden="true"
       >
         <FadeIn reduced={reduced} delay={0.05} className="relative z-10">
           <div className="mb-5 inline-flex items-center justify-center rounded-2xl p-2">
-            <img src={bantaiLogo} alt="BANTAI Logo" className="h-28 w-auto object-contain drop-shadow-[0_0_18px_rgba(96,165,250,0.7)]" />
+            <img src={bantaiLogo} alt="BANTAI Logo" className="h-20 w-auto object-contain drop-shadow-[0_0_18px_rgba(96,165,250,0.7)]" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-ink">B.A.N.T.A.I.</h1>
           <p className="mt-1 text-sm font-medium text-ink-muted">
@@ -294,7 +294,7 @@ export function Login() {
       </aside>
 
       {/* ── Right form panel ──────────────────────────────────────────── */}
-      <main className="flex min-h-0 w-full flex-col items-center justify-center overflow-hidden bg-white px-4 py-3 sm:px-6 sm:py-4 lg:w-1/2 lg:px-16 lg:py-6">
+      <main className="flex min-h-screen w-full flex-col items-center justify-center bg-white p-6 lg:min-h-0 lg:h-full lg:overflow-hidden lg:px-10 lg:py-6 xl:px-14 xl:py-8">
         {/* Mobile logo */}
         <FadeIn reduced={reduced} delay={0.05} className="mb-3 flex flex-col items-center lg:hidden">
           <div className="mb-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl shadow-lg">
@@ -304,8 +304,8 @@ export function Login() {
           <p className="text-[13px] text-ink-muted">Command Center</p>
         </FadeIn>
 
-        <div className="w-full max-w-[400px]">
-          <FadeIn reduced={reduced} delay={0.1} className="mb-4">
+        <div className="mx-auto w-full max-w-[430px]">
+          <FadeIn reduced={reduced} delay={0.1} className="mb-3">
             <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-danger">
               <span className="h-1.5 w-1.5 rounded-full bg-danger" aria-hidden="true" />
               Secure operations access
@@ -314,10 +314,10 @@ export function Login() {
             <p className="mt-1.5 text-sm text-ink-muted">
               Sign in to access your command center.
             </p>
-            <div className="mt-4 h-px bg-gradient-to-r from-danger/40 via-line to-transparent" aria-hidden="true" />
+            <div className="mt-3 h-px bg-gradient-to-r from-danger/40 via-line to-transparent" aria-hidden="true" />
           </FadeIn>
 
-          <form onSubmit={submit} noValidate className="space-y-3.5" aria-describedby={formError ? errorId : undefined}>
+          <form onSubmit={submit} noValidate className="space-y-3" aria-describedby={formError ? errorId : undefined}>
 
             {/* Email */}
             <FadeIn reduced={reduced} delay={0.15}>
@@ -503,12 +503,12 @@ export function Login() {
 
           {/* Demo accounts (dev only) */}
           {SHOW_DEMO && (
-            <FadeIn reduced={reduced} delay={0.46} className="mt-4 rounded-xl border border-dashed border-line bg-white p-4">
+            <FadeIn reduced={reduced} delay={0.46} className="mt-4 rounded-xl border border-dashed border-line bg-white p-3">
               <p className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
                 Demo Accounts
                 <span className="rounded bg-danger-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-danger">Quick Fill</span>
               </p>
-              <ul className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+              <ul className="grid gap-1.5 sm:grid-cols-2 sm:gap-3">
                 {demoAccounts.map((a) => (
                   <li key={a.email} className="min-w-0">
                     <button
@@ -518,7 +518,7 @@ export function Login() {
                         setPassword(a.password);
                         setFormError(null);
                       }}
-                      className="flex w-full min-w-0 flex-col items-start rounded-lg border border-transparent px-3 py-2.5 text-left transition-all duration-150 hover:border-line hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
+                      className="flex w-full min-w-0 flex-col items-start rounded-lg border border-transparent px-3 py-2 text-left transition-all duration-150 hover:border-line hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
                     >
                       <span className="text-[13px] font-medium leading-snug text-danger">{a.label}</span>
                       <span className="mt-1 break-all text-[12px] leading-snug text-ink-faint">{a.email}</span>
@@ -530,7 +530,7 @@ export function Login() {
           )}
 
           {/* Footer */}
-          <FadeIn reduced={reduced} delay={0.52} className="mt-3 text-center">
+          <FadeIn reduced={reduced} delay={0.52} className="mt-2 text-center">
             <p className="text-[12px] text-ink-faint">
               Accounts are provisioned internally.{' '}
               <span className="font-medium text-ink-muted">Contact your superadmin for access.</span>

@@ -3,20 +3,20 @@ import type { UserAccount } from '../types';
 export const users: UserAccount[] = [
 {
   id: 'u-0001',
-  f_name: 'Ramon',
-  l_name: 'Alcantara',
+  f_name: 'Heuben Clyde B.',
+  l_name: 'Dagami',
   role: 'superadmin',
-  email: 'r.alcantara@bantai.gov.ph',
+  email: 'heuben.clyde.b.dagami@bantai.gov.ph',
   command_center_id: null
 },
 
 // Admins provisioned but not yet assigned to a command center
 {
   id: 'u-0101',
-  f_name: 'Marites',
-  l_name: 'Salvador',
+  f_name: 'Kirby',
+  l_name: 'Gabayno',
   role: 'admin',
-  email: 'm.salvador@bantai.gov.ph',
+  email: 'kirby.gabayno@bantai.gov.ph',
   command_center_id: null,
   r_profile: {
     agency: 'barangay_tanod',
@@ -27,10 +27,10 @@ export const users: UserAccount[] = [
 },
 {
   id: 'u-0102',
-  f_name: 'Joel',
-  l_name: 'Villanueva',
+  f_name: 'Emmanuel Solomon',
+  l_name: 'Dator',
   role: 'admin',
-  email: 'j.villanueva@bantai.gov.ph',
+  email: 'emmanuel.solomon.dator@bantai.gov.ph',
   command_center_id: null,
   r_profile: {
     agency: 'police',
@@ -41,10 +41,10 @@ export const users: UserAccount[] = [
 },
 {
   id: 'u-0103',
-  f_name: 'Aileen',
-  l_name: 'Torres',
+  f_name: 'Kurt',
+  l_name: 'Banatao',
   role: 'admin',
-  email: 'a.torres@bantai.gov.ph',
+  email: 'kurt.banatao@bantai.gov.ph',
   command_center_id: null,
   r_profile: {
     agency: 'mdrrmo',
@@ -53,14 +53,28 @@ export const users: UserAccount[] = [
     availability: 'off_duty'
   }
 },
+{
+  id: 'u-0104',
+  f_name: 'Majan Isabelle',
+  l_name: 'Tagana',
+  role: 'admin',
+  email: 'majan.isabelle.tagana@bantai.gov.ph',
+  command_center_id: null,
+  r_profile: {
+    agency: 'barangay_tanod',
+    call_sign: null,
+    rank: 'none',
+    availability: 'on_duty'
+  }
+},
 
 // Barangay 171
 {
   id: 'u-1002',
-  f_name: 'Elena',
-  l_name: 'Reyes',
+  f_name: 'Christian Dwight',
+  l_name: 'Lumanog',
   role: 'admin',
-  email: 'e.reyes@brgy171.bantai.gov.ph',
+  email: 'christian.dwight.lumanog@brgy171.bantai.gov.ph',
   command_center_id: 'cc-171',
   r_profile: {
     agency: 'barangay_tanod',
@@ -199,10 +213,10 @@ export const users: UserAccount[] = [
 // Caloocan Police Station 3
 {
   id: 'u-2002',
-  f_name: 'Grace',
-  l_name: 'Lim',
+  f_name: 'Jeffrey',
+  l_name: 'Aspiras',
   role: 'admin',
-  email: 'g.lim@pnp-cal3.bantai.gov.ph',
+  email: 'jeffrey.aspiras@pnp-cal3.bantai.gov.ph',
   command_center_id: 'cc-pnp-cal',
   r_profile: {
     agency: 'police',
@@ -245,10 +259,10 @@ export const users: UserAccount[] = [
 // Caloocan MDRRMO
 {
   id: 'u-3002',
-  f_name: 'Ferdinand',
-  l_name: 'Ocampo',
+  f_name: 'Clarence',
+  l_name: 'Sabangan',
   role: 'admin',
-  email: 'f.ocampo@mdrrmo-cal.bantai.gov.ph',
+  email: 'clarence.sabangan@mdrrmo-cal.bantai.gov.ph',
   command_center_id: 'cc-mdrrmo-cal',
   r_profile: {
     agency: 'mdrrmo',

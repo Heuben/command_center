@@ -60,7 +60,7 @@ describe('<Login />', () => {
   // ── 1. Redirects when already signed in ──────────────────────────────────
   it('redirects to / when the user is already signed in', () => {
     mockUseSession.mockReturnValue({
-      user: { id: '1', f_name: 'Riz', l_name: 'Alcantara', role: 'superadmin', email: 'r.alcantara@bantai.gov.ph', command_center_id: null, account_status: 'active', r_profile: null },
+      user: { id: '1', f_name: 'Heuben Clyde B.', l_name: 'Dagami', role: 'superadmin', email: 'heuben.clyde.b.dagami@bantai.gov.ph', command_center_id: null, account_status: 'active', r_profile: null },
       signIn: mockSignIn,
       theme: 'light' as const,
       setTheme: vi.fn(),
@@ -115,7 +115,7 @@ describe('<Login />', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'r.alcantara@bantai.gov.ph');
+    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'heuben.clyde.b.dagami@bantai.gov.ph');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -128,13 +128,13 @@ describe('<Login />', () => {
     mockSignIn.mockReturnValue(true);
     renderLogin();
 
-    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'r.alcantara@bantai.gov.ph');
+    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'heuben.clyde.b.dagami@bantai.gov.ph');
     await user.type(screen.getByLabelText('Password'), 'superadmin-2026');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     // signIn is called with trimmed, lowercased email and password
     await waitFor(() => {
-      expect(mockSignIn).toHaveBeenCalledWith('r.alcantara@bantai.gov.ph', 'superadmin-2026');
+      expect(mockSignIn).toHaveBeenCalledWith('heuben.clyde.b.dagami@bantai.gov.ph', 'superadmin-2026');
     });
   });
 
@@ -179,7 +179,7 @@ describe('<Login />', () => {
     const emailInput = screen.getByRole('textbox', { name: /work email/i }) as HTMLInputElement;
     const passwordInput = screen.getByLabelText('Password') as HTMLInputElement;
 
-    expect(emailInput.value).toBe('r.alcantara@bantai.gov.ph');
+    expect(emailInput.value).toBe('heuben.clyde.b.dagami@bantai.gov.ph');
     expect(passwordInput.value).toBe('superadmin-2026');
   });
 
@@ -213,7 +213,7 @@ describe('<Login />', () => {
     mockSignIn.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve(true), 500)));
     renderLogin();
 
-    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'r.alcantara@bantai.gov.ph');
+    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'heuben.clyde.b.dagami@bantai.gov.ph');
     await user.type(screen.getByLabelText('Password'), 'superadmin-2026');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
@@ -251,13 +251,13 @@ describe('<Login />', () => {
 
     // Fill email with whitespace and a valid password (>= 8 chars to pass the
     // password-length rule added in the high-fidelity rewrite)
-    await user.type(screen.getByRole('textbox', { name: /work email/i }), '  r.alcantara@bantai.gov.ph  ');
+    await user.type(screen.getByRole('textbox', { name: /work email/i }), '  heuben.clyde.b.dagami@bantai.gov.ph  ');
     await user.type(screen.getByLabelText('Password'), 'demo1234');
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     // Email should be trimmed before sending to signIn
     await waitFor(() => {
-      expect(mockSignIn).toHaveBeenCalledWith('r.alcantara@bantai.gov.ph', 'demo1234');
+      expect(mockSignIn).toHaveBeenCalledWith('heuben.clyde.b.dagami@bantai.gov.ph', 'demo1234');
     });
   });
 
@@ -286,7 +286,7 @@ describe('<Login />', () => {
     expect(screen.getByText(/enter a valid email address/i)).toBeInTheDocument();
 
     await user.clear(screen.getByRole('textbox', { name: /work email/i }));
-    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'r.alcantara@bantai.gov.ph');
+    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'heuben.clyde.b.dagami@bantai.gov.ph');
     expect(screen.queryByText(/enter a valid email address/i)).toBeNull();
   });
 
@@ -324,13 +324,13 @@ describe('<Login />', () => {
     // Clear any leftover localStorage from prior tests
     window.localStorage.removeItem('bantai-remember-email');
 
-    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'r.alcantara@bantai.gov.ph');
+    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'heuben.clyde.b.dagami@bantai.gov.ph');
     await user.type(screen.getByLabelText('Password'), 'superadmin-2026');
     await user.click(screen.getByRole('checkbox', { name: /remember my email/i }));
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(window.localStorage.getItem('bantai-remember-email')).toBe('r.alcantara@bantai.gov.ph');
+      expect(window.localStorage.getItem('bantai-remember-email')).toBe('heuben.clyde.b.dagami@bantai.gov.ph');
     });
   });
 

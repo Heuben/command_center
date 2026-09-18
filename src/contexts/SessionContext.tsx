@@ -16,8 +16,9 @@ import { REFERENCE_NOW } from '../utils/time';
  * Keys are emails (lowercase); values are the demo passwords.
  */
 const DEMO_PASSWORDS: Record<string, string> = {
-  'r.alcantara@bantai.gov.ph': 'superadmin-2026',
-  'e.reyes@brgy171.bantai.gov.ph': 'admin-171-2026'
+  'heuben.clyde.b.dagami@bantai.gov.ph': 'superadmin-2026',
+  'christian.dwight.lumanog@brgy171.bantai.gov.ph': 'admin-171-2026',
+  'majan.isabelle.tagana@bantai.gov.ph': 'admin-2026'
 };
 
 type Theme = 'light' | 'dark';
