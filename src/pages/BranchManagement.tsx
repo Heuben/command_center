@@ -140,10 +140,10 @@ export function BranchManagement() {
   },
   {
     key: 'location',
-    header: 'Coordinates',
+    header: 'Location',
     render: (c) =>
-    <span className="font-mono text-[12px] tabular-nums text-ink-muted">
-          {c.location.lat.toFixed(4)}, {c.location.lng.toFixed(4)}
+    <span className="text-[12px] text-ink-muted">
+          {c.branch}
         </span>
 
   },

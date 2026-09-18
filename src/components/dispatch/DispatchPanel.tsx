@@ -510,7 +510,7 @@ export function DispatchPanel({
 
         <p className="flex items-start gap-1.5 px-1 text-[12px] text-ink-faint">
           <MapPinIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          {alert.location.lat.toFixed(4)}, {alert.location.lng.toFixed(4)} · {center?.name}
+          {alert.address || `${alert.location.lat.toFixed(4)}, ${alert.location.lng.toFixed(4)}`} · {center?.name}
         </p>
       </div>
 

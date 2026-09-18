@@ -389,7 +389,7 @@ export function Login() {
                     type="button"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded text-ink-faint transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas"
+                    className="absolute right-2 top-1/2 z-30 -translate-y-1/2 rounded bg-surface p-1 text-ink-faint transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas"
                   >
                     {showPassword ? (
                       <EyeOffIcon className="h-4 w-4" aria-hidden="true" />

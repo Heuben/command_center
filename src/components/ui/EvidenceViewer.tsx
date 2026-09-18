@@ -92,8 +92,8 @@ export function EvidenceViewer({ alert, open, onClose }: Props) {
             },
             { label: 'Confidence', value: confidenceDisplay(alert.confidence_level) },
             {
-              label: 'GPS',
-              value: `${alert.location.lat.toFixed(4)}, ${alert.location.lng.toFixed(4)}`
+              label: 'Location',
+              value: alert.address || `${alert.location.lat.toFixed(4)}, ${alert.location.lng.toFixed(4)}`
             }].
             map((item) =>
             <p key={item.label} className="text-[12px] text-white/50">

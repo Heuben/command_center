@@ -84,8 +84,8 @@ export function CivilianReportsTable({
     <div className={cellStack}>
         <div className="max-w-xs leading-tight">
           <p className="truncate text-[13px] text-ink">{r.human_location}</p>
-          <p className="truncate text-[11px] tabular-nums text-ink-faint">
-            {r.raw_location.lat.toFixed(4)}, {r.raw_location.lng.toFixed(4)}
+          <p className="truncate text-[11px] text-ink-faint">
+            {centerName(r.command_center_id)}
           </p>
         </div>
       {spacer}
@@ -177,9 +177,9 @@ function CivilianReportDrawer({
             alt={`Media submitted with report ${report.id.toUpperCase()}`}
             className="w-full rounded-lg border border-line object-cover" />
 
-          <p className="mt-2 flex items-center gap-1.5 text-[12px] tabular-nums text-ink-muted">
+          <p className="mt-2 flex items-center gap-1.5 text-[12px] text-ink-muted">
             <MapPinIcon className="h-3.5 w-3.5" />
-            {report.raw_location.lat.toFixed(4)}, {report.raw_location.lng.toFixed(4)}
+            {report.human_location}
           </p>
         </div>
 

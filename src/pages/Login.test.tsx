@@ -6,6 +6,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { Login } from './Login';
+import { EvidenceViewer } from '../components/ui/EvidenceViewer';
 
 /* -------------------------------------------------------------------------- */
 /* Mock SessionContext                                                        */
@@ -205,6 +206,28 @@ describe('<Login />', () => {
     await waitFor(() => {
       expect(screen.queryByRole('alert')).toBeNull();
     });
+  });
+
+  it('shows the alert address instead of raw GPS coordinates in the evidence viewer', () => {
+    const alert = {
+      id: 'a-9001',
+      driver_id: 'u-5001',
+      device_id: 'dev-0231',
+      location: { lat: 14.658, lng: 120.9838 },
+      address: 'Plaza Roma cor. M. Hizon St., Barangay 171',
+      alert_type: 'threat_gun' as const,
+      source: 'edge_websocket' as const,
+      confidence_level: 0.94,
+      snapshot_urls: ['/demo.jpg'],
+      outcome: 'unresolved' as const,
+      created_at: '2026-08-19T14:32:01Z'
+    };
+
+    render(<EvidenceViewer alert={alert} open onClose={() => {}} />);
+
+    expect(screen.getAllByText(/Plaza Roma cor\. M\. Hizon St\., Barangay 171/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Location:/i)).toBeInTheDocument();
+    expect(screen.queryByText(/14\.6580,\s*120\.9838/i)).not.toBeInTheDocument();
   });
 
   // ── 13. Submit button disabled while busy ───────────────────────────────
