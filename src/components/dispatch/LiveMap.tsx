@@ -12,6 +12,7 @@ export type MapIncident = {
 const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const ATTRIBUTION = '&copy; OpenStreetMap &copy; CARTO';
+const BRAND_MAP_COLOR = '#ca2028';
 
 const statusColor: Record<BranchResponseStatus, string> = {
   pending: '#c26a08',
@@ -120,10 +121,10 @@ export function LiveMap({
           center={[c.location.lat, c.location.lng]}
           radius={3000}
           pathOptions={{
-            color: '#1d5be0',
+            color: BRAND_MAP_COLOR,
             weight: 1,
             dashArray: '4 4',
-            fillColor: '#1d5be0',
+            fillColor: BRAND_MAP_COLOR,
             fillOpacity: 0.04
           }}
           interactive={false} />
@@ -133,7 +134,7 @@ export function LiveMap({
           center={[c.location.lat, c.location.lng]}
           radius={6}
           pathOptions={{
-            color: '#1d5be0',
+            color: BRAND_MAP_COLOR,
             weight: 2,
             fillColor: '#ffffff',
             fillOpacity: 1

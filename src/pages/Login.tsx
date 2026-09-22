@@ -108,7 +108,7 @@ function GradientOrbs() {
     <>
       <div
         className="pointer-events-none absolute -left-20 -top-20 h-80 w-80 rounded-full opacity-30 blur-3xl dark:opacity-25"
-style={{ background: 'rgb(24 92 232 / 1)' }}
+style={{ background: 'rgb(202 32 40 / 1)' }}
         aria-hidden="true"
       />
       <div
