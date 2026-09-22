@@ -31,7 +31,6 @@ import {
 import { Modal } from '../components/ui/Modal';
 import { RowActions } from '../components/ui/RowActions';
 import type { RowAction } from '../components/ui/RowActions';
-import { SkeletonGroup, SkeletonRow } from '../components/ui/SkeletonGroup';
 import { useToast } from '../hooks/useToast';
 import { useMotionVariants, fadeUp, DUR, EASE } from '../lib/motion';
 
@@ -322,15 +321,6 @@ export function Personnel() {
       </AnimatePresence>
 
       <Card className="overflow-hidden">
-        {isFirstLoad ?
-        <div className="p-4">
-            <SkeletonGroup
-            count={6}
-            item={() => <SkeletonRow />}
-            gap="normal"
-            aria-label="Loading personnel" />
-          </div> :
-
         <DataTable
           columns={columns}
           rows={rows}
@@ -342,9 +332,9 @@ export function Personnel() {
             title="No personnel found"
             description="Adjust your search or add a responder to this branch." />
 
-          } />
-
-        }
+          }
+          loading={isFirstLoad}
+          caption={isFirstLoad ? 'Loading personnel' : undefined} />
       </Card>
 
       <AddResponderModal

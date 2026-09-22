@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOutIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { LogOutIcon, MenuIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from '../../contexts/SessionContext';
 import { commandCenters, centerName } from '../../data/commandCenters';
@@ -9,7 +9,7 @@ import { Button, Select } from '../ui/primitives';
 import { formatClock } from '../../utils/time';
 import { Modal } from '../ui/Modal';
 
-export function TopBar() {
+export function TopBar({ onMenu }: {onMenu?: () => void;}) {
   const { user, isSuperadmin, branchFilter, setBranchFilter, theme, setTheme, signOut, now } =
   useSession();
   const navigate = useNavigate();
@@ -24,11 +24,20 @@ export function TopBar() {
   centerName(user.command_center_id);
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-line bg-surface/95 px-5 backdrop-blur supports-[backdrop-filter]:bg-surface/80 dark:bg-elevated/80">
-      <div className="flex items-center gap-3">
+    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-line bg-surface/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-surface/80 dark:bg-elevated/80 sm:gap-4 sm:px-5">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        {onMenu &&
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onMenu}
+          aria-label="Open navigation"
+          className="md:hidden">
+          <MenuIcon className="h-4 w-4" />
+        </Button>}
         <div className="leading-tight">
-          <p className="text-[11px] uppercase tracking-wide text-ink-faint">Branch Context</p>
-          <p className="text-[13px] font-semibold text-ink">{branchContext}</p>
+          <p className="hidden text-[11px] uppercase tracking-wide text-ink-faint sm:block">Branch Context</p>
+          <p className="max-w-[150px] truncate text-[13px] font-semibold text-ink sm:max-w-none">{branchContext}</p>
         </div>
         {isSuperadmin &&
         <>
@@ -49,7 +58,7 @@ export function TopBar() {
         }
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
         <p className="hidden text-[13px] tabular-nums text-ink-muted md:block">
           {formatClock(new Date(now).toISOString())} PHT
         </p>

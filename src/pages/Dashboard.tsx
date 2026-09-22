@@ -5,6 +5,7 @@ import {
   ClipboardCheckIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
+  PanelRightOpenIcon,
   RadioIcon } from
 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
@@ -23,6 +24,7 @@ export function Dashboard() {
   const { branchResponses } = useDispatchData();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [queueOpen, setQueueOpen] = useState(true);
+  const [dispatchOpen, setDispatchOpen] = useState(true);
 
   const rows = useMemo<QueueRow[]>(() => {
     return branchResponses.
@@ -64,12 +66,12 @@ export function Dashboard() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 flex-1">
         {/* Queue — collapsible so the map can take the full board */}
         {queueOpen ?
         <section
           aria-label="Emergency queue"
-          className="flex w-[336px] shrink-0 flex-col border-r border-line bg-surface">
+          className="absolute inset-y-0 left-0 z-20 flex w-[min(336px,calc(100vw-3rem))] shrink-0 flex-col border-r border-line bg-surface shadow-xl md:relative md:z-auto md:w-[336px] md:shadow-none">
             <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
               <div>
                 <h2 className="text-sm font-semibold text-ink">Emergency Queue</h2>
@@ -97,9 +99,10 @@ export function Dashboard() {
               <EmergencyQueue
               rows={rows}
               selectedKey={activeKey}
-              onSelect={(row) =>
-              setSelectedKey(`${row.alert.id}:${row.response.command_center_id}`)
-              }
+              onSelect={(row) => {
+                setSelectedKey(`${row.alert.id}:${row.response.command_center_id}`);
+                setDispatchOpen(true);
+              }}
               now={now}
               showBranch={isSuperadmin && !scopeCenterId} />
             
@@ -155,23 +158,30 @@ export function Dashboard() {
               selectedAlertId={selected?.alert.id ?? null}
               onSelect={(alertId) => {
                 const match = rows.find((r) => r.alert.id === alertId);
-                if (match) setSelectedKey(`${match.alert.id}:${match.response.command_center_id}`);
+                if (match) {
+                  setSelectedKey(`${match.alert.id}:${match.response.command_center_id}`);
+                  setDispatchOpen(true);
+                }
               }} />
             
           </div>
         </section>
 
         {/* Dispatch panel */}
+        {dispatchOpen ?
         <section
           aria-label="Dispatch panel"
-          className="flex w-96 shrink-0 flex-col border-l border-line bg-canvas">
+          className="absolute inset-y-0 right-0 z-20 flex w-[min(384px,calc(100vw-3rem))] shrink-0 flex-col border-l border-line bg-canvas shadow-xl md:relative md:z-auto md:w-96 md:shadow-none">
           {selected ?
           <motion.div
             key={`${selected.alert.id}:${selected.response.command_center_id}`}
             initial={{ opacity: 0, x: 8 }}
             animate={{ opacity: 1, x: 0, transition: { duration: DUR.base, ease: EASE.out } }}
             className="flex min-h-0 flex-1">
-              <DispatchPanel alert={selected.alert} response={selected.response} />
+              <DispatchPanel
+                alert={selected.alert}
+                response={selected.response}
+                onClose={() => setDispatchOpen(false)} />
             </motion.div> :
 
           <EmptyState
@@ -179,7 +189,20 @@ export function Dashboard() {
             description="Select an alert from the emergency queue to view driver details, evidence, and responder assignments." />
 
           }
-        </section>
+        </section> :
+        <div className="flex w-12 shrink-0 flex-col items-center gap-3 border-l border-line bg-surface py-3">
+          <button
+            onClick={() => setDispatchOpen(true)}
+            aria-label="Show dispatch panel"
+            title="Show dispatch panel"
+            className="rounded-md p-1.5 text-ink-muted transition-colors duration-150 ease-out hover:bg-ink/[0.06] hover:text-ink">
+            <PanelRightOpenIcon className="h-4 w-4" />
+          </button>
+          <span className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-ink-faint [writing-mode:vertical-rl]">
+            Dispatch
+          </span>
+        </div>
+        }
       </div>
     </div>);
 

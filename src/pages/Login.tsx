@@ -6,6 +6,7 @@ import {
   AlertCircleIcon,
   Loader2Icon,
   LockIcon,
+  MailIcon,
   CheckIcon
 } from 'lucide-react';
 import bantaiLogo from '../bantai_logo_pic_icons/bantai_logo.png';
@@ -294,7 +295,7 @@ export function Login() {
       </aside>
 
       {/* ── Right form panel ──────────────────────────────────────────── */}
-      <main className="flex min-h-screen w-full flex-col items-center justify-center bg-white p-6 lg:min-h-0 lg:h-full lg:overflow-hidden lg:px-10 lg:py-6 xl:px-14 xl:py-8">
+      <main className="flex min-h-screen w-full flex-col items-center justify-center bg-slate-50/60 p-4 sm:p-6 lg:min-h-0 lg:h-full lg:overflow-hidden lg:px-10 lg:py-6 xl:px-14 xl:py-8">
         {/* Mobile logo */}
         <FadeIn reduced={reduced} delay={0.05} className="mb-3 flex flex-col items-center lg:hidden">
           <div className="mb-2 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl shadow-lg">
@@ -304,44 +305,50 @@ export function Login() {
           <p className="text-[13px] text-ink-muted">Command Center</p>
         </FadeIn>
 
-        <div className="mx-auto w-full max-w-[430px]">
+        <div className="mx-auto w-full max-w-[480px] rounded-2xl border border-line bg-white p-4 shadow-[0_18px_45px_-24px_rgba(15,23,42,0.45)] sm:p-5">
           <FadeIn reduced={reduced} delay={0.1} className="mb-3">
             <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-danger">
               <span className="h-1.5 w-1.5 rounded-full bg-danger" aria-hidden="true" />
               Secure operations access
             </div>
-            <h2 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Welcome back</h2>
-            <p className="mt-1.5 text-sm text-ink-muted">
+            <h2 className="text-[22px] font-bold leading-tight tracking-tight text-ink">Welcome back</h2>
+            <p className="mt-1 text-[13px] text-ink-muted">
               Sign in to access your command center.
             </p>
             <div className="mt-3 h-px bg-gradient-to-r from-danger/40 via-line to-transparent" aria-hidden="true" />
           </FadeIn>
 
-          <form onSubmit={submit} noValidate className="space-y-3" aria-describedby={formError ? errorId : undefined}>
+          <form onSubmit={submit} noValidate className="space-y-2.5" aria-describedby={formError ? errorId : undefined}>
 
             {/* Email */}
             <FadeIn reduced={reduced} delay={0.15}>
-              <div className="space-y-1.5">
-                <Label htmlFor={emailId}>Work Email</Label>
-                <Input
-                  ref={emailRef}
-                  id={emailId}
-                  name="email"
-                  type="email"
-                  autoComplete="username"
-                  required
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (formError) setFormError(null);
-                  }}
-                  placeholder="name@station.bantai.gov.ph"
-                  className="h-10"
-                  invalid={!!emailFieldError}
-                  aria-invalid={!!emailFieldError}
-                  aria-describedby={emailFieldError ? emailErrorId : undefined}
-                  disabled={busy}
-                />
+              <div className="space-y-1">
+                <Label htmlFor={emailId} className="text-[12px]">Work Email</Label>
+                <div className="relative">
+                  <MailIcon
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    ref={emailRef}
+                    id={emailId}
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    required
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (formError) setFormError(null);
+                    }}
+                    placeholder="name@station.bantai.gov.ph"
+                    className="h-10 pl-9"
+                    invalid={!!emailFieldError}
+                    aria-invalid={!!emailFieldError}
+                    aria-describedby={emailFieldError ? emailErrorId : undefined}
+                    disabled={busy}
+                  />
+                </div>
                 {emailFieldError && (
                   <p id={emailErrorId} className="text-[12px] font-medium text-danger">
                     {emailFieldError}
@@ -352,12 +359,12 @@ export function Login() {
 
             {/* Password */}
             <FadeIn reduced={reduced} delay={0.22}>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor={passwordId}>Password</Label>
+                  <Label htmlFor={passwordId} className="text-[12px]">Password</Label>
                   <button
                     type="button"
-                    className="rounded px-1 text-[12px] font-medium text-danger hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas"
+                    className="rounded px-1 text-[11px] font-medium text-danger hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas"
                   >
                     Forgot password?
                   </button>
@@ -434,7 +441,7 @@ export function Login() {
             <FadeIn reduced={reduced} delay={0.28}>
               <label
                 htmlFor={rememberId}
-                className="flex cursor-pointer select-none items-center gap-2.5 text-[13px] text-ink-muted"
+                  className="flex cursor-pointer select-none items-center gap-2 text-[12px] text-ink-muted"
               >
                 <span className="relative inline-flex h-4 w-4 shrink-0 items-center justify-center">
                   <input
@@ -466,10 +473,10 @@ export function Login() {
                   animate={{ opacity: 1, y: 0, height: 'auto' }}
                   exit={reduced ? { opacity: 0 } : { opacity: 0, y: -6, height: 0 }}
                   transition={{ duration: 0.22, ease: 'easeOut' }}
-                  className="flex items-start gap-2.5 overflow-hidden rounded-lg border border-danger/20 bg-danger/5 px-3.5 py-3"
+                  className="flex items-start gap-2 overflow-hidden rounded-lg border border-danger/20 bg-danger/5 px-3 py-2.5"
                 >
                   <ErrorIcon />
-                  <p className="text-[13px] font-medium leading-snug text-danger">{formError}</p>
+                  <p className="text-[12px] font-medium leading-snug text-danger">{formError}</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -479,7 +486,7 @@ export function Login() {
               <Button
                 type="submit"
                 variant="danger"
-                className="h-10 w-full text-sm font-semibold focus-visible:ring-danger/50"
+                className="h-9 w-full text-[13px] font-semibold focus-visible:ring-danger/50"
                 disabled={busy}
                 aria-busy={busy}
               >
@@ -496,19 +503,19 @@ export function Login() {
           </form>
 
           {/* Trust signal */}
-          <FadeIn reduced={reduced} delay={0.4} className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-ink-faint">
+          <FadeIn reduced={reduced} delay={0.4} className="mt-2 flex items-center justify-center gap-1.5 text-[10px] text-ink-faint">
             <LockIcon className="h-3 w-3" aria-hidden="true" />
             <span>Secure connection · TLS 1.3</span>
           </FadeIn>
 
           {/* Demo accounts (dev only) */}
           {SHOW_DEMO && (
-            <FadeIn reduced={reduced} delay={0.46} className="mt-4 rounded-xl border border-dashed border-line bg-white p-3">
-              <p className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
+            <FadeIn reduced={reduced} delay={0.46} className="mt-2.5 rounded-xl border border-dashed border-line bg-slate-50/70 p-2">
+              <p className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-widest text-ink-faint">
                 Demo Accounts
                 <span className="rounded bg-danger-soft px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-danger">Quick Fill</span>
               </p>
-              <ul className="grid gap-1.5 sm:grid-cols-2 sm:gap-3">
+              <ul className="grid gap-1 sm:grid-cols-2 sm:gap-2">
                 {demoAccounts.map((a) => (
                   <li key={a.email} className="min-w-0">
                     <button
@@ -518,10 +525,10 @@ export function Login() {
                         setPassword(a.password);
                         setFormError(null);
                       }}
-                      className="flex w-full min-w-0 flex-col items-start rounded-lg border border-transparent px-3 py-2 text-left transition-all duration-150 hover:border-line hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
+                      className="flex w-full min-w-0 flex-col items-start rounded-lg border border-transparent px-2.5 py-1.5 text-left transition-all duration-150 hover:border-line hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
                     >
-                      <span className="text-[13px] font-medium leading-snug text-danger">{a.label}</span>
-                      <span className="mt-1 break-all text-[12px] leading-snug text-ink-faint">{a.email}</span>
+                      <span className="text-[12px] font-medium leading-snug text-danger">{a.label}</span>
+                      <span className="mt-0.5 break-all text-[11px] leading-snug text-ink-faint">{a.email}</span>
                     </button>
                   </li>
                 ))}
@@ -530,8 +537,8 @@ export function Login() {
           )}
 
           {/* Footer */}
-          <FadeIn reduced={reduced} delay={0.52} className="mt-2 text-center">
-            <p className="text-[12px] text-ink-faint">
+          <FadeIn reduced={reduced} delay={0.52} className="mt-1.5 text-center">
+            <p className="text-[11px] text-ink-faint">
               Accounts are provisioned internally.{' '}
               <span className="font-medium text-ink-muted">Contact your superadmin for access.</span>
             </p>

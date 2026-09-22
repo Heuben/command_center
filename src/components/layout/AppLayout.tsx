@@ -12,6 +12,7 @@ export function AppLayout() {
   const { user, isSuperadmin } = useSession();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -24,13 +25,22 @@ export function AppLayout() {
 
   return (
     <ToastProvider>
-      <div className="flex h-full w-full overflow-hidden bg-canvas">
+      <div className="relative flex h-full w-full overflow-hidden bg-canvas">
         <Sidebar
           collapsed={sidebarCollapsed}
+          mobileOpen={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
           onToggle={() => setSidebarCollapsed((prev) => !prev)} />
+        {mobileNavOpen &&
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={() => setMobileNavOpen(false)}
+          className="fixed inset-0 z-40 bg-ink/30 md:hidden"
+        />}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar />
+          <TopBar onMenu={() => setMobileNavOpen(true)} />
           <main
             className={
             fullBleed ?
@@ -56,7 +66,7 @@ export function AppLayout() {
                 <Outlet /> : (
 
                 /* Uniform page wrapper — every routed page shares this width and padding. */
-                <div className="mx-auto w-full max-w-[1600px] px-6 py-6">
+                <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6">
                     <Outlet />
                   </div>)}
               </motion.div>

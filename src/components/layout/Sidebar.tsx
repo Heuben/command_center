@@ -36,7 +36,12 @@ const items: NavItem[] = [
 ];
 
 
-export function Sidebar({ collapsed, onToggle }: {collapsed: boolean;onToggle: () => void;}) {
+export function Sidebar({
+  collapsed,
+  mobileOpen,
+  onClose,
+  onToggle
+}: {collapsed: boolean;mobileOpen: boolean;onClose: () => void;onToggle: () => void;}) {
   const { isSuperadmin } = useSession();
   const visible = items.filter((i) => !i.superadminOnly || isSuperadmin);
 
@@ -44,7 +49,8 @@ export function Sidebar({ collapsed, onToggle }: {collapsed: boolean;onToggle: (
     <nav
       aria-label="Primary"
       className={twMerge(
-        'flex h-full shrink-0 flex-col border-r border-line bg-surface transition-[width] duration-200 ease-out dark:bg-elevated',
+        'fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col border-r border-line bg-surface transition-[width,transform] duration-200 ease-out dark:bg-elevated md:relative md:z-auto md:translate-x-0',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
         collapsed ? 'w-16' : 'w-60'
       )}>
       <div
@@ -94,6 +100,7 @@ export function Sidebar({ collapsed, onToggle }: {collapsed: boolean;onToggle: (
                 to={item.to}
                 end={item.to === '/'}
                 title={collapsed ? label : undefined}
+                onClick={onClose}
                 className={() => ''}>
                 {({ isActive }) => (
                   <span

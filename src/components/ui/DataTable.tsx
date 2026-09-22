@@ -134,10 +134,25 @@ export function DataTable<T>({
           Array.from({ length: 6 }, (_, i) =>
           <tr key={`sk-${i}`} className="border-b border-line/70 last:border-0">
               {columns.map((c, ci) =>
-            <td key={c.key} className="px-4 py-3">
+            <td key={c.key} className="px-4 py-2.5">
+                <div
+                  className={twMerge(
+                    'flex min-h-[2.75rem] flex-col justify-center gap-1.5',
+                    c.align === 'right' && 'items-end'
+                  )}>
+                  {ci === 0 ?
+                  <>
+                    <Skeleton
+                      className="h-3.5 w-32 max-w-full"
+                      tone={i % 2 === 0 ? 'surface' : 'muted'} />
+                    <Skeleton
+                      className="h-3 w-24 max-w-[80%]"
+                      tone="muted" />
+                  </> :
                   <Skeleton
-                  className={ci === 0 ? 'h-3.5 w-32' : 'h-3.5 w-20'}
-                  tone={i % 2 === 0 ? 'surface' : 'muted'} />
+                    className={ci % 3 === 0 ? 'h-3.5 w-16' : ci % 2 === 0 ? 'h-3.5 w-24' : 'h-3.5 w-20'}
+                    tone={i % 2 === 0 ? 'surface' : 'muted'} />}
+                </div>
                 </td>
             )}
             </tr>

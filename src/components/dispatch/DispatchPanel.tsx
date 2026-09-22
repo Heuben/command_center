@@ -3,6 +3,7 @@ import {
   ChevronDownIcon,
   EyeIcon,
   MapPinIcon,
+  PanelRightCloseIcon,
   PhoneIcon,
   PlusIcon,
   SearchIcon,
@@ -38,11 +39,12 @@ type Candidate = UserAccount & {km: number;};
 
 export function DispatchPanel({
   alert,
-  response
+  response,
+  onClose
 
 
 
-}: {alert: Alert;response: AlertBranchResponse;}) {
+}: {alert: Alert;response: AlertBranchResponse;onClose?: () => void;}) {
   const { user, now } = useSession();
   const { assignments, acknowledge, dispatchResponders, reassignResponder } = useDispatchData();
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -167,9 +169,20 @@ export function DispatchPanel({
           <h2 className="text-base font-semibold text-danger">
             {alertTypeLabel[alert.alert_type]}
           </h2>
-          <span className="text-lg font-semibold tabular-nums text-ink">
-            {elapsedSince(response.triggered_at, now)}
-          </span>
+          <div className="flex items-start gap-2">
+            <span className="text-lg font-semibold tabular-nums text-ink">
+              {elapsedSince(response.triggered_at, now)}
+            </span>
+            {onClose &&
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Hide dispatch panel"
+              title="Hide dispatch panel"
+              className="rounded-md p-1 text-ink-muted transition-colors hover:bg-ink/[0.06] hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
+              <PanelRightCloseIcon className="h-4 w-4" />
+            </button>}
+          </div>
         </div>
         <p className="mt-1 text-[13px] text-ink-muted">
           Alert #{alert.id.replace('a-', '')} <span className="text-ink-faint">|</span>{' '}
