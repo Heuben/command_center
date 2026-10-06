@@ -27,7 +27,7 @@ export function Modal({ open, onClose, title, subtitle, footer, children, size =
   return createPortal(
     <AnimatePresence>
       {open &&
-      <div className="fixed inset-0 z-[999] flex items-center justify-center overflow-y-auto scrollbar-none p-4 sm:p-8">
+      <div className="fixed inset-0 z-[999] flex items-start justify-center overflow-y-auto scrollbar-none p-2 sm:items-center sm:p-8">
           <motion.div
           className="fixed inset-0 bg-slate-950/50"
           initial={{ opacity: 0 }}
@@ -46,11 +46,11 @@ export function Modal({ open, onClose, title, subtitle, footer, children, size =
           exit={{ opacity: 0, scale: 0.98, y: 4 }}
           transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
           className={twMerge(
-            'relative z-10 my-auto w-full overflow-hidden rounded-xl border border-line bg-elevated shadow-panel',
+            'relative z-10 my-auto flex max-h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-xl border border-line bg-elevated shadow-panel sm:max-h-[calc(100dvh-4rem)]',
             size === 'lg' ? 'max-w-3xl' : 'max-w-xl'
           )}>
-            <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-              <div>
+            <div className="flex shrink-0 items-start justify-between gap-4 border-b border-line px-4 py-4 sm:px-5">
+              <div className="min-w-0">
                 <h2 className="text-base font-semibold text-ink">{title}</h2>
                 {subtitle && <p className="mt-0.5 text-[13px] text-ink-muted">{subtitle}</p>}
               </div>
@@ -61,9 +61,9 @@ export function Modal({ open, onClose, title, subtitle, footer, children, size =
                 <XIcon className="h-4 w-4" />
               </button>
             </div>
-            <div className="max-h-[70vh] overflow-y-auto scrollbar-none px-5 py-4">{children}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto scrollbar-none px-4 py-4 sm:px-5">{children}</div>
             {footer &&
-          <div className="flex items-center justify-end gap-2 border-t border-line bg-ink/[0.02] px-5 py-3">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-ink/[0.02] px-4 py-3 sm:px-5">
                 {footer}
               </div>
           }

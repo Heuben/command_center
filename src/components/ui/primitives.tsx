@@ -10,7 +10,7 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const buttonVariants = {
-  primary: 'bg-primary text-white hover:bg-primary/90 border border-transparent',
+  primary: 'bg-primary-strong text-white hover:bg-primary-strong/90 border border-transparent',
   secondary: 'bg-surface text-ink border border-line hover:bg-ink/[0.04]',
   ghost:
   'bg-transparent text-ink-muted border border-transparent hover:bg-ink/[0.05] hover:text-ink',
@@ -120,7 +120,7 @@ export function PageHeader({
         <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>}
       </div>
-      {actions && <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">{actions}</div>}
+      {actions && <div className="flex w-full min-w-0 max-w-full flex-wrap items-center gap-2 sm:w-auto">{actions}</div>}
     </motion.header>);
 
 }
@@ -159,7 +159,7 @@ export function Segmented<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface p-1 relative z-20">
+      className="inline-flex min-w-0 max-w-full items-center gap-1 overflow-x-auto rounded-lg border border-line bg-surface p-1 relative z-20 scrollbar-none">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -170,8 +170,8 @@ export function Segmented<T extends string>({
             aria-selected={active}
             onClick={() => onChange(o.value)}
             className={twMerge(
-              'inline-flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out',
-              active ? 'bg-primary text-white' : 'text-ink-muted hover:bg-ink/[0.05] hover:text-ink'
+              'inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out',
+              active ? 'bg-primary-strong text-white' : 'text-ink-muted hover:bg-ink/[0.05] hover:text-ink'
             )}>
             {o.label}
             {typeof o.count === 'number' &&
@@ -196,16 +196,28 @@ export function EmptyState({
   icon,
   title,
   description,
-  tone
+  tone: _tone
+}: {
+  icon?: React.ReactNode | React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
+  title: string;
+  description?: string;
+  tone?: 'neutral' | 'muted';
+}) {
+  const renderIcon = () => {
+    if (!icon) return null;
+    if (React.isValidElement(icon)) return icon;
+    if (typeof icon === 'function') {
+      const Comp = icon as React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
+      return <Comp className="h-5 w-5" aria-hidden="true" />;
+    }
+    return null;
+  };
 
-
-}: {icon?: React.ReactNode;title: string;description?: string;tone?: 'neutral' | 'muted';}) {
-  const IconComp = icon;
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
       {icon ? (
         <div className="rounded-full bg-ink/[0.05] p-3 text-ink-faint">
-          <IconComp className="h-5 w-5" aria-hidden="true" />
+          {renderIcon()}
         </div>
       ) : (
         <div className="h-10 w-10 rounded-full bg-ink/[0.05]" aria-hidden="true" />

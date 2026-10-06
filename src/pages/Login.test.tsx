@@ -7,15 +7,27 @@ import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { Login } from './Login';
 import { EvidenceViewer } from '../components/ui/EvidenceViewer';
+import type { UserAccount } from '../types';
 
 /* -------------------------------------------------------------------------- */
 /* Mock SessionContext                                                        */
 /* -------------------------------------------------------------------------- */
 
-const mockSignIn = vi.fn<[string, string], boolean>();
-const mockUseSession = vi.fn(() => ({
+const mockSignIn = vi.fn<[string, string], boolean | Promise<boolean>>();
+const mockDevLogin = vi.fn<[], Promise<boolean>>();
+type MockSession = {
+  user: UserAccount | null;
+  ready: boolean;
+  signIn: typeof mockSignIn;
+  devLogin: typeof mockDevLogin;
+  theme: 'light';
+  setTheme: () => void;
+};
+const mockUseSession = vi.fn<[], MockSession>(() => ({
   user: null,
+  ready: true,
   signIn: mockSignIn,
+  devLogin: mockDevLogin,
   theme: 'light' as const,
   setTheme: vi.fn(),
 }));
@@ -44,9 +56,15 @@ describe('<Login />', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, 'scrollTo', {
+      value: vi.fn(),
+      writable: true,
+    });
     mockUseSession.mockReturnValue({
       user: null,
+      ready: true,
       signIn: mockSignIn,
+      devLogin: mockDevLogin,
       theme: 'light' as const,
       setTheme: vi.fn(),
     });
@@ -61,8 +79,10 @@ describe('<Login />', () => {
   // ── 1. Redirects when already signed in ──────────────────────────────────
   it('redirects to / when the user is already signed in', () => {
     mockUseSession.mockReturnValue({
-      user: { id: '1', f_name: 'Heuben Clyde B.', l_name: 'Dagami', role: 'superadmin', email: 'heuben.clyde.b.dagami@bantai.gov.ph', command_center_id: null, account_status: 'active', r_profile: null },
+      user: { id: '1', f_name: 'Heuben Clyde B.', l_name: 'Dagami', role: 'superadmin', email: 'heuben.clyde.b.dagami@bantai.gov.ph', command_center_id: null, account_status: 'active' },
+      ready: true,
       signIn: mockSignIn,
+      devLogin: mockDevLogin,
       theme: 'light' as const,
       setTheme: vi.fn(),
     });
@@ -87,17 +107,27 @@ describe('<Login />', () => {
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
   });
 
-  // ── 4. Renders demo account buttons ───────────────────────────────────
-  it('renders demo account buttons', () => {
+  it('does not render embedded demo accounts', () => {
     renderLogin();
-    expect(screen.getByRole('button', { name: /superadmin — system-wide/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /admin — barangay 171/i })).toBeInTheDocument();
+    expect(screen.queryByText(/demo accounts/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /superadmin — system-wide/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /admin — barangay 171/i })).not.toBeInTheDocument();
   });
 
   // ── 5. Renders submit button ───────────────────────────────────────────
   it('renders the sign in button', () => {
     renderLogin();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it('enters the system directly through the development-only button', async () => {
+    const user = userEvent.setup();
+    mockDevLogin.mockResolvedValue(true);
+    renderLogin();
+
+    await user.click(screen.getByRole('button', { name: /enter system \(development only\)/i }));
+
+    await waitFor(() => expect(mockDevLogin).toHaveBeenCalledOnce());
   });
 
   // ── 6. Shows error when email is empty on submit ───────────────────────
@@ -170,44 +200,6 @@ describe('<Login />', () => {
     expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  // ── 11. Pre-fills demo account credentials ───────────────────────────────
-  it('pre-fills credentials when a demo account button is clicked', async () => {
-    const user = userEvent.setup();
-    renderLogin();
-
-    await user.click(screen.getByRole('button', { name: /superadmin — system-wide/i }));
-
-    const emailInput = screen.getByRole('textbox', { name: /work email/i }) as HTMLInputElement;
-    const passwordInput = screen.getByLabelText('Password') as HTMLInputElement;
-
-    expect(emailInput.value).toBe('heuben.clyde.b.dagami@bantai.gov.ph');
-    expect(passwordInput.value).toBe('superadmin-2026');
-  });
-
-  // ── 12. Clears error when demo account is selected ─────────────────────
-  it('clears the error message when a demo account is selected', async () => {
-    const user = userEvent.setup();
-    mockSignIn.mockReturnValue(false);
-    renderLogin();
-
-    // Trigger an error first
-    await user.type(screen.getByRole('textbox', { name: /work email/i }), 'wrong@email.com');
-    await user.type(screen.getByLabelText('Password'), 'wrongpassword');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument();
-    });
-
-    // Click demo account
-    await user.click(screen.getByRole('button', { name: /superadmin — system-wide/i }));
-
-    // Error should be gone (after exit animation completes)
-    await waitFor(() => {
-      expect(screen.queryByRole('alert')).toBeNull();
-    });
-  });
-
   it('shows the alert address instead of raw GPS coordinates in the evidence viewer', () => {
     const alert = {
       id: 'a-9001',
@@ -223,7 +215,7 @@ describe('<Login />', () => {
       created_at: '2026-08-19T14:32:01Z'
     };
 
-    render(<EvidenceViewer alert={alert} open onClose={() => {}} />);
+    render(<EvidenceViewer alert={alert} open onClose={() => undefined} />);
 
     expect(screen.getAllByText(/Plaza Roma cor\. M\. Hizon St\., Barangay 171/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Location:/i)).toBeInTheDocument();
@@ -370,11 +362,10 @@ describe('<Login />', () => {
     expect(container.querySelector('svg.lucide-lock')).toBeTruthy();
   });
 
-  // ── 27. Demo accounts render in dev mode ───────────────────────────────────
-  it('renders demo accounts in dev mode (import.meta.env.DEV === true)', () => {
+  it('keeps the development-only system entry without showing demo accounts', () => {
     renderLogin();
-    // The demo button is gated by SHOW_DEMO which is true under vitest (DEV)
-    expect(screen.getByRole('button', { name: /superadmin — system-wide/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /enter system \(development only\)/i })).toBeInTheDocument();
+    expect(screen.queryByText(/demo accounts/i)).not.toBeInTheDocument();
   });
 
   // ── 28. Submitting with an invalid email shows form-level error ────────────

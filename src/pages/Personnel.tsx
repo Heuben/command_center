@@ -12,7 +12,6 @@ import {
 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
 import { useDispatchData } from '../contexts/DispatchContext';
-import { centerName, commandCenters } from '../data/commandCenters';
 import type { Agency, UserAccount } from '../types';
 import { agencyLabel, agencyShort, fullName, rankDisplay, roleLabel } from '../utils/labels';
 import { DataTable } from '../components/ui/DataTable';
@@ -36,7 +35,7 @@ import { useMotionVariants, fadeUp, DUR, EASE } from '../lib/motion';
 
 export function Personnel() {
   const { scopeCenterId, isSuperadmin, user } = useSession();
-  const { userList, updateUser } = useDispatchData();
+  const { userList, updateUser, commandCenters, centerName, ready } = useDispatchData();
   const toast = useToast();
   const pageVariants = useMotionVariants(fadeUp);
   const [query, setQuery] = useState('');
@@ -57,11 +56,9 @@ export function Personnel() {
 
   const isDeactivated = (id: string) => deactivatedIds.includes(id);
 
-  // Simulated first-paint skeleton (1s). Drop in production.
   useEffect(() => {
-    const t = window.setTimeout(() => setIsFirstLoad(false), 600);
-    return () => window.clearTimeout(t);
-  }, []);
+    if (ready) setIsFirstLoad(false);
+  }, [ready]);
 
   // Auto-dismiss the "provisioned" banner after a few seconds.
   useEffect(() => {
@@ -295,7 +292,7 @@ export function Personnel() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search name or call sign"
               aria-label="Search personnel"
-              className="w-64 pl-8" />
+              className="w-full pl-8 sm:w-64" />
 
             </div>
             <Button variant="primary" onClick={() => setAddOpen(true)}>
@@ -314,8 +311,8 @@ export function Personnel() {
           exit={{ opacity: 0, transition: { duration: DUR.fast, ease: EASE.in } }}
           role="status"
           className="mb-4 mt-2 rounded-lg border border-success/30 bg-success-soft px-4 py-3 text-[13px] text-success">
-            {created} was provisioned. A temporary password was issued and a password change is
-            required at first sign-in.
+            {created} was provisioned. Share the temporary password and require a change at first
+            sign-in.
           </motion.div>
         )}
       </AnimatePresence>
@@ -340,10 +337,10 @@ export function Personnel() {
       <AddResponderModal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        onCreated={(name) => {
-          setCreated(name);
+        onCreated={(name, tempPassword) => {
+          setCreated(`${name} · temporary password ${tempPassword}`);
           setAddOpen(false);
-          toast.success(`${name} provisioned. A temporary password was issued.`);
+          toast.success(`${name} provisioned. Temporary password: ${tempPassword}`);
         }}
         onError={(msg) => toast.error(msg)}
         lockedCenterId={isSuperadmin ? null : user?.command_center_id ?? null} />
@@ -364,19 +361,18 @@ function AddResponderModal({
 
 
 
-}: {open: boolean;onClose: () => void;onCreated: (name: string) => void;onError: (msg: string) => void;lockedCenterId: string | null;}) {
+}: {open: boolean;onClose: () => void;onCreated: (name: string, tempPassword: string) => void;onError: (msg: string) => void;lockedCenterId: string | null;}) {
   const { user: currentUser } = useSession();
-  const { userList, createUser } = useDispatchData();
+  const { userList, createUser, commandCenters } = useDispatchData();
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
   const [email, setEmail] = useState('');
   const [agency, setAgency] = useState<Agency>('barangay_tanod');
   const [callSign, setCallSign] = useState('');
   const [rank, setRank] = useState('');
-  const [center, setCenter] = useState(lockedCenterId ?? commandCenters[0].id);
+  const [center, setCenter] = useState(lockedCenterId ?? '');
   const [submitting, setSubmitting] = useState(false);
 
-  // Reset state every time the modal opens so a previous attempt's text doesn't bleed in.
   useEffect(() => {
     if (open) {
       setFirst('');
@@ -385,17 +381,23 @@ function AddResponderModal({
       setAgency('barangay_tanod');
       setCallSign('');
       setRank('');
-      setCenter(lockedCenterId ?? commandCenters[0].id);
+      setCenter(lockedCenterId ?? commandCenters[0]?.id ?? '');
       setSubmitting(false);
     }
-  }, [open, lockedCenterId]);
+  }, [open, lockedCenterId, commandCenters]);
 
-  const tempPassword = 'BNT-' + Math.random().toString(36).slice(2, 8).toUpperCase();
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const emailTaken = userList.some((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-  const canSubmit = !!(first.trim() && last.trim() && emailValid && !emailTaken && !submitting);
+  const canSubmit = !!(
+    first.trim() &&
+    last.trim() &&
+    emailValid &&
+    !emailTaken &&
+    !submitting &&
+    center
+  );
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!first.trim() || !last.trim() || !email.trim()) {
       onError('First name, last name, and email are required.');
       return;
@@ -408,9 +410,13 @@ function AddResponderModal({
       onError('A user with that email already exists.');
       return;
     }
+    if (!center) {
+      onError('Create a command center before provisioning responders.');
+      return;
+    }
     setSubmitting(true);
     try {
-      createUser(
+      const result = await createUser(
         {
           f_name: first.trim(),
           l_name: last.trim(),
@@ -428,7 +434,7 @@ function AddResponderModal({
         },
         currentUser?.id ?? ''
       );
-      onCreated(`${first.trim()} ${last.trim()}`);
+      onCreated(`${first.trim()} ${last.trim()}`, result.tempPassword);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to create account.';
       onError(msg);
@@ -510,7 +516,9 @@ function AddResponderModal({
             value={center}
             disabled={!!lockedCenterId}
             onChange={(e) => setCenter(e.target.value)}>
-            {commandCenters.map((c) =>
+            {commandCenters.length === 0 ?
+            <option value="">No command centers yet</option> :
+            commandCenters.map((c) =>
             <option key={c.id} value={c.id}>
                 {c.name}
               </option>
@@ -519,9 +527,9 @@ function AddResponderModal({
         </div>
         <div className="col-span-2 rounded-md border border-line bg-canvas px-3 py-2.5">
           <p className="text-[11px] uppercase tracking-wide text-ink-faint">Temporary Password</p>
-          <p className="mt-1 font-mono text-[13px] text-ink">{tempPassword}</p>
+          <p className="mt-1 text-[13px] text-ink">A one-time password will be generated on create.</p>
           <p className="mt-1 text-[12px] text-ink-muted">
-            The responder must change this password at first sign-in.
+            Copy it from the confirmation toast. The responder must change it at first sign-in.
           </p>
         </div>
       </div>

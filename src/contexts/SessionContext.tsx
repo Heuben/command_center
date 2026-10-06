@@ -4,22 +4,10 @@ import React, {
   useContext,
   useEffect,
   useMemo,
-  useState } from
-'react';
+  useState
+} from 'react';
 import type { UserAccount } from '../types';
-import { users } from '../data/users';
-import { REFERENCE_NOW } from '../utils/time';
-
-/**
- * Mock password store for demo accounts.
- * In production, passwords would be hashed and validated server-side.
- * Keys are emails (lowercase); values are the demo passwords.
- */
-const DEMO_PASSWORDS: Record<string, string> = {
-  'heuben.clyde.b.dagami@bantai.gov.ph': 'superadmin-2026',
-  'christian.dwight.lumanog@brgy171.bantai.gov.ph': 'admin-171-2026',
-  'majan.isabelle.tagana@bantai.gov.ph': 'admin-2026'
-};
+import { api } from '../lib/api';
 
 type Theme = 'light' | 'dark';
 
@@ -37,14 +25,14 @@ function readStoredTheme(): Theme {
 
 type SessionValue = {
   user: UserAccount | null;
-  signIn: (email: string, password: string) => boolean;
-  signOut: () => void;
+  ready: boolean;
+  signIn: (email: string, password: string) => Promise<boolean>;
+  devLogin: () => Promise<boolean>;
+  signOut: () => Promise<void>;
   theme: Theme;
   setTheme: (t: Theme) => void;
-  /** Superadmin-only branch filter. 'all' = system-wide. Admins are always pinned to their branch. */
   branchFilter: string;
   setBranchFilter: (id: string) => void;
-  /** Resolved scope: a command_center_id, or null for system-wide. */
   scopeCenterId: string | null;
   isSuperadmin: boolean;
   now: number;
@@ -56,13 +44,14 @@ const SessionContext = createContext<SessionValue | null>(null);
 
 export function SessionProvider({ children }: {children: React.ReactNode;}) {
   const [user, setUser] = useState<UserAccount | null>(null);
+  const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState<Theme>(readStoredTheme);
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [sirenVolume, setSirenVolume] = useState(70);
-  const [now, setNow] = useState(REFERENCE_NOW);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow((n) => n + 1000), 1000);
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
 
@@ -70,41 +59,66 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  // Persist theme so it survives reloads and shares across this app's tabs.
   useEffect(() => {
     try {
       window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {
-
-      /* storage unavailable — toggle still works for the current session */}
+      /* storage unavailable */
+    }
   }, [theme]);
 
-  const signIn = useCallback((email: string, password: string) => {
-    const trimmedEmail = email.trim().toLowerCase();
-    const trimmedPassword = password.trim();
-
-    if (!trimmedEmail || !trimmedPassword) return false;
-
-    const match = users.find(
-      (u) =>
-      u.email.toLowerCase() === trimmedEmail && (
-      u.role === 'admin' || u.role === 'superadmin')
-    );
-    if (!match) return false;
-
-    // Deactivated users cannot sign in.
-    if (match.account_status === 'deactivated') return false;
-
-    // Validate password against mock credentials.
-    const validPassword = DEMO_PASSWORDS[match.email.toLowerCase()];
-    if (!validPassword || validPassword !== trimmedPassword) return false;
-
-    setUser(match);
-    setBranchFilter('all');
-    return true;
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .me()
+      .then((data) => {
+        if (!cancelled) setUser(data.user);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const signOut = useCallback(() => setUser(null), []);
+  const signIn = useCallback(async (email: string, password: string) => {
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+    if (!trimmedEmail || !trimmedPassword) return false;
+    try {
+      const data = await api.login(trimmedEmail, trimmedPassword);
+      setUser(data.user);
+      setBranchFilter('all');
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const devLogin = useCallback(async () => {
+    if (!import.meta.env.DEV) return false;
+    try {
+      const data = await api.devLogin();
+      setUser(data.user);
+      setBranchFilter('all');
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      await api.logout();
+    } catch {
+      /* session already gone */
+    }
+    setUser(null);
+  }, []);
 
   const isSuperadmin = user?.role === 'superadmin';
   const scopeCenterId = isSuperadmin ?
@@ -116,7 +130,9 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
   const value = useMemo<SessionValue>(
     () => ({
       user,
+      ready,
       signIn,
+      devLogin,
       signOut,
       theme,
       setTheme,
@@ -128,7 +144,7 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
       sirenVolume,
       setSirenVolume
     }),
-    [user, signIn, signOut, theme, branchFilter, scopeCenterId, isSuperadmin, now, sirenVolume]
+    [user, ready, signIn, devLogin, signOut, theme, branchFilter, scopeCenterId, isSuperadmin, now, sirenVolume]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

@@ -32,7 +32,7 @@ export function Switch({ checked, onChange, disabled, label, className }: Switch
         onClick={() => !disabled && onChange(!checked)}
         className={twMerge(
           'relative h-5 w-9 rounded-full border transition-colors duration-200 ease-out',
-          checked ? 'border-primary bg-primary' : 'border-line bg-ink/10'
+          checked ? 'border-primary-strong bg-primary-strong' : 'border-line bg-ink/10'
         )}>
         <motion.span
           layout="position"

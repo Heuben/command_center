@@ -1,11 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CogIcon, DownloadIcon, UserSearchIcon, XIcon } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
 import { useDispatchData } from '../contexts/DispatchContext';
-import { superadminOnlyActions } from '../data/auditLogs';
-import { userById, userName } from '../data/users';
-import { centerName } from '../data/commandCenters';
+import { SUPERADMIN_ONLY_ACTIONS } from '../types';
 import type { AuditAction, AuditCategory, SystemAuditLog } from '../types';
 import {
   actionCategory,
@@ -52,7 +50,7 @@ const ACTOR_SYSTEM = '__system__';
 
 export function AuditLogs() {
   const { isSuperadmin, scopeCenterId } = useSession();
-  const { logs } = useDispatchData();
+  const { logs, userById, userName, centerName } = useDispatchData();
 
   const [categories, setCategories] = useState<string[]>([]);
   const [actions, setActions] = useState<string[]>([]);
@@ -68,7 +66,7 @@ export function AuditLogs() {
     isSuperadmin ?
     !scopeCenterId || l.command_center_id === scopeCenterId :
     l.command_center_id === scopeCenterId &&
-    !superadminOnlyActions.includes(l.action)
+    !SUPERADMIN_ONLY_ACTIONS.includes(l.action)
     ),
     [logs, isSuperadmin, scopeCenterId]
   );
@@ -137,15 +135,15 @@ export function AuditLogs() {
   categories.length + actions.length + actors.length + (from ? 1 : 0) + (to ? 1 : 0);
 
   const exportVisible = () => {
-    const cols = [
-    { key: 'created_at', header: 'Timestamp' },
-    { key: 'actor', header: 'Actor' },
-    { key: 'action', header: 'Action' },
-    { key: 'category', header: 'Category' },
-    { key: 'target_entity', header: 'Target Entity' },
-    { key: 'reference', header: 'Reference' },
-    { key: 'branch', header: 'Branch' }] as
-    const;
+    const cols: Column<{ created_at: string; actor: string; action: string; category: string; target_entity: string; reference: string; branch: string }>[] = [
+      { key: 'created_at', header: 'Timestamp' },
+      { key: 'actor', header: 'Actor' },
+      { key: 'action', header: 'Action' },
+      { key: 'category', header: 'Category' },
+      { key: 'target_entity', header: 'Target Entity' },
+      { key: 'reference', header: 'Reference' },
+      { key: 'branch', header: 'Branch' }
+    ];
     const records = visible.map((l) => ({
       created_at: formatDateTime(l.created_at),
       actor: l.actor_id ? userName(l.actor_id) : 'System',
@@ -300,7 +298,7 @@ export function AuditLogs() {
 
       <Card className="mb-4 p-4">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="w-[180px]">
+          <div className="w-full min-w-0 sm:w-[180px]">
             <Label>Category</Label>
             <MultiSelect
               ariaLabel="Filter by category"
@@ -311,7 +309,7 @@ export function AuditLogs() {
 
           </div>
 
-          <div className="w-[220px]">
+          <div className="w-full min-w-0 sm:w-[220px]">
             <Label>Action</Label>
             <MultiSelect
               ariaLabel="Filter by action"
@@ -323,29 +321,29 @@ export function AuditLogs() {
 
           </div>
 
-          <div>
+          <div className="w-full min-w-0 sm:w-44">
             <Label htmlFor="from">From</Label>
             <Input
               id="from"
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="w-44" />
+              className="w-full" />
 
           </div>
 
-          <div>
+          <div className="w-full min-w-0 sm:w-44">
             <Label htmlFor="to">To</Label>
             <Input
               id="to"
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-44" />
+              className="w-full" />
 
           </div>
 
-          <div className="ml-auto flex items-end gap-2">
+          <div className="ml-auto flex w-full flex-wrap items-end gap-2 sm:w-auto">
             <MultiSelect
               variant="button"
               ariaLabel="Filter by actor"
@@ -355,10 +353,10 @@ export function AuditLogs() {
               selected={actors}
               onChange={setActors}
               searchable
-              className="w-[190px]"
+              className="w-full sm:w-[190px]"
               panelClassName="min-w-[280px]" />
 
-            <Button onClick={exportVisible} disabled={visible.length === 0}>
+            <Button className="w-full sm:w-auto" onClick={exportVisible} disabled={visible.length === 0}>
               <DownloadIcon className="h-4 w-4" />
               Export CSV ({visible.length})
             </Button>

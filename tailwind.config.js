@@ -17,6 +17,7 @@ export default {content: [
         },
         primary: {
           DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+          strong: 'rgb(var(--primary-strong) / <alpha-value>)',
           soft: 'rgb(var(--primary-soft) / <alpha-value>)',
         },
         urgent: {

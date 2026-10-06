@@ -77,7 +77,7 @@ export function DataTable<T>({
           {caption}
         </p>
       }
-      <table className="w-full border-collapse text-sm">
+      <table className="w-full min-w-[720px] border-collapse text-sm xl:min-w-full">
         <thead>
           <tr className="border-b border-line bg-ink/[0.02]">
             {columns.map((c) => {

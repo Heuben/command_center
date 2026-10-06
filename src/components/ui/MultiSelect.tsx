@@ -96,7 +96,7 @@ export function MultiSelect({
         </span>
         <span className="flex items-center gap-1.5">
           {selected.length > 1 &&
-          <span className="rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
+          <span className="rounded-full bg-primary-strong px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
               {selected.length}
             </span>
           }
@@ -145,7 +145,7 @@ export function MultiSelect({
                     <span
                     className={twMerge(
                       'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
-                      checked ? 'border-primary bg-primary text-white' : 'border-line'
+                      checked ? 'border-primary-strong bg-primary-strong text-white' : 'border-line'
                     )}>
                       {checked && <CheckIcon className="h-3 w-3" />}
                     </span>
