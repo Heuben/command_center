@@ -5,7 +5,7 @@ import { twMerge } from 'tailwind-merge';
 import type { Alert, AlertBranchResponse, BranchResponseStatus } from '../../types';
 import { alertTypeLabel, alertTypeShort, branchStatusLabel } from '../../utils/labels';
 import { distanceKm, elapsedSince, formatDistance } from '../../utils/time';
-import { centerById, centerName } from '../../data/commandCenters';
+import { useDispatchData } from '../../contexts/DispatchContext';
 import { fadeUp } from '../../lib/motion';
 
 export type QueueRow = {
@@ -36,15 +36,16 @@ export function EmergencyQueue({
   rows,
   selectedKey,
   onSelect,
-  now,
-  showBranch
-
-
-
-
-
-
-}: {rows: QueueRow[];selectedKey: string | null;onSelect: (row: QueueRow) => void;now: number;showBranch: boolean;}) {
+  now = Date.now(),
+  showBranch = false
+}: {
+  rows: QueueRow[];
+  selectedKey: string | null;
+  onSelect: (row: QueueRow) => void;
+  now?: number;
+  showBranch?: boolean;
+}) {
+  const { centerById, centerName } = useDispatchData();
   const [expanded, setExpanded] =
   useState<Record<BranchResponseStatus, boolean>>(DEFAULT_EXPANDED);
 

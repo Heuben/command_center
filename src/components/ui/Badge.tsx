@@ -33,7 +33,7 @@ const soft: Record<Tone, string> = {
 
 const solid: Record<Tone, string> = {
   neutral: 'bg-ink-muted text-canvas',
-  primary: 'bg-primary text-white',
+  primary: 'bg-primary-strong text-white',
   urgent: 'bg-urgent text-white',
   success: 'bg-success text-white',
   danger: 'bg-danger text-white'
@@ -54,6 +54,8 @@ const tagBar: Record<Tone, string> = {
   success: 'border-l-success text-success',
   danger: 'border-l-danger text-danger'
 };
+
+export type Variant = 'soft' | 'solid' | 'dot' | 'tag';
 
 export function Badge({
   tone = 'neutral',

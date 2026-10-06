@@ -49,13 +49,13 @@ export function Sidebar({
     <nav
       aria-label="Primary"
       className={twMerge(
-        'fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col border-r border-line bg-surface transition-[width,transform] duration-200 ease-out dark:bg-elevated md:relative md:z-auto md:translate-x-0',
+        'fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col border-r border-[#991b1b] bg-[#b91c1c] text-white transition-[width,transform] duration-200 ease-out md:relative md:z-auto md:translate-x-0',
         mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
         collapsed ? 'w-16' : 'w-60'
       )}>
       <div
         className={twMerge(
-          'flex items-center border-b border-line',
+          'flex items-center border-b border-white/20',
           collapsed ? 'justify-center px-2 py-2.5' : 'px-2.5 py-2.5'
         )}>
         <button
@@ -69,7 +69,7 @@ export function Sidebar({
           )}>
           <span
             className={twMerge(
-              'flex items-center justify-center rounded-xl overflow-hidden',
+              'flex items-center justify-center overflow-hidden rounded-full bg-white p-1',
               collapsed ? 'h-8 w-8 shrink-0' : 'h-9 w-9 shrink-0'
             )}>
             <img src={bantaiIcon2} alt="BANTAI Icon" className="h-full w-full object-contain" />
@@ -77,8 +77,8 @@ export function Sidebar({
 
           {!collapsed &&
             <div className="min-w-0 leading-tight">
-              <p className="text-[13px] font-semibold tracking-tight text-ink">B.A.N.T.A.I.</p>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
+              <p className="text-[13px] font-semibold tracking-tight text-white">B.A.N.T.A.I.</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">
                 Command Center
               </p>
             </div>
@@ -110,14 +110,14 @@ export function Sidebar({
                       'h-10 w-10 justify-center self-center' :
                       'w-full justify-start gap-2.5 px-2.5 py-2',
                       isActive ?
-                      'text-primary' :
-                      'text-ink-muted hover:bg-ink/[0.05] hover:text-ink dark:hover:bg-white/5'
+                      'text-white' :
+                      'text-white/85 hover:bg-white/10 hover:text-white'
                     )}>
                     {isActive &&
                     <motion.span
                       layoutId="sidebar-active"
                       className={twMerge(
-                        'absolute inset-0 -z-10 rounded-xl bg-primary-soft dark:bg-primary/15',
+                        'absolute inset-0 -z-10 rounded-xl bg-white/20',
                         collapsed ? 'left-1.5 right-1.5' : ''
                       )}
                       transition={{ type: 'spring', stiffness: 380, damping: 32 }} />
@@ -133,11 +133,11 @@ export function Sidebar({
       </ul>
 
       {!collapsed && (
-        <div className="border-t border-line px-4 py-3">
-          <p className="text-[11px] text-ink-faint">
+        <div className="border-t border-white/20 px-4 py-3">
+          <p className="text-[11px] text-white/75">
             {isSuperadmin ? 'System-wide access' : 'Branch-scoped access'}
           </p>
-          <p className="text-[11px] text-ink-faint">Desktop client 2.4.1</p>
+          <p className="text-[11px] text-white/60">Desktop client 2.4.1</p>
         </div>
       )}
     </nav>

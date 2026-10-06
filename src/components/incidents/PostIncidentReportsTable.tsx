@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import type { IncidentReport } from '../../types';
-import { alertById } from '../../data/alerts';
-import { userName } from '../../data/users';
-import { centerName } from '../../data/commandCenters';
 import { alertTypeLabel } from '../../utils/labels';
 import { formatDateTime } from '../../utils/time';
 import { DataTable } from '../ui/DataTable';
@@ -33,7 +30,7 @@ export function PostIncidentReportsTable({
   showBranch
 }: {rows: IncidentReport[];showBranch: boolean;}) {
   const { user } = useSession();
-  const { updateReport } = useDispatchData();
+  const { updateReport, alertById, userName, centerName } = useDispatchData();
 
   const [active, setActive] = useState<IncidentReport | null>(null);
   /** Live edits — kept separate from the seeded `rows` prop so changes are tracked in-memory. */
@@ -75,7 +72,7 @@ export function PostIncidentReportsTable({
     setDetailedNarrative('');
   };
 
-  const handleRequestRevision = () => {
+  const handleRequestRevision = async () => {
     if (!active) return;
     if (!revisionReason.trim()) {
       setError('Explain what needs to be revised before sending the request.');
@@ -83,7 +80,7 @@ export function PostIncidentReportsTable({
     }
     setSaving(true);
     try {
-      const updated = updateReport(
+      const updated = await updateReport(
         active.id,
         {
           status: 'under_review',
@@ -112,7 +109,7 @@ export function PostIncidentReportsTable({
     }
   };
 
-  const handleApproveReport = () => {
+  const handleApproveReport = async () => {
     if (!active) return;
     if (!summary.trim()) {
       setError('Summary cannot be empty before approval.');
@@ -120,7 +117,7 @@ export function PostIncidentReportsTable({
     }
     setSaving(true);
     try {
-      const updated = updateReport(
+      const updated = await updateReport(
         active.id,
         {
           status: 'approved',

@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { DUR, EASE } from '../lib/motion';
-import { commandCenters as seedCenters } from '../data/commandCenters';
-import { userName, users as seedUsers } from '../data/users';
+import { useDispatchData } from '../contexts/DispatchContext';
 import type { CommandCenter } from '../types';
 import { centerTypeLabel } from '../utils/labels';
 import { formatDate } from '../utils/time';
@@ -36,8 +35,14 @@ const emptyDraft = (): {
 });
 
 export function BranchManagement() {
-  const [centers, setCenters] = useState<CommandCenter[]>(seedCenters);
-  const [users] = useState(seedUsers);
+  const {
+    commandCenters: centers,
+    userList: users,
+    userName,
+    createCenter,
+    updateCenter,
+    deleteCenter
+  } = useDispatchData();
   const [editing, setEditing] = useState<CommandCenter | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<CommandCenter | null>(null);
@@ -61,29 +66,21 @@ export function BranchManagement() {
     return adminUsers.filter((u) => !u.command_center_id || currentIds.includes(u.id));
   }, [adminUsers, editing]);
 
-  const save = (
+  const save = async (
   next: Omit<CommandCenter, 'id' | 'created_at'> & {id?: string;created_at?: string;}) =>
   {
     if (next.id) {
-      setCenters((prev) =>
-      prev.map((c) => c.id === next.id ? { ...c, ...next, id: c.id } as CommandCenter : c)
-      );
+      await updateCenter(next.id, next);
       setNotice(`${next.name} was updated.`);
     } else {
-      const id = `cc-${Date.now().toString(36)}`;
-      const created: CommandCenter = {
-        ...next,
-        id,
-        created_at: new Date().toISOString()
-      } as CommandCenter;
-      setCenters((prev) => [...prev, created]);
+      const created = await createCenter(next);
       setNotice(`${created.name} was registered.`);
     }
     setCreating(false);
     setEditing(null);
   };
 
-  const remove = (center: CommandCenter) => {
+  const remove = async (center: CommandCenter) => {
     const personnelCount = users.filter((u) => u.command_center_id === center.id).length;
     if (personnelCount > 0) {
       setError(
@@ -92,8 +89,12 @@ export function BranchManagement() {
       setDeleting(null);
       return;
     }
-    setCenters((prev) => prev.filter((c) => c.id !== center.id));
-    setNotice(`${center.name} was removed.`);
+    try {
+      await deleteCenter(center.id);
+      setNotice(`${center.name} was removed.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete branch.');
+    }
     setDeleting(null);
   };
 
@@ -266,7 +267,8 @@ function BranchForm({
 
 
 
-}: {open: boolean;center: CommandCenter | null;adminUsers: {id: string;email: string;role: string;}[];onCancel: () => void;onError: (msg: string) => void;onSubmit: (next: Omit<CommandCenter, 'id' | 'created_at'> & {id?: string;}) => void;}) {
+}: {open: boolean;center: CommandCenter | null;adminUsers: {id: string;email: string;role: string;}[];onCancel: () => void;onError: (msg: string) => void;onSubmit: (next: Omit<CommandCenter, 'id' | 'created_at'> & {id?: string;}) => Promise<void> | void;}) {
+  const { userName } = useDispatchData();
   const [draft, setDraft] = useState(() => emptyDraft());
   const [submitting, setSubmitting] = useState(false);
 
@@ -297,21 +299,19 @@ function BranchForm({
   !!draft.branch.trim() &&
   validLat &&
   validLng &&
-  draft.adminIds.length > 0 &&
   !submitting;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
     if (!draft.name.trim()) return onError('Name is required.');
     if (!draft.branch.trim()) return onError('Coverage area is required.');
     if (!validLat) return onError('Latitude must be a number between -90 and 90.');
     if (!validLng) return onError('Longitude must be a number between -180 and 180.');
-    if (draft.adminIds.length === 0) return onError('Assign at least one admin to this branch.');
 
     setSubmitting(true);
     try {
-      onSubmit({
+      await onSubmit({
         id: center?.id,
         name: draft.name.trim(),
         type: draft.type,
@@ -408,8 +408,8 @@ function BranchForm({
             className="w-full" />
           
           <p className="mt-1.5 text-[12px] text-ink-muted">
-            Only admin accounts without a command center are listed. Admins already on this branch
-            stay selectable.
+            Only admin accounts without a command center are listed. You can register a branch
+            first and assign admins later.
           </p>
         </div>
       </form>

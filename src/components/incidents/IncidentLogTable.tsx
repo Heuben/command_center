@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { Alert, AlertBranchResponse } from '../../types';
-import { centerName } from '../../data/commandCenters';
-import { alertById } from '../../data/alerts';
+import { useDispatchData } from '../../contexts/DispatchContext';
 import { alertTypeLabel, confidenceDisplay } from '../../utils/labels';
 import { durationBetween, formatDateTime } from '../../utils/time';
 import { DataTable } from '../ui/DataTable';
@@ -34,6 +33,7 @@ export function IncidentLogTable({
   rows,
   showBranch
 }: {rows: IncidentLogRow[];showBranch: boolean;}) {
+  const { centerName, alertById } = useDispatchData();
   const [active, setActive] = useState<IncidentLogRow | null>(null);
 
   const columns: Column<IncidentLogRow>[] = [
@@ -165,6 +165,7 @@ export function IncidentLogTable({
 }
 
 function IncidentLogDrawer({ row, onClose }: {row: IncidentLogRow | null;onClose: () => void;}) {
+  const { alertById, centerName } = useDispatchData();
   if (!row) return null;
 
   const alert = alertById(row.alert.id) ?? row.alert;

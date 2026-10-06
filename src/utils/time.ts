@@ -1,4 +1,4 @@
-export const REFERENCE_NOW = new Date('2026-08-19T14:52:00Z').getTime();
+export const REFERENCE_NOW = Date.now();
 
 const MANILA: Intl.DateTimeFormatOptions = { timeZone: 'Asia/Manila' };
 
@@ -26,8 +26,9 @@ export function formatDateTime(iso: string): string {
 }
 
 /** Compact elapsed time, e.g. "04:21" or "1h 12m". */
-export function elapsedSince(iso: string, now: number): string {
-  const seconds = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 1000));
+export function elapsedSince(iso: string, now: number = Date.now()): string {
+  const current = Number.isFinite(now) ? now : Date.now();
+  const seconds = Math.max(0, Math.floor((current - new Date(iso).getTime()) / 1000));
   if (seconds < 3600) {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -40,8 +41,9 @@ export function elapsedSince(iso: string, now: number): string {
   return `${d}d ${h % 24}h`;
 }
 
-export function elapsedSeconds(iso: string, now: number): number {
-  return Math.max(0, Math.floor((now - new Date(iso).getTime()) / 1000));
+export function elapsedSeconds(iso: string, now: number = Date.now()): number {
+  const current = Number.isFinite(now) ? now : Date.now();
+  return Math.max(0, Math.floor((current - new Date(iso).getTime()) / 1000));
 }
 
 /** Duration between two timestamps, e.g. "6m 24s". Returns "—" when incomplete. */

@@ -4,16 +4,18 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { useSession } from '../../contexts/SessionContext';
-import { ToastProvider } from '../../contexts/ToastContext';
 import { ToastViewport } from '../ui/Toast';
 import { DUR, EASE } from '../../lib/motion';
 
 export function AppLayout() {
-  const { user, isSuperadmin } = useSession();
+  const { user, ready, isSuperadmin } = useSession();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  if (!ready) {
+    return <div className="flex h-full w-full items-center justify-center bg-canvas text-[13px] text-ink-muted">Loading session…</div>;
+  }
   if (!user) return <Navigate to="/login" replace />;
 
   const superadminRoutes = ['/hardware', '/branches'];
@@ -21,11 +23,8 @@ export function AppLayout() {
     return <Navigate to="/" replace />;
   }
 
-  const fullBleed = location.pathname === '/';
-
   return (
-    <ToastProvider>
-      <div className="relative flex h-full w-full overflow-hidden bg-canvas">
+    <div className="relative flex h-[100dvh] min-h-0 w-full overflow-hidden bg-canvas">
         <Sidebar
           collapsed={sidebarCollapsed}
           mobileOpen={mobileNavOpen}
@@ -41,12 +40,7 @@ export function AppLayout() {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar onMenu={() => setMobileNavOpen(true)} />
-          <main
-            className={
-            fullBleed ?
-            'min-h-0 flex-1 overflow-hidden' :
-            'min-h-0 flex-1 overflow-y-auto scrollbar-none'
-            }>
+          <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-none">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={location.pathname}
@@ -61,20 +55,15 @@ export function AppLayout() {
                   y: -4,
                   transition: { duration: DUR.fast, ease: EASE.in }
                 }}
-                className={fullBleed ? 'h-full' : ''}>
-                {fullBleed ?
-                <Outlet /> : (
-
-                /* Uniform page wrapper — every routed page shares this width and padding. */
-                <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6">
-                    <Outlet />
-                  </div>)}
+                className="min-w-0">
+                <div className="mx-auto w-full max-w-[1600px] px-3 py-4 sm:px-6 sm:py-6">
+                  <Outlet />
+                </div>
               </motion.div>
             </AnimatePresence>
           </main>
         </div>
         <ToastViewport />
       </div>
-    </ToastProvider>);
-
+    );
 }

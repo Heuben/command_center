@@ -5,9 +5,8 @@ import type { LatLng } from '../../types';
 import { useSession } from '../../contexts/SessionContext';
 import { Input, Label } from './primitives';
 
-const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const ATTRIBUTION = '&copy; OpenStreetMap &copy; CARTO';
+const OSM_TILES = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 /** Fallback view when neither coordinate has been entered yet. */
 const DEFAULT_CENTER: LatLng = { lat: 14.6577, lng: 120.9842 };
@@ -130,10 +129,9 @@ export function LocationPicker({
             className="h-full w-full"
             attributionControl>
             <TileLayer
-              url={theme === 'dark' ? DARK_TILES : LIGHT_TILES}
+              url={OSM_TILES}
               attribution={ATTRIBUTION}
-              subdomains="abcd"
-              maxZoom={20} />
+              maxZoom={19} />
             
             <ClickCapture
               onPick={(next) =>

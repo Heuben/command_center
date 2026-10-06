@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogOutIcon, MenuIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from '../../contexts/SessionContext';
-import { commandCenters, centerName } from '../../data/commandCenters';
+import { useDispatchData } from '../../contexts/DispatchContext';
 import { fullName, roleLabel } from '../../utils/labels';
 import { Button, Select } from '../ui/primitives';
 import { formatClock } from '../../utils/time';
@@ -12,6 +12,7 @@ import { Modal } from '../ui/Modal';
 export function TopBar({ onMenu }: {onMenu?: () => void;}) {
   const { user, isSuperadmin, branchFilter, setBranchFilter, theme, setTheme, signOut, now } =
   useSession();
+  const { commandCenters, centerName } = useDispatchData();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
 
@@ -24,8 +25,8 @@ export function TopBar({ onMenu }: {onMenu?: () => void;}) {
   centerName(user.command_center_id);
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-line bg-surface/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-surface/80 dark:bg-elevated/80 sm:gap-4 sm:px-5">
-      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+    <header className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1.5 border-b border-line bg-surface/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-surface/80 dark:bg-elevated/80 lg:h-14 lg:flex-nowrap lg:gap-4 lg:px-5 lg:py-0">
+      <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:gap-3">
         {onMenu &&
         <Button
           variant="ghost"
@@ -35,9 +36,9 @@ export function TopBar({ onMenu }: {onMenu?: () => void;}) {
           className="md:hidden">
           <MenuIcon className="h-4 w-4" />
         </Button>}
-        <div className="leading-tight">
+        <div className="min-w-0 leading-tight">
           <p className="hidden text-[11px] uppercase tracking-wide text-ink-faint sm:block">Branch Context</p>
-          <p className="max-w-[150px] truncate text-[13px] font-semibold text-ink sm:max-w-none">{branchContext}</p>
+          <p className="max-w-[110px] truncate text-[13px] font-semibold text-ink sm:max-w-[180px] lg:max-w-none">{branchContext}</p>
         </div>
         {isSuperadmin &&
         <>
@@ -46,7 +47,7 @@ export function TopBar({ onMenu }: {onMenu?: () => void;}) {
             aria-label="Filter by branch"
             value={branchFilter}
             onChange={(e) => setBranchFilter(e.target.value)}
-            className="h-8 text-[13px]">
+            className="h-8 min-w-0 max-w-[42vw] text-[13px] sm:max-w-[180px] lg:max-w-[220px]">
               <option value="all">All Branches</option>
               {commandCenters.map((c) =>
             <option key={c.id} value={c.id}>
@@ -58,7 +59,7 @@ export function TopBar({ onMenu }: {onMenu?: () => void;}) {
         }
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+      <div className="ml-auto flex w-full shrink-0 items-center justify-end gap-1 sm:w-auto sm:gap-3">
         <p className="hidden text-[13px] tabular-nums text-ink-muted md:block">
           {formatClock(new Date(now).toISOString())} PHT
         </p>

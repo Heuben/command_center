@@ -240,3 +240,18 @@ export type SystemAuditLog = {
   old_value: Record<string, unknown> | null;
   new_value: Record<string, unknown> | null;
 };
+
+export type AppState = {
+  users: UserAccount[];
+  commandCenters: CommandCenter[];
+  alerts: Alert[];
+  branchResponses: AlertBranchResponse[];
+  assignments: AlertResponderAssignment[];
+  reviews: AlertOutcomeReview[];
+  civilianReports: CivilianReport[];
+  reports: IncidentReport[];
+  logs: SystemAuditLog[];
+  devices: Device[];
+};
+
+export const SUPERADMIN_ONLY_ACTIONS: AuditAction[] = ['CREATE_COMMAND_CENTER'];

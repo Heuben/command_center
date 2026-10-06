@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
 import { useDispatchData } from '../contexts/DispatchContext';
-import { centerName } from '../data/commandCenters';
 import { roleLabel } from '../utils/labels';
 import { Button, Card, Input, Label, PageHeader, SectionTitle } from '../components/ui/primitives';
 import { Badge } from '../components/ui/Badge';
@@ -67,7 +66,7 @@ function readStored<T>(key: string, fallback: T): T {
 export function Settings() {
   const { user, theme, setTheme, sirenVolume, setSirenVolume, signOut, isSuperadmin } =
   useSession();
-  const { updateUser, userList } = useDispatchData();
+  const { updateUser, userList, centerName } = useDispatchData();
   const toast = useToast();
   const navigate = useNavigate();
   const [testing, setTesting] = useState(false);
@@ -146,22 +145,24 @@ export function Settings() {
       return;
     }
     setSaving(true);
-    try {
-      updateUser(
-        liveUser.id,
-        {
-          f_name: first.trim(),
-          l_name: last.trim(),
-          email: email.trim()
-        },
-        liveUser.id
-      );
-      setSavedAt(Date.now());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save profile.');
-    } finally {
-      setSaving(false);
-    }
+    void (async () => {
+      try {
+        await updateUser(
+          liveUser.id,
+          {
+            f_name: first.trim(),
+            l_name: last.trim(),
+            email: email.trim()
+          },
+          liveUser.id
+        );
+        setSavedAt(Date.now());
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not save profile.');
+      } finally {
+        setSaving(false);
+      }
+    })();
   };
 
   const handleSaveSettings = (scope: 'global' | 'local') => {
@@ -450,7 +451,7 @@ export function Settings() {
                   aria-pressed={theme === 'light'}
                   className={
                   'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out ' + (
-                  theme === 'light' ? 'bg-primary text-white' : 'text-ink-muted hover:text-ink')
+                  theme === 'light' ? 'bg-primary-strong text-white' : 'text-ink-muted hover:text-ink')
                   }>
               <SunIcon className="h-4 w-4" /> Light
             </button>
@@ -459,7 +460,7 @@ export function Settings() {
                   aria-pressed={theme === 'dark'}
                   className={
                   'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out ' + (
-                  theme === 'dark' ? 'bg-primary text-white' : 'text-ink-muted hover:text-ink')
+                  theme === 'dark' ? 'bg-primary-strong text-white' : 'text-ink-muted hover:text-ink')
                   }>
               <MoonIcon className="h-4 w-4" /> Dark
             </button>
@@ -537,8 +538,7 @@ export function Settings() {
             variant="danger"
             onClick={() => {
               setSigningOut(false);
-              signOut();
-              navigate('/login');
+              void signOut().then(() => navigate('/login'));
             }}>
               <LogOutIcon className="h-4 w-4" />
               Sign Out

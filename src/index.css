@@ -20,6 +20,7 @@
   --ink-muted: 88 102 121;
   --ink-faint: 142 156 174;
   --primary: 202 32 40;
+  --primary-strong: 202 32 40;
   --primary-soft: 254 228 229;
   --urgent: 217 119 6;
   --urgent-soft: 254 243 216;
@@ -41,32 +42,33 @@
   --glow-accent: 0 0 0 1px rgba(236, 72, 153, 0.22), 0 8px 24px -8px rgba(236, 72, 153, 0.45);
 }
 .dark {
-  --canvas: 10 15 28;
-  --surface: 17 24 39;
-  --elevated: 24 32 50;
-  --line: 32 42 62;
-  --line-strong: 46 58 82;
-  --ink: 241 245 249;
-  --ink-muted: 148 163 184;
-  --ink-faint: 100 116 139;
-  --primary: 248 113 113;
-  --primary-soft: 68 25 27;
-  --urgent: 245 158 11;
-  --urgent-soft: 60 45 16;
-  --success: 52 211 122;
-  --success-soft: 19 52 34;
+  --canvas: 0 0 0;
+  --surface: 10 10 10;
+  --elevated: 18 18 18;
+  --line: 42 42 42;
+  --line-strong: 64 64 64;
+  --ink: 245 245 245;
+  --ink-muted: 180 180 180;
+  --ink-faint: 140 140 140;
+  --primary: 248 82 89;
+  --primary-strong: 185 28 28;
+  --primary-soft: 72 16 20;
+  --urgent: 251 191 36;
+  --urgent-soft: 64 43 5;
+  --success: 74 222 128;
+  --success-soft: 15 55 30;
   --danger: 248 113 113;
   --danger-soft: 68 25 27;
-  --accent: 248 113 113;
-  --accent-soft: 68 25 27;
+  --accent: 248 82 89;
+  --accent-soft: 72 16 20;
   --cyan: 56 189 248;
-  --cyan-soft: 8 47 73;
+  --cyan-soft: 8 39 52;
   --violet: 167 139 250;
   --violet-soft: 39 24 76;
-  --glow-primary: 0 0 0 1px rgba(248, 113, 113, 0.3), 0 8px 28px -8px rgba(248, 113, 113, 0.45);
-  --glow-success: 0 0 0 1px rgba(52, 211, 122, 0.3), 0 8px 28px -8px rgba(52, 211, 122, 0.45);
+  --glow-primary: 0 0 0 1px rgba(248, 82, 89, 0.3), 0 8px 28px -8px rgba(248, 82, 89, 0.45);
+  --glow-success: 0 0 0 1px rgba(74, 222, 128, 0.3), 0 8px 28px -8px rgba(74, 222, 128, 0.45);
   --glow-danger: 0 0 0 1px rgba(248, 113, 113, 0.3), 0 8px 28px -8px rgba(248, 113, 113, 0.5);
-  --glow-accent: 0 0 0 1px rgba(244, 114, 182, 0.3), 0 8px 28px -8px rgba(244, 114, 182, 0.5);
+  --glow-accent: 0 0 0 1px rgba(248, 82, 89, 0.3), 0 8px 28px -8px rgba(248, 82, 89, 0.5);
 }
 html,
 body,
@@ -111,6 +113,9 @@ body {
 .leaflet-container {
   background: rgb(var(--elevated));
   font-family: inherit;
+}
+.dark .leaflet-tile-pane {
+  filter: brightness(0.65) invert(1) contrast(3) hue-rotate(200deg) saturate(0.28) brightness(0.75);
 }
 .leaflet-control-attribution {
   font-size: 10px !important;

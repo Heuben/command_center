@@ -18,8 +18,6 @@ import type {
 '../../types';
 import { useSession } from '../../contexts/SessionContext';
 import { useDispatchData } from '../../contexts/DispatchContext';
-import { userById, userName, users } from '../../data/users';
-import { centerById } from '../../data/commandCenters';
 import {
   alertTypeLabel,
   assignmentStatusLabel,
@@ -46,7 +44,7 @@ export function DispatchPanel({
 
 }: {alert: Alert;response: AlertBranchResponse;onClose?: () => void;}) {
   const { user, now } = useSession();
-  const { assignments, acknowledge, dispatchResponders, reassignResponder } = useDispatchData();
+  const { assignments, acknowledge, dispatchResponders, reassignResponder, userById, userName, userList, centerById } = useDispatchData();
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [staged, setStaged] = useState<string[]>([]);
   const [leadId, setLeadId] = useState<string | null>(null);
@@ -69,13 +67,13 @@ export function DispatchPanel({
   );
   const allBranchResponders = useMemo(
     () =>
-    users.filter(
+    userList.filter(
       (u) =>
       u.role === 'responder' &&
       u.command_center_id === response.command_center_id &&
       u.account_status !== 'deactivated'
     ),
-    [response.command_center_id]
+    [response.command_center_id, userList]
   );
 
   /** Every on-duty responder at this branch is assignable — suggestions are only a shortcut. */
@@ -260,7 +258,7 @@ export function DispatchPanel({
                     className={twMerge(
                       'shrink-0 rounded-md border px-2.5 py-1 text-[12px] font-medium transition-colors duration-150 ease-out',
                       allStaged ?
-                      'border-primary bg-primary text-white hover:bg-primary/90' :
+                      'border-primary-strong bg-primary-strong text-white hover:bg-primary-strong/90' :
                       'border-line bg-surface text-ink hover:bg-ink/[0.04]'
                     )}>
                         {allStaged ? 'Added' : 'Add Unit'}
@@ -357,7 +355,7 @@ export function DispatchPanel({
           <button
           onClick={orderDispatch}
           disabled={staged.length === 0}
-          className="mt-4 w-full rounded-lg bg-primary py-3 text-center text-sm font-semibold text-white shadow-md transition-colors duration-150 ease-out hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-45">
+          className="mt-4 w-full rounded-lg bg-primary-strong py-3 text-center text-sm font-semibold text-white shadow-md transition-colors duration-150 ease-out hover:bg-primary-strong/90 disabled:cursor-not-allowed disabled:opacity-45">
             Order Dispatch ({staged.length} {staged.length === 1 ? 'Responder' : 'Responders'})
           </button>
         </section>
@@ -460,9 +458,9 @@ export function DispatchPanel({
             onClick={() => setEvidenceOpen(true)}
             className="group relative block w-full overflow-hidden rounded-md border border-line">
             <img
-              src={alert.snapshot_urls[0]}
+              src={alert.snapshot_urls[0] || ''}
               alt={`Auto-captured device snapshot for alert ${alert.id.replace('a-', '')}`}
-              className="h-32 w-full object-cover" />
+              className="h-32 w-full object-cover bg-ink/[0.04]" />
             
 
             <span className="absolute inset-0 flex items-center justify-center bg-slate-950/35 opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100">
@@ -556,7 +554,7 @@ export function DispatchPanel({
                   setReassignFor(null);
                 }
               }}
-              className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-[13px] font-medium text-white transition-colors duration-150 ease-out hover:bg-primary/90">
+              className="shrink-0 rounded-md bg-primary-strong px-3 py-1.5 text-[13px] font-medium text-white transition-colors duration-150 ease-out hover:bg-primary-strong/90">
                 Assign
               </button>
             </li>

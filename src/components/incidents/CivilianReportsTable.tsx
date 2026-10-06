@@ -3,8 +3,6 @@ import { MapPinIcon } from 'lucide-react';
 import type { CivilianReport } from '../../types';
 import { useSession } from '../../contexts/SessionContext';
 import { useDispatchData } from '../../contexts/DispatchContext';
-import { centerName } from '../../data/commandCenters';
-import { userName } from '../../data/users';
 import { formatDateTime } from '../../utils/time';
 import { DataTable } from '../ui/DataTable';
 import type { Column } from '../ui/DataTable';
@@ -32,6 +30,7 @@ export function CivilianReportsTable({
   showBranch
 }: {rows: CivilianReport[];showBranch: boolean;}) {
   const [active, setActive] = useState<CivilianReport | null>(null);
+  const { centerName, userName } = useDispatchData();
 
   const columns: Column<CivilianReport>[] = [
   {
@@ -146,7 +145,7 @@ function CivilianReportDrawer({
   onClose
 }: {report: CivilianReport | null;onClose: () => void;}) {
   const { user } = useSession();
-  const { acknowledgeCivilianReport } = useDispatchData();
+  const { acknowledgeCivilianReport, centerName, userName } = useDispatchData();
 
   if (!report) return null;
   const isPending = report.status === 'pending';

@@ -9,9 +9,8 @@ export type MapIncident = {
   status: BranchResponseStatus;
 };
 
-const LIGHT_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-const DARK_TILES = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const ATTRIBUTION = '&copy; OpenStreetMap &copy; CARTO';
+const OSM_TILES = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const BRAND_MAP_COLOR = '#ca2028';
 
 const statusColor: Record<BranchResponseStatus, string> = {
@@ -108,7 +107,7 @@ export function LiveMap({
       className="h-full w-full">
       <TileLayer
         key={theme}
-        url={theme === 'dark' ? DARK_TILES : LIGHT_TILES}
+        url={OSM_TILES}
         attribution={ATTRIBUTION} />
       
 

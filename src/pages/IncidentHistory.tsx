@@ -3,8 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { DownloadIcon } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
 import { useDispatchData } from '../contexts/DispatchContext';
-import { alerts } from '../data/alerts';
-import { centerName } from '../data/commandCenters';
 import { IncidentLogTable, type IncidentLogRow } from '../components/incidents/IncidentLogTable';
 import { PostIncidentReportsTable } from '../components/incidents/PostIncidentReportsTable';
 import { CivilianReportsTable } from '../components/incidents/CivilianReportsTable';
@@ -18,7 +16,7 @@ type View = 'all' | 'log' | 'reports' | 'civilian';
 
 export function IncidentHistory() {
   const { scopeCenterId, isSuperadmin } = useSession();
-  const { branchResponses, reports, civilianReports } = useDispatchData();
+  const { branchResponses, reports, civilianReports, alerts, centerName } = useDispatchData();
   const [view, setView] = useState<View>('all');
 
   const showBranch = isSuperadmin && !scopeCenterId;

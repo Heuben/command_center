@@ -1,209 +1,114 @@
-import React, { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import React from 'react';
 import {
   ClipboardCheckIcon,
-  PanelLeftCloseIcon,
-  PanelLeftOpenIcon,
-  PanelRightOpenIcon,
-  RadioIcon } from
-'lucide-react';
-import { useSession } from '../contexts/SessionContext';
+  FileTextIcon,
+  ScrollTextIcon,
+  UsersIcon
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useDispatchData } from '../contexts/DispatchContext';
-import { alerts } from '../data/alerts';
-import { users } from '../data/users';
-import { commandCenters } from '../data/commandCenters';
-import { EmergencyQueue, type QueueRow } from '../components/dispatch/EmergencyQueue';
-import { DispatchPanel } from '../components/dispatch/DispatchPanel';
-import { LiveMap } from '../components/dispatch/LiveMap';
-import { EmptyState } from '../components/ui/primitives';
-import { DUR, EASE } from '../lib/motion';
+
+const shortcuts = [
+  {
+    to: '/incidents',
+    label: 'Incident history',
+    description: 'Review incident records, reports, and submitted evidence.',
+    icon: ClipboardCheckIcon
+  },
+  {
+    to: '/incidents',
+    label: 'Civilian reports',
+    description: 'Review reports submitted by members of the public.',
+    icon: FileTextIcon
+  },
+  {
+    to: '/personnel',
+    label: 'Personnel',
+    description: 'View staff and manage responder accounts.',
+    icon: UsersIcon
+  },
+  {
+    to: '/audit',
+    label: 'Audit logs',
+    description: 'Review the recorded history of system activity.',
+    icon: ScrollTextIcon
+  }
+];
 
 export function Dashboard() {
-  const { scopeCenterId, isSuperadmin, now } = useSession();
-  const { branchResponses } = useDispatchData();
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [queueOpen, setQueueOpen] = useState(true);
-  const [dispatchOpen, setDispatchOpen] = useState(true);
+  const { alerts, civilianReports, reports, userList } = useDispatchData();
+  const activePersonnel = userList.filter((user) => user.account_status !== 'deactivated').length;
 
-  const rows = useMemo<QueueRow[]>(() => {
-    return branchResponses.
-    filter((r) => !scopeCenterId || r.command_center_id === scopeCenterId).
-    map((response) => ({
-      response,
-      alert: alerts.find((a) => a.id === response.alert_id)!
-    })).
-    filter((r) => !!r.alert).
-    sort(
-      (a, b) =>
-      new Date(b.response.triggered_at).getTime() -
-      new Date(a.response.triggered_at).getTime()
-    );
-  }, [branchResponses, scopeCenterId]);
-
-  /** Default to the most recent incident with responders in the field, else the newest alert. */
-  const defaultRow =
-  rows.find((r) => r.response.status === 'dispatched' || r.response.status === 'arrived') ??
-  rows[0];
-  const activeKey =
-  selectedKey ?? (
-  defaultRow ? `${defaultRow.alert.id}:${defaultRow.response.command_center_id}` : null);
-  const selected = rows.find((r) => `${r.alert.id}:${r.response.command_center_id}` === activeKey);
-
-  const scopedResponders = users.filter(
-    (u) =>
-    u.role === 'responder' &&
-    u.account_status !== 'deactivated' && (
-    !scopeCenterId || u.command_center_id === scopeCenterId)
-  );
-  const scopedCenters = commandCenters.filter((c) => !scopeCenterId || c.id === scopeCenterId);
-  const onDuty = scopedResponders.filter((r) => r.r_profile?.availability !== 'off_duty').length;
-  const pendingCount = rows.filter((r) => r.response.status === 'pending').length;
-
-  const mapIncidents = rows.
-  filter((r) => r.response.status !== 'resolved').
-  map((r) => ({ alert: r.alert, status: r.response.status }));
+  const metrics = [
+    { label: 'Incident records', value: alerts.length },
+    { label: 'Incident reports', value: reports.length },
+    { label: 'Civilian reports', value: civilianReports.length },
+    { label: 'Active personnel', value: activePersonnel }
+  ];
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="relative flex min-h-0 flex-1">
-        {/* Queue — collapsible so the map can take the full board */}
-        {queueOpen ?
-        <section
-          aria-label="Emergency queue"
-          className="absolute inset-y-0 left-0 z-20 flex w-[min(336px,calc(100vw-3rem))] shrink-0 flex-col border-r border-line bg-surface shadow-xl md:relative md:z-auto md:w-[336px] md:shadow-none">
-            <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-              <div>
-                <h2 className="text-sm font-semibold text-ink">Emergency Queue</h2>
-                <p className="text-[12px] text-ink-muted">
-                  {pendingCount > 0 ?
-                `${pendingCount} awaiting acknowledgement` :
-                'All alerts acknowledged'}
-                </p>
+    <div className="mx-auto w-full max-w-6xl space-y-5 sm:space-y-6">
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+          Command Center
+        </p>
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-ink sm:text-2xl">Dashboard</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-muted">
+          Review incident records, manage personnel, and check system activity.
+        </p>
+      </header>
+
+      <section
+        aria-label="Record summary"
+        className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-3">
+        {metrics.map((metric) => (
+          <div
+            key={metric.label}
+            className="min-w-0 rounded-xl border border-line bg-surface p-3.5 shadow-card sm:p-4">
+            <p className="text-xs font-medium leading-snug text-ink-muted sm:text-sm">
+              {metric.label}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums text-ink sm:text-3xl">
+              {metric.value}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      <section
+        aria-labelledby="dispatch-status-heading"
+        className="rounded-xl border border-line bg-surface p-4 shadow-card sm:p-5">
+        <h2 id="dispatch-status-heading" className="text-sm font-semibold text-ink sm:text-base">
+          Live dispatch is disabled
+        </h2>
+        <p className="mt-1 max-w-3xl text-sm leading-relaxed text-ink-muted">
+          The live queue, map, and responder assignment controls have been removed. Existing
+          incident records and audit history remain available.
+        </p>
+      </section>
+
+      <section
+        aria-label="Dashboard shortcuts"
+        className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-3">
+        {shortcuts.map(({ to, label, description, icon: Icon }) => (
+          <Link
+            key={label}
+            to={to}
+            className="group flex min-h-24 min-w-0 items-start rounded-xl border border-line bg-surface p-3.5 shadow-card transition-colors hover:bg-ink/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:p-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="shrink-0 rounded-lg bg-primary-soft p-2 text-primary">
+                <Icon className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold leading-snug text-ink group-hover:text-primary">
+                  {label}
+                </h2>
+                <p className="mt-1 text-sm leading-relaxed text-ink-muted">{description}</p>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="flex items-center gap-1.5 rounded-full bg-success-soft px-2 py-1 text-[11px] font-semibold text-success">
-                  <span className="h-1.5 w-1.5 rounded-full bg-success animate-ops-pulse" />
-                  LIVE
-                </span>
-                <button
-                onClick={() => setQueueOpen(false)}
-                aria-label="Hide emergency queue"
-                title="Hide queue"
-                className="rounded-md p-1.5 text-ink-muted transition-colors duration-150 ease-out hover:bg-ink/[0.06] hover:text-ink">
-                  <PanelLeftCloseIcon className="h-4 w-4" />
-                </button>
-              </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto scrollbar-none">
-              <EmergencyQueue
-              rows={rows}
-              selectedKey={activeKey}
-              onSelect={(row) => {
-                setSelectedKey(`${row.alert.id}:${row.response.command_center_id}`);
-                setDispatchOpen(true);
-              }}
-              now={now}
-              showBranch={isSuperadmin && !scopeCenterId} />
-            
-            </div>
-          </section> :
-
-        <div className="flex w-12 shrink-0 flex-col items-center gap-3 border-r border-line bg-surface py-3">
-            <button
-            onClick={() => setQueueOpen(true)}
-            aria-label="Show emergency queue"
-            title="Show queue"
-            className="rounded-md p-1.5 text-ink-muted transition-colors duration-150 ease-out hover:bg-ink/[0.06] hover:text-ink">
-              <PanelLeftOpenIcon className="h-4 w-4" />
-            </button>
-            {pendingCount > 0 &&
-          <span className="rounded-full bg-urgent px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
-                {pendingCount}
-              </span>
-          }
-            <span className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-ink-faint [writing-mode:vertical-rl]">
-              Emergency Queue
-            </span>
-          </div>
-        }
-
-        {/* Map */}
-        <section aria-label="Live incident map" className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center justify-between gap-4 border-b border-line bg-surface px-4 py-2.5">
-            <div className="flex items-center gap-4">
-              <span className="inline-flex items-center gap-2 text-[13px] text-ink-muted">
-                <RadioIcon className="h-4 w-4 text-primary" />
-                <span className="font-medium text-ink tabular-nums">{onDuty}</span> responders
-                available
-              </span>
-              <span className="hidden h-4 w-px bg-line md:block" aria-hidden />
-              <span className="hidden text-[13px] text-ink-muted md:inline">
-                <span className="font-medium text-ink tabular-nums">{mapIncidents.length}</span>{' '}
-                open incidents
-              </span>
-            </div>
-            <Link
-              to="/incidents"
-              className="inline-flex items-center gap-2 rounded-md border border-line px-2.5 py-1.5 text-[13px] font-medium text-ink transition-colors duration-150 ease-out hover:bg-ink/[0.04]">
-              <ClipboardCheckIcon className="h-4 w-4 text-ink-muted" />
-              Incident Records
-            </Link>
-          </div>
-          <div className="min-h-0 flex-1">
-            <LiveMap
-              incidents={mapIncidents}
-              responders={scopedResponders}
-              centers={scopedCenters}
-              selectedAlertId={selected?.alert.id ?? null}
-              onSelect={(alertId) => {
-                const match = rows.find((r) => r.alert.id === alertId);
-                if (match) {
-                  setSelectedKey(`${match.alert.id}:${match.response.command_center_id}`);
-                  setDispatchOpen(true);
-                }
-              }} />
-            
-          </div>
-        </section>
-
-        {/* Dispatch panel */}
-        {dispatchOpen ?
-        <section
-          aria-label="Dispatch panel"
-          className="absolute inset-y-0 right-0 z-20 flex w-[min(384px,calc(100vw-3rem))] shrink-0 flex-col border-l border-line bg-canvas shadow-xl md:relative md:z-auto md:w-96 md:shadow-none">
-          {selected ?
-          <motion.div
-            key={`${selected.alert.id}:${selected.response.command_center_id}`}
-            initial={{ opacity: 0, x: 8 }}
-            animate={{ opacity: 1, x: 0, transition: { duration: DUR.base, ease: EASE.out } }}
-            className="flex min-h-0 flex-1">
-              <DispatchPanel
-                alert={selected.alert}
-                response={selected.response}
-                onClose={() => setDispatchOpen(false)} />
-            </motion.div> :
-
-          <EmptyState
-            title="No incident selected"
-            description="Select an alert from the emergency queue to view driver details, evidence, and responder assignments." />
-
-          }
-        </section> :
-        <div className="flex w-12 shrink-0 flex-col items-center gap-3 border-l border-line bg-surface py-3">
-          <button
-            onClick={() => setDispatchOpen(true)}
-            aria-label="Show dispatch panel"
-            title="Show dispatch panel"
-            className="rounded-md p-1.5 text-ink-muted transition-colors duration-150 ease-out hover:bg-ink/[0.06] hover:text-ink">
-            <PanelRightOpenIcon className="h-4 w-4" />
-          </button>
-          <span className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-ink-faint [writing-mode:vertical-rl]">
-            Dispatch
-          </span>
-        </div>
-        }
-      </div>
-    </div>);
-
+          </Link>
+        ))}
+      </section>
+    </div>
+  );
 }
