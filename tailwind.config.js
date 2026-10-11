@@ -55,9 +55,7 @@ export default {content: [
         '3xl': '1.5rem',
       },
       boxShadow: {
-        card: '0 1px 2px rgb(15 23 42 / 0.04)',
         panel: '0 8px 30px rgb(15 23 42 / 0.10)',
-        lift: '0 12px 32px -8px rgb(15 23 42 / 0.18)',
       },
     },
   },

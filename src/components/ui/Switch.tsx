@@ -38,7 +38,7 @@ export function Switch({ checked, onChange, disabled, label, className }: Switch
           layout="position"
           animate={{ x: checked ? 16 : 0 }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm" />
+          className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white" />
       </button>
       {label && (
         <span className="text-[13px] font-medium text-ink">{label}</span>

@@ -35,11 +35,6 @@
   --cyan-soft: 224 242 254;
   --violet: 124 58 237;
   --violet-soft: 237 233 254;
-  /* Glow halos for live indicators, status dots, and chart strokes */
-  --glow-primary: 0 0 0 1px rgba(202, 32, 40, 0.18), 0 8px 24px -8px rgba(202, 32, 40, 0.35);
-  --glow-success: 0 0 0 1px rgba(16, 138, 70, 0.2), 0 8px 24px -8px rgba(16, 138, 70, 0.4);
-  --glow-danger: 0 0 0 1px rgba(202, 32, 40, 0.2), 0 8px 24px -8px rgba(202, 32, 40, 0.45);
-  --glow-accent: 0 0 0 1px rgba(236, 72, 153, 0.22), 0 8px 24px -8px rgba(236, 72, 153, 0.45);
 }
 .dark {
   --canvas: 0 0 0;
@@ -65,10 +60,6 @@
   --cyan-soft: 8 39 52;
   --violet: 167 139 250;
   --violet-soft: 39 24 76;
-  --glow-primary: 0 0 0 1px rgba(248, 82, 89, 0.3), 0 8px 28px -8px rgba(248, 82, 89, 0.45);
-  --glow-success: 0 0 0 1px rgba(74, 222, 128, 0.3), 0 8px 28px -8px rgba(74, 222, 128, 0.45);
-  --glow-danger: 0 0 0 1px rgba(248, 113, 113, 0.3), 0 8px 28px -8px rgba(248, 113, 113, 0.5);
-  --glow-accent: 0 0 0 1px rgba(248, 82, 89, 0.3), 0 8px 28px -8px rgba(248, 82, 89, 0.5);
 }
 html,
 body,
@@ -87,16 +78,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-}
-/* Dark-mode shadow overrides — deeper contrast against near-black canvas */
-.dark .shadow-panel {
-  box-shadow: 0 12px 36px -8px rgb(0 0 0 / 0.65);
-}
-.dark .shadow-card {
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
-}
-.dark .shadow-lift {
-  box-shadow: 0 12px 32px -8px rgb(0 0 0 / 0.55);
 }
 /* Dark-mode scrollbar — lighter thumb for contrast against dark track */
 .dark ::-webkit-scrollbar-thumb {
@@ -189,19 +170,6 @@ button:disabled,
 }
 .animate-ops-pulse {
   animation: ops-pulse 1.6s ease-in-out infinite;
-}
-/* ---------- Hero metric glow ring (used by KPI cards) ---------- */
-.glow-ring-primary {
-  box-shadow: var(--glow-primary);
-}
-.glow-ring-success {
-  box-shadow: var(--glow-success);
-}
-.glow-ring-danger {
-  box-shadow: var(--glow-danger);
-}
-.glow-ring-accent {
-  box-shadow: var(--glow-accent);
 }
 /* ---------- Skeleton shimmer ---------- */
 @keyframes shimmer {

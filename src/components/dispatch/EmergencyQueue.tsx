@@ -76,7 +76,7 @@ export function EmergencyQueue({
                 </span>
                 <span
                   className={twMerge(
-                    'rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+                    'rounded-sm px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
                     status === 'pending' && group.length > 0 ?
                     'bg-urgent text-white' :
                     'bg-ink/[0.07] text-ink-muted'

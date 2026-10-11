@@ -497,12 +497,12 @@ function Chip({ label, onRemove }: {label: string;onRemove: () => void;}) {
       initial={{ opacity: 0, scale: 0.88 }}
       animate={{ opacity: 1, scale: 1, transition: { duration: 0.15, ease: [0.23, 1, 0.32, 1] } }}
       exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.1, ease: [0.4, 0, 1, 1] } }}
-      className="inline-flex items-center gap-1.5 rounded-full border border-line bg-canvas py-1 pl-2.5 pr-1.5 text-[12px] text-ink">
+      className="inline-flex items-center gap-1.5 rounded-md border border-line bg-canvas py-1 pl-2.5 pr-1.5 text-[12px] text-ink">
       {label}
       <button
         onClick={onRemove}
         aria-label={`Remove filter ${label}`}
-        className="rounded-full p-0.5 text-ink-faint transition-colors duration-150 ease-out hover:bg-ink/[0.08] hover:text-ink">
+        className="rounded-sm p-0.5 text-ink-faint transition-colors duration-150 ease-out hover:bg-ink/[0.08] hover:text-ink">
         <XIcon className="h-3 w-3" />
       </button>
     </motion.span>);

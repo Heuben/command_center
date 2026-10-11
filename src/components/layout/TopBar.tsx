@@ -81,7 +81,7 @@ export function TopBar({ onMenu }: {onMenu?: () => void;}) {
         </Button>
         <span className="h-6 w-px bg-line" aria-hidden />
         <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-[12px] font-semibold text-primary">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary-soft text-[12px] font-semibold tabular-nums text-primary">
             {user.f_name[0]}
             {user.l_name[0]}
           </span>

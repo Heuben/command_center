@@ -96,7 +96,7 @@ export function MultiSelect({
         </span>
         <span className="flex items-center gap-1.5">
           {selected.length > 1 &&
-          <span className="rounded-full bg-primary-strong px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
+          <span className="rounded-sm bg-primary-strong px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
               {selected.length}
             </span>
           }
