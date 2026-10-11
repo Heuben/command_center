@@ -235,11 +235,11 @@ function CategoryCard({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-ink">{title}</h2>
-            <span className="rounded-full bg-ink/[0.07] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-ink-muted">
+            <span className="rounded-sm bg-ink/[0.07] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-ink-muted">
               {count}
             </span>
             {typeof pending === 'number' && pending > 0 &&
-            <span className="rounded-full bg-urgent px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
+            <span className="rounded-sm bg-urgent px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
                 {pending} pending
               </span>
             }

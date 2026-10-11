@@ -71,7 +71,7 @@ export function Badge({
       <span
         className={twMerge(
           base,
-          'rounded-full border border-line bg-surface px-2.5 py-1 text-ink',
+          'text-ink-muted',
           className
         )}>
         <span className={twMerge('h-1.5 w-1.5 rounded-full', dotColor[tone])} />
@@ -98,7 +98,7 @@ export function Badge({
     <span
       className={twMerge(
         base,
-        'rounded-full px-2.5 py-1',
+        'rounded-md px-1.5 py-1',
         variant === 'solid' ? solid[tone] : soft[tone],
         className
       )}>

@@ -219,7 +219,7 @@ export function DispatchPanel({
           </h3>
 
           {units.length > 0 &&
-        <div className="mb-3 flex flex-col gap-3 rounded-lg border border-line bg-surface p-3 shadow-card">
+        <div className="mb-3 flex flex-col gap-3 rounded-lg border border-line bg-surface p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-[13px] font-semibold text-ink">Dispatch by Unit</p>
                 <p className="text-[12px] text-ink-faint">
@@ -270,7 +270,7 @@ export function DispatchPanel({
             </div>
         }
 
-          <div className="flex flex-col gap-3 rounded-lg border-2 border-primary/60 bg-surface p-3 shadow-card">
+          <div className="flex flex-col gap-3 rounded-lg border border-primary/60 bg-surface p-3">
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-[13px] font-semibold text-ink">Nearest Available</p>
               <p className="text-[12px] text-ink-faint">
@@ -355,7 +355,7 @@ export function DispatchPanel({
           <button
           onClick={orderDispatch}
           disabled={staged.length === 0}
-          className="mt-4 w-full rounded-lg bg-primary-strong py-3 text-center text-sm font-semibold text-white shadow-md transition-colors duration-150 ease-out hover:bg-primary-strong/90 disabled:cursor-not-allowed disabled:opacity-45">
+          className="mt-4 w-full rounded-md bg-primary-strong py-3 text-center text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-primary-strong/90 disabled:cursor-not-allowed disabled:opacity-45">
             Order Dispatch ({staged.length} {staged.length === 1 ? 'Responder' : 'Responders'})
           </button>
         </section>
@@ -601,11 +601,11 @@ function ResponderSearch({
         onChange={(e) => setQuery(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="w-full rounded-lg border border-line bg-surface py-2 pl-9 pr-3 text-sm text-ink placeholder:text-ink-faint focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+        className="w-full rounded-md border border-line bg-surface py-2 pl-9 pr-3 text-sm text-ink placeholder:text-ink-faint focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
       
 
       {query.length > 0 &&
-      <ul className="mt-1.5 max-h-56 divide-y divide-line overflow-y-auto scrollbar-none rounded-lg border border-line bg-surface shadow-card">
+      <ul className="mt-1.5 max-h-56 divide-y divide-line overflow-y-auto scrollbar-none rounded-lg border border-line bg-surface">
           {matches.map((c) =>
         <li key={c.id} className="flex items-center justify-between gap-3 px-3 py-2">
               <div className="min-w-0">

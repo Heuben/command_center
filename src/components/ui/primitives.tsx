@@ -99,7 +99,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return (
     <div
       {...props}
-      className={twMerge('rounded-xl border border-line bg-surface shadow-card', className)} />);
+      className={twMerge('rounded-lg border border-line bg-surface', className)} />);
 
 
 }
@@ -177,7 +177,7 @@ export function Segmented<T extends string>({
             {typeof o.count === 'number' &&
             <span
               className={twMerge(
-                'rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+                'rounded-sm px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
                 active ? 'bg-white/20 text-white' : 'bg-ink/[0.07] text-ink-muted'
               )}>
                 {o.count}

@@ -69,7 +69,7 @@ export function Sidebar({
           )}>
           <span
             className={twMerge(
-              'flex items-center justify-center overflow-hidden rounded-full bg-white p-1',
+              'flex items-center justify-center overflow-hidden rounded-full bg-[#df5b62] p-1',
               collapsed ? 'h-8 w-8 shrink-0' : 'h-9 w-9 shrink-0'
             )}>
             <img src={bantaiIcon2} alt="BANTAI Icon" className="h-full w-full object-contain" />

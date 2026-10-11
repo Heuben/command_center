@@ -88,28 +88,6 @@ function GeoGrid() {
   );
 }
 
-function GradientOrbs() {
-  return (
-    <>
-      <div
-        className="pointer-events-none absolute -left-20 -top-20 h-80 w-80 rounded-full opacity-30 blur-3xl dark:opacity-25"
-        style={{ background: 'rgb(202 32 40 / 1)' }}
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full opacity-25 blur-3xl dark:opacity-20"
-        style={{ background: 'rgb(14 165 233 / 1)' }}
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute -right-16 top-1/4 h-48 w-48 rounded-full opacity-20 blur-3xl dark:opacity-15"
-        style={{ background: 'rgb(236 72 153 / 1)' }}
-        aria-hidden="true"
-      />
-    </>
-  );
-}
-
 function ErrorIcon() {
   return <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />;
 }
@@ -274,10 +252,9 @@ export function Login() {
         aria-hidden="true"
       >
         <GeoGrid />
-        <GradientOrbs />
         <FadeIn reduced={reduced} delay={0.05} className="relative z-10">
           <div className="flex items-center gap-3">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white p-2 shadow-lg">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#df5b62] p-2">
               <img src={bantaiIcon} alt="BANTAI" className="h-full w-full object-contain" />
             </span>
             <div>
@@ -313,7 +290,7 @@ export function Login() {
       <main className="flex min-h-screen w-full flex-col items-center justify-center bg-canvas px-4 py-8 sm:px-6 lg:min-h-0 lg:h-full lg:overflow-y-auto lg:px-10 lg:py-8 xl:px-16">
         {/* Mobile logo */}
         <FadeIn reduced={reduced} delay={0.05} className="mb-6 flex items-center gap-3 lg:hidden">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white p-1.5 shadow-card">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#df5b62] p-1.5">
             <img src={bantaiIcon} alt="BANTAI" className="h-full w-full object-contain" />
           </span>
           <div>
@@ -324,13 +301,13 @@ export function Login() {
           </div>
         </FadeIn>
 
-        <div className="mx-auto w-full max-w-[440px] rounded-2xl border border-line bg-surface p-5 shadow-panel sm:p-7">
+        <div className="mx-auto w-full max-w-[440px] rounded-lg border border-line bg-surface p-5 sm:p-7">
           <FadeIn reduced={reduced} delay={0.1} className="mb-6">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-danger/20 bg-danger/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-danger">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-md border border-danger/20 bg-danger/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-danger">
               <LockIcon className="h-3 w-3" aria-hidden="true" />
               Authorized personnel
             </div>
-            <h2 className="text-2xl font-semibold leading-tight tracking-tight text-ink">Welcome back</h2>
+            <h2 className="text-2xl font-semibold leading-tight tracking-tight text-ink">Welcome!</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink-muted">
               Sign in to access your command center.
             </p>
@@ -341,10 +318,10 @@ export function Login() {
             {/* Email */}
             <FadeIn reduced={reduced} delay={0.15}>
               <div className="space-y-1.5">
-                <Label htmlFor={emailId} className="text-[13px]">Work email</Label>
+                <Label htmlFor={emailId} className="text-[13px]">Email</Label>
                 <div className="relative">
                   <MailIcon
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
                     aria-hidden="true"
                   />
                   <Input
@@ -389,7 +366,7 @@ export function Login() {
                 </div>
                 <div className="relative">
                   <LockIcon
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint"
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
                     aria-hidden="true"
                   />
                   <Input

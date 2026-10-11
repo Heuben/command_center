@@ -21,24 +21,13 @@ type KpiCardProps = {
   deltaCaption?: string;
   /** Optional status text shown next to the value (replaces delta). */
   statusLabel?: string;
-  /** Accent tone — controls the glow ring and the dot color. */
+  /** Accent tone — controls the status dot and trend color. */
   tone?: Tone;
   /** Optional inline trend (e.g. 12 small bars). Width is auto. */
   trend?: number[];
   /** Aria-label override. Defaults to the label. */
   ariaLabel?: string;
   className?: string;
-};
-
-const toneToGlow: Record<Tone, string> = {
-  primary: 'glow-ring-primary',
-  success: 'glow-ring-success',
-  danger: 'glow-ring-danger',
-  urgent: 'glow-ring-danger',
-  accent: 'glow-ring-accent',
-  cyan: 'glow-ring-primary',
-  violet: 'glow-ring-accent',
-  neutral: ''
 };
 
 const toneToBar: Record<Tone, string> = {
@@ -75,8 +64,7 @@ const toneToBadge: Record<Tone, 'primary' | 'success' | 'danger' | 'urgent' | 'n
 };
 
 /**
- * KPI tile — a small uppercase caption, a bold large value, a delta chip, and a
- * subtle trend mini-chart with a soft glow ring driven by `tone`.
+ * KPI card — a concise label, a prominent value, and optional trend details.
  */
 export function KpiCard({
   label,
@@ -121,8 +109,7 @@ export function KpiCard({
       }}
       aria-label={ariaLabel ?? label}
       className={twMerge(
-        'group relative flex flex-col gap-1 overflow-hidden rounded-xl border border-line bg-surface p-2.5 shadow-card transition-shadow duration-200 ease-out hover:shadow-lift dark:bg-elevated',
-        toneToGlow[tone],
+        'group relative flex flex-col gap-1 overflow-hidden rounded-lg border border-line bg-surface p-2.5 dark:bg-elevated',
         className
       )}>
       <div className="flex items-center justify-between gap-2">
