@@ -7,6 +7,7 @@ import { IncidentLogTable, type IncidentLogRow } from '../components/incidents/I
 import { PostIncidentReportsTable } from '../components/incidents/PostIncidentReportsTable';
 import { CivilianReportsTable } from '../components/incidents/CivilianReportsTable';
 import { Button, Card, PageHeader, Segmented } from '../components/ui/primitives';
+import { Skeleton } from '../components/ui/Skeleton';
 import { rowsToCsv, downloadCsv } from '../utils/csv';
 import type { CivilianReport, IncidentReport } from '../types';
 import { formatDateTime } from '../utils/time';
@@ -16,7 +17,7 @@ type View = 'all' | 'log' | 'reports' | 'civilian';
 
 export function IncidentHistory() {
   const { scopeCenterId, isSuperadmin } = useSession();
-  const { branchResponses, reports, civilianReports, alerts, centerName } = useDispatchData();
+  const { branchResponses, reports, civilianReports, alerts, centerName, ready } = useDispatchData();
   const [view, setView] = useState<View>('all');
 
   const showBranch = isSuperadmin && !scopeCenterId;
@@ -170,18 +171,23 @@ export function IncidentHistory() {
         'Records across all command centers'
         }
         actions={
-        <Segmented<View>
-          ariaLabel="Record category"
-          value={view}
-          onChange={setView}
-          options={[
-          { value: 'all', label: 'All' },
-          { value: 'log', label: 'Incident Log', count: logRows.length },
-          { value: 'reports', label: 'Post-Incident Reports', count: reportRows.length },
-          { value: 'civilian', label: 'Civilian Reports', count: civilianRows.length }]
-          } />
-
-        } />
+          ready ? (
+            <Segmented<View>
+              ariaLabel="Record category"
+              value={view}
+              onChange={setView}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'log', label: 'Incident Log', count: logRows.length },
+                { value: 'reports', label: 'Post-Incident Reports', count: reportRows.length },
+                { value: 'civilian', label: 'Civilian Reports', count: civilianRows.length }
+              ]}
+            />
+          ) : (
+            <TabsSkeleton />
+          )
+        }
+      />
       
 
       <AnimatePresence>
@@ -204,12 +210,62 @@ export function IncidentHistory() {
       </AnimatePresence>
 
       <div className="space-y-6">
-        {view === 'all' ?
+        {!ready ? <CategoryCardSkeleton count={view === 'all' ? 3 : 1} /> : view === 'all' ?
         [sections.log, sections.reports, sections.civilian] :
         sections[view]}
       </div>
     </>);
 
+}
+
+function TabsSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading record categories"
+      aria-busy="true"
+      className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface p-1">
+      {['w-16', 'w-24', 'w-32', 'w-28'].map((width) => (
+        <Skeleton key={width} className={`h-7 ${width} rounded-md`} />
+      ))}
+    </div>
+  );
+}
+
+function CategoryCardSkeleton({ count }: { count: number }) {
+  return (
+    <div role="status" aria-label="Loading incident records" aria-busy="true" className="space-y-6">
+      {Array.from({ length: count }, (_, cardIndex) => (
+        <Card key={cardIndex} className="overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-4 w-40 max-w-full" />
+              <Skeleton className="h-3.5 w-64 max-w-full" />
+            </div>
+            <Skeleton className="h-8 w-32 shrink-0 rounded-md" />
+          </div>
+          <div className="space-y-4 p-4">
+            <div className="flex gap-4 border-b border-line pb-3">
+              {['w-20', 'w-28', 'w-24', 'w-16'].map((width) => (
+                <Skeleton key={width} className={`h-3 ${width} max-w-full`} />
+              ))}
+            </div>
+            {Array.from({ length: 5 }, (_, rowIndex) => (
+              <div key={rowIndex} className="flex gap-4">
+                {['w-20', 'w-28', 'w-24', 'w-16'].map((width) => (
+                  <Skeleton
+                    key={width}
+                    className={`h-3.5 ${width} max-w-full`}
+                    tone={rowIndex % 2 === 0 ? 'surface' : 'muted'}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
 }
 
 function CategoryCard({
