@@ -9,6 +9,8 @@ export class ApiError extends Error {
 // Hardcoded base URL for the Bantai ICC API as requested
 const API_BASE_URL = 'https://www.bantai.online/api/v1';
 
+import type { SystemAuditLog, UserAccount, CommandCenter, AppState, AuditCategory, AuditAction } from '../types';
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   // Get access token from localStorage if available
   const accessToken = typeof window !== 'undefined' ? window.localStorage.getItem('bantai-access-token') : null;
@@ -38,6 +40,32 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return data;
 }
 
+interface ResponderProfileRow {
+  id: string;
+  f_name: string;
+  l_name: string;
+  m_name: string | null;
+  email: string;
+  role: 'RESPONDER' | 'ADMIN' | 'SUPER';
+  command_center_id: string | null;
+  m_number: string | null;
+  phone_verified_at: Date | null;
+}
+
+interface DashboardStatsDto {
+  totalIncidents: number;
+  totalActivePersonnel: number;
+  totalGunIncidents: number;
+  totalBladeIncidents: number;
+  totalCollisionIncidents: number;
+}
+
+interface PaginatedAuditLogs {
+  data: SystemAuditLog[];
+  cursor: string | null;
+  hasNextPage: boolean;
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request<{accessToken: string; refreshToken: string}>('/auth/local/signin', {
@@ -49,35 +77,6 @@ export const api = {
       method: 'POST'
     }),
   logout: () => request<{ok: boolean}>('/auth/logout', { method: 'POST' }),
-  // Define the shape of the responder profile endpoint response
-  interface ResponderProfileRow {
-    id: string;
-    f_name: string;
-    l_name: string;
-    m_name: string | null;
-    email: string;
-    role: 'RESPONDER' | 'ADMIN' | 'SUPER';
-    command_center_id: string | null;
-    m_number: string | null;
-    phone_verified_at: Date | null;
-  }
-
-  // Dashboard stats DTO
-  interface DashboardStatsDto {
-    totalIncidents: number;
-    totalActivePersonnel: number;
-    totalGunIncidents: number;
-    totalBladeIncidents: number;
-    totalCollisionIncidents: number;
-  }
-
-  // Audit logs DTOs
-  interface PaginatedAuditLogs {
-    data: import('../types').SystemAuditLog[];
-    cursor: string | null;
-    hasNextPage: boolean;
-  }
-
   me: async () => {
     const profile = await request<ResponderProfileRow>('/responders/profile');
     // Map the responder profile to the UserAccount shape expected by the app
@@ -121,38 +120,38 @@ export const api = {
   },
 
   // Personnel management: get all users
-  getUsers: () => request<import('../types').UserAccount[]>('/users'),
+  getUsers: () => request<UserAccount[]>('/users'),
 
   // Branch management: get all command centers
-  getCommandCenters: () => request<import('../types').CommandCenter[]>('/command-centers'),
+  getCommandCenters: () => request<CommandCenter[]>('/command-centers'),
 
   // Settings (global) - placeholder; adjust based on actual backend
-  getSettings: () => request<import('../types').AppState>('/settings'), // Adjust type as needed
-  updateSettings: (settings: Partial<import('../types').AppState>) =>
-    request<import('../types').AppState>('/settings', {
+  getSettings: () => request<AppState>('/settings'), // Adjust type as needed
+  updateSettings: (settings: Partial<AppState>) =>
+    request<AppState>('/settings', {
       method: 'PATCH',
       body: JSON.stringify(settings)
     }),
-  state: () => request<import('../types').AppState>('/state'),
+  state: () => request<AppState>('/state'),
   createCenter: (body: unknown) =>
-    request<{center: import('../types').CommandCenter}>('/command-centers', {
+    request<{center: CommandCenter}>('/command-centers', {
       method: 'POST',
       body: JSON.stringify(body)
     }),
   updateCenter: (id: string, body: unknown) =>
-    request<{center: import('../types').CommandCenter}>(`/command-centers/${id}`, {
+    request<{center: CommandCenter}>(`/command-centers/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body)
     }),
   deleteCenter: (id: string) =>
     request<{ok: boolean}>(`/command-centers/${id}`, { method: 'DELETE' }),
   createUser: (body: unknown) =>
-    request<{user: import('../types').UserAccount;tempPassword: string}>('/users', {
+    request<{user: UserAccount;tempPassword: string}>('/users', {
       method: 'POST',
       body: JSON.stringify(body)
     }),
   updateUser: (id: string, body: unknown) =>
-    request<{user: import('../types').UserAccount}>(`/users/${id}`, {
+    request<{user: UserAccount}>(`/users/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body)
     }),
@@ -162,14 +161,14 @@ export const api = {
       body: JSON.stringify({ command_center_id })
     }),
   dispatchResponders: (
-  alertId: string,
-  command_center_id: string,
-  responder_ids: string[],
-  lead_id: string | null) =>
-  request(`/alerts/${alertId}/dispatch`, {
-    method: 'POST',
-    body: JSON.stringify({ command_center_id, responder_ids, lead_id })
-  }),
+    alertId: string,
+    command_center_id: string,
+    responder_ids: string[],
+    lead_id: string | null) =>
+    request(`/alerts/${alertId}/dispatch`, {
+      method: 'POST',
+      body: JSON.stringify({ command_center_id, responder_ids, lead_id })
+    }),
   reassignResponder: (assignmentId: string, responder_id: string) =>
     request(`/assignments/${assignmentId}/reassign`, {
       method: 'POST',

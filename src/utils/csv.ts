@@ -12,7 +12,7 @@ function escapeCell(value: unknown): string {
 }
 
 type Row = Record<string, unknown>;
-type Column<TRow extends Row> = {
+export type Column<TRow extends Row> = {
   key: keyof TRow & string;
   header: string;
   format?: (v: TRow[keyof TRow], row: TRow) => string;

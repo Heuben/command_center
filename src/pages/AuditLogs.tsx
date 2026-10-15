@@ -1,17 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CogIcon, DownloadIcon, UserSearchIcon, XIcon } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
 import { api } from '../lib/api';
-import { SUPERADMIN_ONLY_ACTIONS } from '../types';
 import type { AuditAction, AuditCategory, SystemAuditLog } from '../types';
 import {
   actionCategory,
   actionLabel,
   categoryLabel,
-  roleLabel,
-  targetEntityLabel } from
-'../utils/labels';
+  targetEntityLabel
+} from '../utils/labels';
 import { formatDateTime } from '../utils/time';
 import { DataTable } from '../components/ui/DataTable';
 import type { Column } from '../components/ui/DataTable';
@@ -19,7 +17,7 @@ import { MultiSelect } from '../components/ui/MultiSelect';
 import { Button, Card, EmptyState, Input, Label, PageHeader } from '../components/ui/primitives';
 import { Drawer } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
-import { downloadCsv, rowsToCsv } from '../utils/csv';
+import { downloadCsv, rowsToCsv, type Column as CSVColumn } from '../utils/csv';
 import { DUR, EASE } from '../lib/motion';
 
 /**
@@ -51,7 +49,7 @@ const ACTOR_SYSTEM = '__system__';
 export function AuditLogs() {
   const { isSuperadmin, scopeCenterId } = useSession();
   const [logs, setLogs] = useState<SystemAuditLog[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
+  const cursorRef = useRef<string | null>(null);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,9 +73,9 @@ export function AuditLogs() {
   };
 
   // Fetch logs function
-  const fetchLogs = async (reset = false) => {
+  const fetchLogs = useCallback(async (reset = false) => {
     if (reset) {
-      setCursor(null);
+      cursorRef.current = null;
       setHasNextPage(false);
     }
     setLoading(true);
@@ -86,7 +84,7 @@ export function AuditLogs() {
       const limit = 50; // Page size
       const result = await api.auditLogs(
         limit,
-        cursor,
+        cursorRef.current,
         filters.commandCenterId,
         filters.category,
         filters.action,
@@ -95,19 +93,26 @@ export function AuditLogs() {
         filters.to
       );
       setLogs(prev => reset ? result.data : [...prev, ...result.data]);
-      setCursor(result.cursor);
+      cursorRef.current = result.cursor;
       setHasNextPage(result.hasNextPage);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load audit logs');
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    filters.action,
+    filters.actor,
+    filters.category,
+    filters.commandCenterId,
+    filters.from,
+    filters.to
+  ]);
 
   // Refetch when filters change
   useEffect(() => {
     fetchLogs(true);
-  }, [categories, actions, actors, from, to, isSuperadmin, scopeCenterId]);
+  }, [fetchLogs]);
 
   // Load more function
   const loadMore = () => {
@@ -121,7 +126,7 @@ export function AuditLogs() {
 
   const exportVisible = () => {
     // Export the current logs array (the page we have fetched)
-    const cols: Column<{ created_at: string; actor: string; action: string; category: string; target_entity: string; reference: string; branch: string }>[] = [
+    const cols: CSVColumn<{ created_at: string; actor: string; action: string; category: string; target_entity: string; reference: string; branch: string }>[] = [
       { key: 'created_at', header: 'Timestamp' },
       { key: 'actor', header: 'Actor' },
       { key: 'action', header: 'Action' },
@@ -409,6 +414,11 @@ export function AuditLogs() {
             {filterCount > 0 && ` of ${hasNextPage ? 'more available' : 'no more'}`}
           </p>
         </div>
+        {error && (
+          <p role="alert" className="border-b border-danger/25 bg-danger-soft/50 px-4 py-3 text-[13px] text-danger">
+            {error}
+          </p>
+        )}
         <DataTable
           columns={columns}
           rows={logs}
@@ -433,12 +443,9 @@ export function AuditLogs() {
         open={!!selected}
         onClose={() => setSelected(null)}
         title={selected ? actionLabel[selected.action] : ''}
-        subtitle={
-        selected ?
-        `${categoryLabel[actionCategory[selected.action]]} · ${
-        targetEntityLabel[selected.target_entity]} · ${
-        selected.reference}` :
-        ''}
+        subtitle={selected ?
+          `${categoryLabel[actionCategory[selected.action]]} · ${targetEntityLabel[selected.target_entity]} · ${selected.reference}` :
+          ''
         }>
         {selected &&
         <div className="space-y-5">
@@ -526,7 +533,8 @@ function DiffBlock({
           No data
         </div>
       </div>
-  );
+      );
+      }
 
   return (
     <div>
@@ -539,7 +547,7 @@ function DiffBlock({
         'border-success/25 bg-success-soft/50')
         }>
         <dl className="space-y-2">
-          {Object.entries(value).map(([k, v]) =>
+          {Object.entries(value).map(([k, v]) => (
           <div key={k} className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
               <dt className="text-[11px] font-medium uppercase tracking-wide text-ink-muted sm:w-1/3 sm:shrink-0">
                 {k.replace(/_/g, ' ')}
@@ -559,7 +567,7 @@ function DiffBlock({
               }
               </dd>
             </div>
-          )}
+          ))}
         </dl>
       </div>
     </div>
