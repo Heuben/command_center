@@ -13,8 +13,8 @@ import type { UserAccount } from '../types';
 /* Mock SessionContext                                                        */
 /* -------------------------------------------------------------------------- */
 
-const mockSignIn = vi.fn<[string, string], boolean | Promise<boolean>>();
-const mockDevLogin = vi.fn<[], Promise<boolean>>();
+const mockSignIn = vi.fn<[string, string], Promise<UserAccount>>();
+const mockDevLogin = vi.fn<[], Promise<UserAccount>>();
 type MockSession = {
   user: UserAccount | null;
   ready: boolean;
@@ -122,7 +122,7 @@ describe('<Login />', () => {
 
   it('enters the system directly through the development-only button', async () => {
     const user = userEvent.setup();
-    mockDevLogin.mockResolvedValue(true);
+    mockDevLogin.mockResolvedValue({ id: '1', f_name: 'Dev', l_name: 'User', role: 'superadmin', email: 'dev@test.com' } as UserAccount);
     renderLogin();
 
     await user.click(screen.getByRole('button', { name: /enter system \(development only\)/i }));
@@ -156,7 +156,8 @@ describe('<Login />', () => {
   // ── 8. Calls signIn and navigates on valid credentials ──────────────────
   it('calls signIn with credentials and navigates on valid login', async () => {
     const user = userEvent.setup();
-    mockSignIn.mockReturnValue(true);
+    const mockUser: UserAccount = { id: '1', f_name: 'Heuben Clyde B.', l_name: 'Dagami', role: 'superadmin', email: 'heuben.clyde.b.dagami@bantai.gov.ph', command_center_id: null, account_status: 'active' };
+    mockSignIn.mockResolvedValue(mockUser);
     renderLogin();
 
     await user.type(screen.getByRole('textbox', { name: /work email/i }), 'heuben.clyde.b.dagami@bantai.gov.ph');
@@ -167,12 +168,15 @@ describe('<Login />', () => {
     await waitFor(() => {
       expect(mockSignIn).toHaveBeenCalledWith('heuben.clyde.b.dagami@bantai.gov.ph', 'superadmin-2026');
     });
+
+    // Should navigate to home on success
+    expect(screen.getByRole('link', { href: '/' })).toBeInTheDocument();
   });
 
   // ── 9. Shows error on invalid credentials ────────────────────────────────
   it('shows an error message on invalid credentials', async () => {
     const user = userEvent.setup();
-    mockSignIn.mockReturnValue(false);
+    mockSignIn.mockRejectedValue(new Error('Invalid email or password.'));
     renderLogin();
 
     await user.type(screen.getByRole('textbox', { name: /work email/i }), 'wrong@email.com');
@@ -225,7 +229,7 @@ describe('<Login />', () => {
   // ── 13. Submit button disabled while busy ───────────────────────────────
   it('disables the submit button while the sign-in request is processing', async () => {
     const user = userEvent.setup();
-    mockSignIn.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve(true), 500)));
+    mockSignIn.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ id: '1', f_name: 'Test', l_name: 'User', role: 'superadmin', email: 'test@test.com' } as UserAccount), 500)));
     renderLogin();
 
     await user.type(screen.getByRole('textbox', { name: /work email/i }), 'heuben.clyde.b.dagami@bantai.gov.ph');
@@ -245,7 +249,7 @@ describe('<Login />', () => {
     expect(screen.getByRole('button', { name: /forgot password/i })).toBeInTheDocument();
   });
 
-  // ── 15. Renders left branding panel in desktop view ──────────────────────
+  // ── 15. Renders left branding panel in desktop view ─────────────────────
   it('renders the B.A.N.T.A.I. brand name and tagline in the left panel on desktop', () => {
     renderLogin();
     // On desktop (lg+), the left panel is visible — it has the brand name
@@ -333,7 +337,8 @@ describe('<Login />', () => {
   // ── 24. Remember me persists email to localStorage on successful sign-in ───
   it('persists email to localStorage when "remember me" is checked and sign-in succeeds', async () => {
     const user = userEvent.setup();
-    mockSignIn.mockReturnValue(true);
+    const mockUser: UserAccount = { id: '1', f_name: 'Heuben Clyde B.', l_name: 'Dagami', role: 'superadmin', email: 'heuben.clyde.b.dagami@bantai.gov.ph', command_center_id: null, account_status: 'active' };
+    mockSignIn.mockResolvedValue(mockUser);
     renderLogin();
 
     // Clear any leftover localStorage from prior tests

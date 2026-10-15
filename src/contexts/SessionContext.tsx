@@ -26,8 +26,8 @@ function readStoredTheme(): Theme {
 type SessionValue = {
   user: UserAccount | null;
   ready: boolean;
-  signIn: (email: string, password: string) => Promise<boolean>;
-  devLogin: () => Promise<boolean>;
+  signIn: (email: string, password: string) => Promise<UserAccount>;
+  devLogin: () => Promise<UserAccount>;
   signOut: () => Promise<void>;
   theme: Theme;
   setTheme: (t: Theme) => void;
@@ -85,29 +85,38 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
     };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string): Promise<UserAccount> => {
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
-    if (!trimmedEmail || !trimmedPassword) return false;
+    if (!trimmedEmail || !trimmedPassword) {
+      throw new Error('Enter your email and password.');
+    }
     try {
       const data = await api.login(trimmedEmail, trimmedPassword);
-      setUser(data.user);
+      // The login API now returns {accessToken, refreshToken}
+      // The token is stored in localStorage by the api.request function
+      // Now fetch the user data
+      const userData = await api.me();
+      if (!cancelled) setUser(userData.user);
       setBranchFilter('all');
-      return true;
-    } catch {
-      return false;
+      return userData.user;
+    } catch (error: any) {
+      // Re-throw the error so the calling component can handle it
+      throw error;
     }
   }, []);
 
-  const devLogin = useCallback(async () => {
-    if (!import.meta.env.DEV) return false;
+  const devLogin = useCallback(async (): Promise<UserAccount> => {
+    if (!import.meta.env.DEV) throw new Error('Development mode is disabled.');
     try {
       const data = await api.devLogin();
-      setUser(data.user);
+      // Fetch user data after dev login as well
+      const userData = await api.me();
+      if (!cancelled) setUser(userData.user);
       setBranchFilter('all');
-      return true;
-    } catch {
-      return false;
+      return userData.user;
+    } catch (error: any) {
+      throw error;
     }
   }, []);
 
@@ -116,6 +125,14 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
       await api.logout();
     } catch {
       /* session already gone */
+    }
+    // Clear the access token from localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem('bantai-access-token');
+      } catch {
+        /* storage unavailable */
+      }
     }
     setUser(null);
   }, []);

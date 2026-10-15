@@ -221,12 +221,14 @@ export function Login() {
     setBusy(true);
     setFormError(null);
     void (async () => {
-      const ok = await signIn(email.trim(), password);
-      setBusy(false);
-      if (ok) {
+      try {
+        await signIn(email.trim(), password);
+        setBusy(false);
         navigate('/');
-      } else {
-        setFormError('Invalid email or password. Contact your superadmin if you need an account.');
+      } catch (error: any) {
+        setBusy(false);
+        // Use the error message from the API if available, otherwise use a generic message
+        setFormError(error.message || 'Invalid email or password. Contact your superadmin if you need an account.');
       }
     })();
   };
@@ -234,12 +236,13 @@ export function Login() {
   const enterDevelopmentSystem = async () => {
     setBusy(true);
     setFormError(null);
-    const ok = await devLogin();
-    setBusy(false);
-    if (ok) {
+    try {
+      await devLogin();
+      setBusy(false);
       navigate('/');
-    } else {
-      setFormError('Could not enter the development system. Make sure the local API is running in development mode.');
+    } catch (error: any) {
+      setBusy(false);
+      setFormError(error.message || 'Development sign-in is unavailable in this frontend-only build.');
     }
   };
 
