@@ -140,11 +140,21 @@ describe('API Service', () => {
 
   describe('me', () => {
     it('should call the me endpoint and include authorization token', async () => {
-      const mockUser = { id: '1', email: 'test@example.com', role: 'superadmin' };
+      const mockProfile = {
+        id: '1',
+        f_name: 'Test',
+        l_name: 'User',
+        m_name: null,
+        email: 'test@example.com',
+        role: 'SUPER',
+        command_center_id: null,
+        m_number: '1234567890',
+        phone_verified_at: null
+      };
 
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: mockUser }),
+        json: async () => mockProfile,
         status: 200
       } as Response);
 
@@ -153,16 +163,33 @@ describe('API Service', () => {
         window.localStorage.setItem('bantai-access-token', 'mock-token');
       }
 
-      await api.me();
+      const result = await api.me();
 
       expect(fetch).toHaveBeenCalledWith(
-        'https://www.bantai.online/api/v1/auth/me',
+        'https://www.bantai.online/api/v1/responders/profile',
         expect.objectContaining({
           headers: expect.objectContaining({
             'Authorization': 'Bearer mock-token'
           })
         })
       );
+
+      // Optionally, assert on the returned value
+      expect(result).toEqual({
+        user: {
+          id: mockProfile.id,
+          f_name: mockProfile.f_name,
+          l_name: mockProfile.l_name,
+          email: mockProfile.email,
+          role: 'superadmin', // mapped from SUPER
+          m_number: mockProfile.m_number,
+          command_center_id: mockProfile.command_center_id,
+          account_status: undefined,
+          must_change_password: undefined,
+          r_profile: undefined,
+          d_profile: undefined,
+        }
+      });
     });
   });
 });

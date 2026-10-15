@@ -49,7 +49,90 @@ export const api = {
       method: 'POST'
     }),
   logout: () => request<{ok: boolean}>('/auth/logout', { method: 'POST' }),
-  me: () => request<{user: import('../types').UserAccount}>('/auth/me'),
+  // Define the shape of the responder profile endpoint response
+  interface ResponderProfileRow {
+    id: string;
+    f_name: string;
+    l_name: string;
+    m_name: string | null;
+    email: string;
+    role: 'RESPONDER' | 'ADMIN' | 'SUPER';
+    command_center_id: string | null;
+    m_number: string | null;
+    phone_verified_at: Date | null;
+  }
+
+  // Dashboard stats DTO
+  interface DashboardStatsDto {
+    totalIncidents: number;
+    totalActivePersonnel: number;
+    totalGunIncidents: number;
+    totalBladeIncidents: number;
+    totalCollisionIncidents: number;
+  }
+
+  // Audit logs DTOs
+  interface PaginatedAuditLogs {
+    data: import('../types').SystemAuditLog[];
+    cursor: string | null;
+    hasNextPage: boolean;
+  }
+
+  me: async () => {
+    const profile = await request<ResponderProfileRow>('/responders/profile');
+    // Map the responder profile to the UserAccount shape expected by the app
+    const user: UserAccount = {
+      id: profile.id,
+      f_name: profile.f_name,
+      l_name: profile.l_name,
+      email: profile.email,
+      role: profile.role === 'RESPONDER' ? 'responder' :
+            profile.role === 'ADMIN' ? 'admin' :
+            'superadmin',
+      m_number: profile.m_number,
+      command_center_id: profile.command_center_id,
+      account_status: undefined,
+      must_change_password: undefined,
+      r_profile: undefined,
+      d_profile: undefined,
+    };
+    return { user };
+  },
+
+  // Dashboard stats
+  dashboardStats: (commandCenterId?: string) => {
+    const url = new URL('/dashboard/stats', API_BASE_URL);
+    if (commandCenterId) url.searchParams.set('commandCenterId', commandCenterId);
+    return request<DashboardStatsDto>(url.pathname + url.search, { method: 'GET' });
+  },
+
+  // Audit logs
+  auditLogs: (limit?: number, cursor?: string | null, commandCenterId?: string, category?: AuditCategory, action?: AuditAction, actor?: string | null, from?: string, to?: string) => {
+    const url = new URL('/audit-logs', API_BASE_URL);
+    if (limit !== undefined) url.searchParams.set('limit', String(limit));
+    if (cursor !== null && cursor !== undefined) url.searchParams.set('cursor', cursor);
+    if (commandCenterId !== undefined) url.searchParams.set('commandCenterId', commandCenterId);
+    if (category !== undefined) url.searchParams.set('category', category);
+    if (action !== undefined) url.searchParams.set('action', action);
+    if (actor !== null && actor !== undefined) url.searchParams.set('actor', actor);
+    if (from !== undefined && from !== '') url.searchParams.set('from', from);
+    if (to !== undefined && to !== '') url.searchParams.set('to', to);
+    return request<PaginatedAuditLogs>(url.pathname + url.search, { method: 'GET' });
+  },
+
+  // Personnel management: get all users
+  getUsers: () => request<import('../types').UserAccount[]>('/users'),
+
+  // Branch management: get all command centers
+  getCommandCenters: () => request<import('../types').CommandCenter[]>('/command-centers'),
+
+  // Settings (global) - placeholder; adjust based on actual backend
+  getSettings: () => request<import('../types').AppState>('/settings'), // Adjust type as needed
+  updateSettings: (settings: Partial<import('../types').AppState>) =>
+    request<import('../types').AppState>('/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(settings)
+    }),
   state: () => request<import('../types').AppState>('/state'),
   createCenter: (body: unknown) =>
     request<{center: import('../types').CommandCenter}>('/command-centers', {

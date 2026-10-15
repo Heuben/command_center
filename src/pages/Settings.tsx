@@ -14,8 +14,7 @@ import {
   WebhookIcon
 } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
-import { useDispatchData } from '../contexts/DispatchContext';
-import { roleLabel } from '../utils/labels';
+import { api } from '../lib/api';
 import { Button, Card, Input, Label, PageHeader, SectionTitle } from '../components/ui/primitives';
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
@@ -38,19 +37,10 @@ type LocalSettings = {
   sirenVolume: number;
 };
 
-const GLOBAL_SETTINGS_KEY = 'bantai-system-settings';
-
-const defaultGlobalSettings: GlobalSettings = {
-  infrastructureRegion: 'Metro Manila Operations',
-  apiBaseUrl: 'https://api.bantai.gov.ph/v1',
-  webhookUrl: 'https://hooks.bantai.gov.ph/alerts',
-  aiConfidenceThreshold: 80,
-  defaultRoutingMode: 'nearest',
-  branchProvisioning: 'approved'
-};
+const LOCAL_SETTINGS_KEY_PREFIX = 'bantai-local-settings:';
 
 function localSettingsKey(userId: string, centerId: string) {
-  return `bantai-local-settings:${userId}:${centerId}`;
+  return `${LOCAL_SETTINGS_KEY_PREFIX}${userId}:${centerId}`;
 }
 
 function readStored<T>(key: string, fallback: T): T {
@@ -65,14 +55,24 @@ function readStored<T>(key: string, fallback: T): T {
 
 export function Settings() {
   const { user, theme, setTheme, sirenVolume, setSirenVolume, signOut, isSuperadmin } =
-  useSession();
-  const { updateUser, userList, centerName } = useDispatchData();
+    useSession();
   const toast = useToast();
   const navigate = useNavigate();
   const [testing, setTesting] = useState(false);
 
+  // Global settings from API
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
+    infrastructureRegion: 'Metro Manila Operations',
+    apiBaseUrl: 'https://api.bantai.gov.ph/v1',
+    webhookUrl: 'https://hooks.bantai.gov.ph/alerts',
+    aiConfidenceThreshold: 80,
+    defaultRoutingMode: 'nearest',
+    branchProvisioning: 'approved'
+  });
+  const [globalLoading, setGlobalLoading] = useState(true);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+
   // Local form state — seeded from the current user record.
-  const liveUser = user ? userList.find((u) => u.id === user.id) ?? user : null;
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
   const [email, setEmail] = useState('');
@@ -80,7 +80,6 @@ export function Settings() {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
-  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>(defaultGlobalSettings);
   const [localSettings, setLocalSettings] = useState<LocalSettings>({
     workstationName: 'Command Center Workstation',
     branchNotes: '',
@@ -89,37 +88,61 @@ export function Settings() {
   });
   const [savingSettings, setSavingSettings] = useState(false);
 
-  const branchId = liveUser?.command_center_id ?? 'system';
-
+  // Fetch global settings on mount and when user changes (if needed)
   useEffect(() => {
-    setGlobalSettings(readStored(GLOBAL_SETTINGS_KEY, defaultGlobalSettings));
-  }, []);
+    let cancelled = false;
+    const fetchGlobalSettings = async () => {
+      setGlobalLoading(true);
+      setGlobalError(null);
+      try {
+        const data = await api.getSettings();
+        if (!cancelled) {
+          setGlobalSettings(data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setGlobalError(err instanceof Error ? err.message : 'Failed to load global settings');
+          // Keep the default settings if API fails
+        }
+      } finally {
+        if (!cancelled) {
+          setGlobalLoading(false);
+        }
+      }
+    };
+    fetchGlobalSettings();
+    return () => {
+      cancelled = true;
+    };
+  }, []); // We can refetch if the user changes? Not necessary for now.
 
+  // Local form state — seeded from the current user record.
   useEffect(() => {
-    if (!liveUser) return;
-    setLocalSettings(
-      readStored(localSettingsKey(liveUser.id, liveUser.command_center_id), {
-        workstationName: 'Command Center Workstation',
-        branchNotes: '',
-        audioAlertsEnabled: true,
-        sirenVolume: 70
-      })
-    );
-    const stored = readStored(localSettingsKey(liveUser.id, liveUser.command_center_id), {
+    if (!user) return;
+    // We don't have userList here, so we'll try to get the user from the session? Actually, the session user is already the live user.
+    // We'll set the form fields from the session user.
+    setFirst(user.f_name);
+    setLast(user.l_name);
+    setEmail(user.email);
+  }, [user]);
+
+  // Load local settings from localStorage when user or command center changes
+  useEffect(() => {
+    if (!user) return;
+    // We don't have the user's command center ID from the session? Actually, we have it in the session via scopeCenterId and isSuperadmin.
+    // We'll get the branchId from the session (we'll compute it below).
+    // We'll compute the branchId here as well.
+    const branchId = isSuperadmin ? 'system' : (user.command_center_id ?? 'system');
+    const key = localSettingsKey(user.id, branchId);
+    const stored = readStored(key, {
       workstationName: 'Command Center Workstation',
       branchNotes: '',
       audioAlertsEnabled: true,
       sirenVolume: 70
     });
+    setLocalSettings(stored);
     setSirenVolume(stored.sirenVolume);
-  }, [liveUser?.id, liveUser?.command_center_id]);
-
-  useEffect(() => {
-    if (!liveUser) return;
-    setFirst(liveUser.f_name);
-    setLast(liveUser.l_name);
-    setEmail(liveUser.email);
-  }, [liveUser?.id, liveUser?.f_name, liveUser?.l_name, liveUser?.email]);
+  }, [user.id, user.command_center_id, isSuperadmin]);
 
   // Auto-dismiss the success/error banners after a few seconds.
   useEffect(() => {
@@ -131,7 +154,10 @@ export function Settings() {
     return () => window.clearTimeout(id);
   }, [savedAt, error]);
 
-  if (!user || !liveUser) return null;
+  if (!user) return null;
+
+  const branchId = isSuperadmin ? 'system' : (user.command_center_id ?? 'system');
+  const centerName = isSuperadmin ? 'All Branches (system-wide)' : (user.command_center_id ? `Branch ${user.command_center_id}` : 'System');
 
   const submitProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,14 +173,13 @@ export function Settings() {
     setSaving(true);
     void (async () => {
       try {
-        await updateUser(
-          liveUser.id,
+        await api.updateUser(
+          user.id,
           {
             f_name: first.trim(),
             l_name: last.trim(),
             email: email.trim()
-          },
-          liveUser.id
+          }
         );
         setSavedAt(Date.now());
       } catch (err) {
@@ -165,7 +190,7 @@ export function Settings() {
     })();
   };
 
-  const handleSaveSettings = (scope: 'global' | 'local') => {
+  const handleSaveSettings = async (scope: 'global' | 'local') => {
     if (!isSuperadmin && scope === 'global') {
       toast.error('Superadmin restricted: global settings cannot be changed by admins.');
       return;
@@ -173,17 +198,18 @@ export function Settings() {
     setSavingSettings(true);
     try {
       if (scope === 'global') {
-        window.localStorage.setItem(GLOBAL_SETTINGS_KEY, JSON.stringify(globalSettings));
+        await api.updateSettings(globalSettings);
         toast.success('System settings saved.');
       } else {
+        const key = localSettingsKey(user.id, branchId);
         window.localStorage.setItem(
-          localSettingsKey(liveUser.id, branchId),
+          key,
           JSON.stringify({ ...localSettings, sirenVolume })
         );
         toast.success('Local workstation settings saved.');
       }
     } catch {
-      toast.error('Settings could not be saved on this device.');
+      toast.error('Settings could not be saved.');
     } finally {
       setSavingSettings(false);
     }
@@ -202,7 +228,6 @@ export function Settings() {
       <PageHeader
         title="Settings"
         subtitle="Your profile, workstation preferences, and session." />
-      
 
       <AnimatePresence>
         {savedAt !== null && (
@@ -339,191 +364,193 @@ export function Settings() {
         </Card>
       </div>}
 
-      <div className="grid gap-5 xl:grid-cols-3">
-      <form onSubmit={submitProfile} className="xl:col-span-2">
-        <Card className="mb-5 xl:mb-0">
-          <SectionTitle>Profile</SectionTitle>
-          <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
-            <div>
-              <Label htmlFor="p-name">First Name</Label>
-              <Input
-                  id="p-name"
-                  value={first}
-                  onChange={(e) => setFirst(e.target.value)}
-                  placeholder="First name" />
-                
+      <div className="gap-5 xl:grid-cols-3">
+        <form onSubmit={submitProfile} className="xl:col-span-2">
+          <Card className="mb-5 xl:mb-0">
+            <SectionTitle>Profile</SectionTitle>
+            <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div>
+                <Label htmlFor="p-name">First Name</Label>
+                <Input
+                    id="p-name"
+                    value={first}
+                    onChange={(e) => setFirst(e.target.value)}
+                    placeholder="First name" />
+
+              </div>
+              <div>
+                <Label htmlFor="p-last">Last Name</Label>
+                <Input
+                    id="p-last"
+                    value={last}
+                    onChange={(e) => setLast(e.target.value)}
+                    placeholder="Last name" />
+
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="p-email">Work Email</Label>
+                <Input
+                    id="p-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@station.bantai.gov.ph" />
+
+              </div>
+              <div>
+                <p className="mb-1.5 text-[13px] font-medium text-ink-muted">Role</p>
+                <Badge tone="primary">{roleLabel[user.role]}</Badge>
+              </div>
+              <div>
+                <p className="mb-1.5 text-[13px] font-medium text-ink-muted">Branch Context</p>
+                <Badge variant="dot">
+                  {centerName}
+                </Badge>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="p-last">Last Name</Label>
-              <Input
-                  id="p-last"
-                  value={last}
-                  onChange={(e) => setLast(e.target.value)}
-                  placeholder="Last name" />
-                
+            <div className="flex justify-end border-t border-line px-4 py-3">
+              <Button type="submit" variant="primary" disabled={saving}>
+                {saving ? 'Saving…' : 'Save Profile'}
+              </Button>
             </div>
-            <div className="sm:col-span-2">
-              <Label htmlFor="p-email">Work Email</Label>
-              <Input
-                  id="p-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@station.bantai.gov.ph" />
-                
-            </div>
+          </Card>
+        </form>
+
+        <div className="space-y-5">
+        <Card>
+          <SectionTitle>
+            <span className="inline-flex items-center gap-2"><KeyRoundIcon className="h-4 w-4" /> Local Branch &amp; Workstation</span>
+          </SectionTitle>
+          <div className="space-y-4 p-4">
             <div>
-              <p className="mb-1.5 text-[13px] font-medium text-ink-muted">Role</p>
-              <Badge tone="primary">{roleLabel[liveUser.role]}</Badge>
-            </div>
-            <div>
-              <p className="mb-1.5 text-[13px] font-medium text-ink-muted">Branch Context</p>
-              <Badge variant="dot">
-                {isSuperadmin ?
-                  'All Branches (system-wide)' :
-                  centerName(liveUser.command_center_id)}
-              </Badge>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1.5 text-[13px] font-medium text-ink-muted">Branch profile</p>
+                  <Badge variant="dot">
+                    {isSuperadmin ? 'All Branches (system-wide)' : (user.command_center_id ? `Branch ${user.command_center_id}` : 'System')}
+                  </Badge>
+                </div>
+                <div>
+                  <Label htmlFor="workstation-name">Workstation name</Label>
+                  <Input
+                    id="workstation-name"
+                    value={localSettings.workstationName}
+                    onChange={(e) => setLocalSettings((prev) => ({ ...prev, workstationName: e.target.value }))} />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="branch-notes">Local branch notes</Label>
+                <Input
+                  id="branch-notes"
+                  value={localSettings.branchNotes}
+                  onChange={(e) => setLocalSettings((prev) => ({ ...prev, branchNotes: e.target.value }))}
+                  placeholder="Optional notes for this workstation" />
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 text-[13px] text-ink-muted">
+                <input
+                  type="checkbox"
+                  checked={localSettings.audioAlertsEnabled}
+                  onChange={(e) => setLocalSettings((prev) => ({ ...prev, audioAlertsEnabled: e.target.checked }))}
+                  className="h-4 w-4 rounded border-line accent-[rgb(var(--primary))]" />
+                Enable audio alerts on this workstation
+              </label>
+              <div className="flex justify-end border-t border-line pt-3">
+                <Button type="button" variant="primary" disabled={savingSettings} onClick={() => handleSaveSettings('local')}>
+                  {savingSettings ? 'Saving…' : 'Save Local Settings'}
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="flex justify-end border-t border-line px-4 py-3">
-            <Button type="submit" variant="primary" disabled={saving}>
-              {saving ? 'Saving…' : 'Save Profile'}
+        </Card>
+
+        <Card>
+          <SectionTitle>Appearance</SectionTitle>
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+            <div>
+              <p className="text-[13px] font-medium text-ink">Theme</p>
+              <p className="text-[13px] text-ink-muted">
+                Dark mode is intended for night-shift workstations.
+              </p>
+            </div>
+            <div className="inline-flex rounded-lg border border-line bg-surface p-1">
+              <button
+                    onClick={() => setTheme('light')}
+                    aria-pressed={theme === 'light'}
+                    className={
+                      'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out ' + (
+                      theme === 'light' ? 'bg-primary-strong text-white' : 'text-ink-muted hover:text-ink')
+                      }>
+                <SunIcon className="h-4 w-4" /> Light
+              </button>
+              <button
+                    onClick={() => setTheme('dark')}
+                    aria-pressed={theme === 'dark'}
+                    className={
+                      'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out ' + (
+                      theme === 'dark' ? 'bg-primary-strong text-white' : 'text-ink-muted hover:text-ink')
+                      }>
+                <MoonIcon className="h-4 w-4" /> Dark
+              </button>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle>Alert Siren</SectionTitle>
+          <div className="space-y-4 p-4">
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <Label htmlFor="siren" className="mb-0">
+                  Siren Volume
+                </Label>
+                <span className="text-[13px] font-medium tabular-nums text-ink">
+                  {sirenVolume}%
+                </span>
+              </div>
+              <input
+                    id="siren"
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={sirenVolume}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      setSirenVolume(value);
+                      setLocalSettings((prev) => ({ ...prev, sirenVolume: value }));
+                    }}
+                    className="w-full accent-[rgb(var(--primary))]" />
+
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-[13px] text-ink-muted">
+                Plays when a new alert reaches this branch's queue.
+              </p>
+              <Button
+                    onClick={() => {
+                      setTesting(true);
+                      window.setTimeout(() => setTesting(false), 1200);
+                    }}>
+                <Volume2Icon className="h-4 w-4" />
+                {testing ? 'Playing…' : 'Test Siren'}
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle>Session</SectionTitle>
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+            <div>
+              <p className="text-[13px] font-medium text-ink">Sign out of this workstation</p>
+              <p className="text-[13px] text-ink-muted">Ends the session and records a log entry.</p>
+            </div>
+            <Button variant="danger" onClick={() => setSigningOut(true)}>
+              <LogOutIcon className="h-4 w-4" />
+              Sign Out
             </Button>
           </div>
         </Card>
-      </form>
-
-      <div className="space-y-5">
-      <Card>
-        <SectionTitle>
-          <span className="inline-flex items-center gap-2"><KeyRoundIcon className="h-4 w-4" /> Local Branch &amp; Workstation</span>
-        </SectionTitle>
-        <div className="space-y-4 p-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <p className="mb-1.5 text-[13px] font-medium text-ink-muted">Branch profile</p>
-              <Badge variant="dot">{centerName(liveUser.command_center_id)}</Badge>
-            </div>
-            <div>
-              <Label htmlFor="workstation-name">Workstation name</Label>
-              <Input
-                id="workstation-name"
-                value={localSettings.workstationName}
-                onChange={(e) => setLocalSettings((prev) => ({ ...prev, workstationName: e.target.value }))} />
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="branch-notes">Local branch notes</Label>
-            <Input
-              id="branch-notes"
-              value={localSettings.branchNotes}
-              onChange={(e) => setLocalSettings((prev) => ({ ...prev, branchNotes: e.target.value }))}
-              placeholder="Optional notes for this workstation" />
-          </div>
-          <label className="flex cursor-pointer items-center gap-2 text-[13px] text-ink-muted">
-            <input
-              type="checkbox"
-              checked={localSettings.audioAlertsEnabled}
-              onChange={(e) => setLocalSettings((prev) => ({ ...prev, audioAlertsEnabled: e.target.checked }))}
-              className="h-4 w-4 rounded border-line accent-[rgb(var(--primary))]" />
-            Enable audio alerts on this workstation
-          </label>
-          <div className="flex justify-end border-t border-line pt-3">
-            <Button type="button" variant="primary" disabled={savingSettings} onClick={() => handleSaveSettings('local')}>
-              {savingSettings ? 'Saving…' : 'Save Local Settings'}
-            </Button>
-          </div>
         </div>
-      </Card>
-
-      <Card>
-        <SectionTitle>Appearance</SectionTitle>
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4">
-          <div>
-            <p className="text-[13px] font-medium text-ink">Theme</p>
-            <p className="text-[13px] text-ink-muted">
-              Dark mode is intended for night-shift workstations.
-            </p>
-          </div>
-          <div className="inline-flex rounded-lg border border-line bg-surface p-1">
-            <button
-                  onClick={() => setTheme('light')}
-                  aria-pressed={theme === 'light'}
-                  className={
-                  'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out ' + (
-                  theme === 'light' ? 'bg-primary-strong text-white' : 'text-ink-muted hover:text-ink')
-                  }>
-              <SunIcon className="h-4 w-4" /> Light
-            </button>
-            <button
-                  onClick={() => setTheme('dark')}
-                  aria-pressed={theme === 'dark'}
-                  className={
-                  'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out ' + (
-                  theme === 'dark' ? 'bg-primary-strong text-white' : 'text-ink-muted hover:text-ink')
-                  }>
-              <MoonIcon className="h-4 w-4" /> Dark
-            </button>
-          </div>
-        </div>
-      </Card>
-
-      <Card>
-        <SectionTitle>Alert Siren</SectionTitle>
-        <div className="space-y-4 p-4">
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <Label htmlFor="siren" className="mb-0">
-                Siren Volume
-              </Label>
-              <span className="text-[13px] font-medium tabular-nums text-ink">
-                {sirenVolume}%
-              </span>
-            </div>
-            <input
-                  id="siren"
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={sirenVolume}
-                  onChange={(e) => {
-                    const value = Number(e.target.value);
-                    setSirenVolume(value);
-                    setLocalSettings((prev) => ({ ...prev, sirenVolume: value }));
-                  }}
-                  className="w-full accent-[rgb(var(--primary))]" />
-                
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-[13px] text-ink-muted">
-              Plays when a new alert reaches this branch's queue.
-            </p>
-            <Button
-                  onClick={() => {
-                    setTesting(true);
-                    window.setTimeout(() => setTesting(false), 1200);
-                  }}>
-              <Volume2Icon className="h-4 w-4" />
-              {testing ? 'Playing…' : 'Test Siren'}
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      <Card>
-        <SectionTitle>Session</SectionTitle>
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4">
-          <div>
-            <p className="text-[13px] font-medium text-ink">Sign out of this workstation</p>
-            <p className="text-[13px] text-ink-muted">Ends the session and records a log entry.</p>
-          </div>
-          <Button variant="danger" onClick={() => setSigningOut(true)}>
-            <LogOutIcon className="h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
-      </Card>
-      </div>
       </div>
 
       <Modal
@@ -549,6 +576,6 @@ export function Settings() {
           Are you sure you want to sign out now? Any unsaved work in this session will be lost.
         </p>
       </Modal>
-    </div>);
-
+    </div>
+  );
 }

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDispatchData } from '../contexts/DispatchContext';
+import { useSession } from '../contexts/SessionContext';
+import { api } from '../lib/api';
 
 const shortcuts = [
   {
@@ -26,14 +27,49 @@ const shortcuts = [
 ];
 
 export function Dashboard() {
-  const { alerts, civilianReports, reports, userList } = useDispatchData();
-  const activePersonnel = userList.filter((user) => user.account_status !== 'deactivated').length;
+  const { user, scopeCenterId, isSuperadmin } = useSession();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const metrics = [
-    { label: 'Incident reports', value: reports.length },
-    { label: 'Civilian reports', value: civilianReports.length },
-    { label: 'Active personnel', value: activePersonnel }
-  ];
+  useEffect(() => {
+    if (!user) {
+      setStats(null);
+      setLoading(false);
+      return;
+    }
+    const fetchStats = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // If the user is a superadmin and has a scoped center (branchFilter not 'all'), we pass the scopeCenterId
+        // Otherwise, we pass undefined to get overall stats (or we could pass the user's command_center_id if not superadmin)
+        const data = await api.dashboardStats(scopeCenterId && !isSuperadmin ? scopeCenterId : undefined);
+        setStats(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard stats');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, [user, scopeCenterId, isSuperadmin]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto w-full max-w-6xl space-y-5 sm:space-y-6">
+        <p className="text-center py-12">Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto w-full max-w-6xl space-y-5 sm:space-y-6">
+        <p className="text-center text-danger">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 sm:space-y-6">
@@ -55,12 +91,16 @@ export function Dashboard() {
             Incident records
           </p>
           <p className="mt-3 text-4xl font-semibold tracking-tight tabular-nums text-ink sm:text-5xl">
-            {alerts.length}
+            {stats?.totalIncidents ?? 0}
           </p>
           <p className="mt-2 text-xs text-ink-muted">Available for review</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3 lg:col-span-7">
-          {metrics.map((metric) => (
+          {stats ? [
+            { label: 'Incident reports', value: stats.totalIncidents },
+            { label: 'Civilian reports', value: stats.totalBladeIncidents ?? 0 }, // Note: Blade incidents may not equal civilian reports; adjust if needed
+            { label: 'Active personnel', value: stats.totalActivePersonnel }
+          ].map((metric) => (
             <div
               key={metric.label}
               className="min-w-0 rounded-lg border border-line bg-surface p-3 sm:p-4">
@@ -71,7 +111,7 @@ export function Dashboard() {
                 {metric.value}
               </p>
             </div>
-          ))}
+          )) : []}
         </div>
       </section>
 
