@@ -93,11 +93,17 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
     }
     try {
       const data = await api.login(trimmedEmail, trimmedPassword);
-      // The login API now returns {accessToken, refreshToken}
-      // The token is stored in localStorage by the api.request function
+      // Store the access token in localStorage for use in subsequent requests
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem('bantai-access-token', data.accessToken);
+        } catch {
+          /* storage unavailable */
+        }
+      }
       // Now fetch the user data
       const userData = await api.me();
-      if (!cancelled) setUser(userData.user);
+      setUser(userData.user);
       setBranchFilter('all');
       return userData.user;
     } catch (error: any) {
@@ -110,9 +116,17 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
     if (!import.meta.env.DEV) throw new Error('Development mode is disabled.');
     try {
       const data = await api.devLogin();
+      // Store the access token in localStorage for use in subsequent requests
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem('bantai-access-token', data.accessToken);
+        } catch {
+          /* storage unavailable */
+        }
+      }
       // Fetch user data after dev login as well
       const userData = await api.me();
-      if (!cancelled) setUser(userData.user);
+      setUser(userData.user);
       setBranchFilter('all');
       return userData.user;
     } catch (error: any) {
