@@ -6,16 +6,31 @@ export class ApiError extends Error {
   }
 }
 
+// Hardcoded base URL for the Bantai ICC API as requested
+const API_BASE_URL = 'https://www.bantai.online/api/v1';
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  // Get access token from localStorage if available
+  const accessToken = typeof window !== 'undefined' ? window.localStorage.getItem('bantai-access-token') : null;
+
   const headers = new Headers(init.headers);
+
+  // Set Content-Type if body is present and not already set
   if (init.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  const res = await fetch(path, {
+
+  // Attach Authorization header if token exists
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
-    credentials: 'include'
+    credentials: 'include' // Important for cookies (refresh token)
   });
+
   const data = (await res.json().catch(() => ({}))) as {error?: string} & T;
   if (!res.ok) {
     throw new ApiError(data.error || 'Request failed.', res.status);
@@ -25,41 +40,41 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   login: (email: string, password: string) =>
-    request<{user: import('../types').UserAccount}>('/api/auth/login', {
+    request<{accessToken: string; refreshToken: string}>('/auth/local/signin', {
       method: 'POST',
       body: JSON.stringify({ email, password })
     }),
   devLogin: () =>
-    request<{user: import('../types').UserAccount}>('/api/auth/dev-login', {
+    request<{accessToken: string; refreshToken: string}>('/auth/dev-login', {
       method: 'POST'
     }),
-  logout: () => request<{ok: boolean}>('/api/auth/logout', { method: 'POST' }),
-  me: () => request<{user: import('../types').UserAccount}>('/api/auth/me'),
-  state: () => request<import('../types').AppState>('/api/state'),
+  logout: () => request<{ok: boolean}>('/auth/logout', { method: 'POST' }),
+  me: () => request<{user: import('../types').UserAccount}>('/auth/me'),
+  state: () => request<import('../types').AppState>('/state'),
   createCenter: (body: unknown) =>
-    request<{center: import('../types').CommandCenter}>('/api/command-centers', {
+    request<{center: import('../types').CommandCenter}>('/command-centers', {
       method: 'POST',
       body: JSON.stringify(body)
     }),
   updateCenter: (id: string, body: unknown) =>
-    request<{center: import('../types').CommandCenter}>(`/api/command-centers/${id}`, {
+    request<{center: import('../types').CommandCenter}>(`/command-centers/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body)
     }),
   deleteCenter: (id: string) =>
-    request<{ok: boolean}>(`/api/command-centers/${id}`, { method: 'DELETE' }),
+    request<{ok: boolean}>(`/command-centers/${id}`, { method: 'DELETE' }),
   createUser: (body: unknown) =>
-    request<{user: import('../types').UserAccount;tempPassword: string}>('/api/users', {
+    request<{user: import('../types').UserAccount;tempPassword: string}>('/users', {
       method: 'POST',
       body: JSON.stringify(body)
     }),
   updateUser: (id: string, body: unknown) =>
-    request<{user: import('../types').UserAccount}>(`/api/users/${id}`, {
+    request<{user: import('../types').UserAccount}>(`/users/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body)
     }),
   acknowledge: (alertId: string, command_center_id: string) =>
-    request(`/api/alerts/${alertId}/acknowledge`, {
+    request(`/alerts/${alertId}/acknowledge`, {
       method: 'POST',
       body: JSON.stringify({ command_center_id })
     }),
@@ -68,29 +83,29 @@ export const api = {
   command_center_id: string,
   responder_ids: string[],
   lead_id: string | null) =>
-  request(`/api/alerts/${alertId}/dispatch`, {
+  request(`/alerts/${alertId}/dispatch`, {
     method: 'POST',
     body: JSON.stringify({ command_center_id, responder_ids, lead_id })
   }),
   reassignResponder: (assignmentId: string, responder_id: string) =>
-    request(`/api/assignments/${assignmentId}/reassign`, {
+    request(`/assignments/${assignmentId}/reassign`, {
       method: 'POST',
       body: JSON.stringify({ responder_id })
     }),
   resolveBranch: (alertId: string, command_center_id: string) =>
-    request(`/api/alerts/${alertId}/resolve`, {
+    request(`/alerts/${alertId}/resolve`, {
       method: 'POST',
       body: JSON.stringify({ command_center_id })
     }),
   reviewOutcome: (reviewId: string, decision: 'approved' | 'rejected', notes: string) =>
-    request(`/api/reviews/${reviewId}/decide`, {
+    request(`/reviews/${reviewId}/decide`, {
       method: 'POST',
       body: JSON.stringify({ decision, notes })
     }),
   acknowledgeCivilianReport: (id: string) =>
-    request(`/api/civilian-reports/${id}/acknowledge`, { method: 'POST' }),
+    request(`/civilian-reports/${id}/acknowledge`, { method: 'POST' }),
   updateReport: (id: string, patch: unknown) =>
-    request(`/api/incident-reports/${id}`, {
+    request(`/incident-reports/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(patch)
     })
