@@ -18,6 +18,7 @@ describe('API Service', () => {
     // Clear localStorage before each test
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem('bantai-access-token');
+      window.localStorage.removeItem('bantai-refresh-token');
     }
   });
 
@@ -88,6 +89,43 @@ describe('API Service', () => {
       await expect(api.login(mockEmail, mockPassword))
         .rejects
         .toEqual(new ApiError('Request failed.', 0)); // ApiError sets status to 0 for non-HTTP errors
+    });
+  });
+
+  describe('token refresh', () => {
+    it('refreshes tokens after a 401 and retries the original request once', async () => {
+      window.localStorage.setItem('bantai-access-token', 'expired-access-token');
+      window.localStorage.setItem('bantai-refresh-token', 'old-refresh-token');
+      mockedFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: 'Unauthorized' })
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ accessToken: 'new-access-token', refreshToken: 'new-refresh-token' })
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ totalIncidents: 1 })
+        } as Response);
+
+      await expect(api.dashboardStats()).resolves.toEqual({ totalIncidents: 1 });
+
+      expect(mockedFetch).toHaveBeenCalledTimes(3);
+      expect(mockedFetch.mock.calls[1][0]).toBe('https://www.bantai.online/api/v1/auth/refresh');
+      expect(mockedFetch.mock.calls[1][1]).toMatchObject({
+        method: 'POST',
+        body: JSON.stringify({ refreshToken: 'old-refresh-token' }),
+        credentials: 'include'
+      });
+      expect(new Headers(mockedFetch.mock.calls[2][1]?.headers).get('Authorization'))
+        .toBe('Bearer new-access-token');
+      expect(window.localStorage.getItem('bantai-access-token')).toBe('new-access-token');
+      expect(window.localStorage.getItem('bantai-refresh-token')).toBe('new-refresh-token');
     });
   });
 

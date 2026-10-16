@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { io } from 'socket.io-client';
 import type { UserAccount } from '../types';
-import { api } from '../lib/api';
+import { api, AUTH_TOKENS_REFRESHED_EVENT, SESSION_EXPIRED_EVENT } from '../lib/api';
 
 type Theme = 'light' | 'dark';
 
@@ -42,6 +43,7 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [sirenVolume, setSirenVolume] = useState(70);
   const [now, setNow] = useState(() => Date.now());
+  const [socketTokenVersion, setSocketTokenVersion] = useState(0);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -59,6 +61,17 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
       /* storage unavailable */
     }
   }, [theme]);
+
+  useEffect(() => {
+    const onTokensRefreshed = () => setSocketTokenVersion((version) => version + 1);
+    const onSessionExpired = () => setUser(null);
+    window.addEventListener(AUTH_TOKENS_REFRESHED_EVENT, onTokensRefreshed);
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => {
+      window.removeEventListener(AUTH_TOKENS_REFRESHED_EVENT, onTokensRefreshed);
+      window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +103,42 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    const accessToken = window.localStorage.getItem('bantai-access-token');
+    if (!accessToken) return;
+
+    console.debug('[socket:incidents] attempting connection');
+    const incidentsSocket = io('https://www.bantai.online/incidents', {
+      auth: { token: accessToken }
+    });
+    const handleConnect = () => {
+      console.info('[socket:incidents] connected', incidentsSocket.id);
+    };
+    const handleConnectError = (error: Error) => {
+      console.error('[socket:incidents] connection error', error.message);
+    };
+    const handleDisconnect = (reason: string) => {
+      console.warn('[socket:incidents] disconnected', reason);
+    };
+    const handleReconnectAttempt = (attempt: number) => {
+      console.debug('[socket:incidents] reconnect attempt', attempt);
+    };
+
+    incidentsSocket.on('connect', handleConnect);
+    incidentsSocket.on('connect_error', handleConnectError);
+    incidentsSocket.on('disconnect', handleDisconnect);
+    incidentsSocket.io.on('reconnect_attempt', handleReconnectAttempt);
+
+    return () => {
+      incidentsSocket.off('connect', handleConnect);
+      incidentsSocket.off('connect_error', handleConnectError);
+      incidentsSocket.off('disconnect', handleDisconnect);
+      incidentsSocket.io.off('reconnect_attempt', handleReconnectAttempt);
+      incidentsSocket.disconnect();
+    };
+  }, [user?.id, socketTokenVersion]);
+
   const signIn = useCallback(async (email: string, password: string): Promise<UserAccount> => {
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
@@ -102,6 +151,7 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
       if (typeof window !== 'undefined') {
         try {
           window.localStorage.setItem('bantai-access-token', data.accessToken);
+          window.localStorage.setItem('bantai-refresh-token', data.refreshToken);
         } catch {
           /* storage unavailable */
         }
@@ -125,6 +175,7 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
       if (typeof window !== 'undefined') {
         try {
           window.localStorage.setItem('bantai-access-token', data.accessToken);
+          window.localStorage.setItem('bantai-refresh-token', data.refreshToken);
         } catch {
           /* storage unavailable */
         }
@@ -149,6 +200,7 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
     if (typeof window !== 'undefined') {
       try {
         window.localStorage.removeItem('bantai-access-token');
+        window.localStorage.removeItem('bantai-refresh-token');
       } catch {
         /* storage unavailable */
       }

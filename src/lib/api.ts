@@ -11,31 +11,110 @@ const API_BASE_URL = 'https://www.bantai.online/api/v1';
 
 import type { SystemAuditLog, UserAccount, CommandCenter, AuditCategory, AuditAction } from '../types';
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  // Get access token from localStorage if available
-  const accessToken = typeof window !== 'undefined' ? window.localStorage.getItem('bantai-access-token') : null;
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
 
+export const AUTH_TOKENS_REFRESHED_EVENT = 'bantai:tokens-refreshed';
+export const SESSION_EXPIRED_EVENT = 'bantai:session-expired';
+
+const ACCESS_TOKEN_KEY = 'bantai-access-token';
+const REFRESH_TOKEN_KEY = 'bantai-refresh-token';
+let refreshInFlight: Promise<AuthTokens | null> | null = null;
+
+function saveAuthTokens(tokens: AuthTokens): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+  window.localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+}
+
+function clearAuthTokens(): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+}
+
+async function refreshAuthTokens(): Promise<AuthTokens | null> {
+  if (refreshInFlight) return refreshInFlight;
+
+  const refreshToken = typeof window !== 'undefined'
+    ? window.localStorage.getItem(REFRESH_TOKEN_KEY)
+    : null;
+  if (!refreshToken) {
+    clearAuthTokens();
+    return null;
+  }
+
+  refreshInFlight = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+        credentials: 'include'
+      });
+      const tokens = await response.json().catch(() => ({})) as Partial<AuthTokens>;
+      if (!response.ok || !tokens.accessToken || !tokens.refreshToken) {
+        clearAuthTokens();
+        return null;
+      }
+
+      const authTokens = {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken
+      };
+      saveAuthTokens(authTokens);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(AUTH_TOKENS_REFRESHED_EVENT));
+      }
+      return authTokens;
+    } catch {
+      clearAuthTokens();
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
+}
+
+async function fetchWithToken(path: string, init: RequestInit, accessToken: string | null): Promise<Response> {
   const headers = new Headers(init.headers);
 
-  // Set Content-Type if body is present and not already set
   if (init.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
-  // Attach Authorization header if token exists
   if (accessToken) {
     headers.set('Authorization', `Bearer ${accessToken}`);
   }
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  return fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
-    credentials: 'include' // Important for cookies (refresh token)
+    credentials: 'include'
   });
+}
 
-  const data = (await res.json().catch(() => ({}))) as {error?: string} & T;
-  if (!res.ok) {
-    throw new ApiError(data.error || 'Request failed.', res.status);
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const accessToken = typeof window !== 'undefined'
+    ? window.localStorage.getItem(ACCESS_TOKEN_KEY)
+    : null;
+  let response = await fetchWithToken(path, init, accessToken);
+
+  if (response.status === 401 && !path.startsWith('/auth/')) {
+    const tokens = await refreshAuthTokens();
+    if (tokens) {
+      response = await fetchWithToken(path, init, tokens.accessToken);
+    }
+  }
+
+  const data = (await response.json().catch(() => ({}))) as {error?: string} & T;
+  if (!response.ok) {
+    throw new ApiError(data.error || 'Request failed.', response.status);
   }
   return data;
 }
@@ -105,12 +184,12 @@ interface PaginatedAuditLogs {
 
 export const api = {
   login: (email: string, password: string) =>
-    request<{accessToken: string; refreshToken: string}>('/auth/local/signin', {
+    request<AuthTokens>('/auth/local/signin', {
       method: 'POST',
       body: JSON.stringify({ email, password })
     }),
   devLogin: () =>
-    request<{accessToken: string; refreshToken: string}>('/auth/dev-login', {
+    request<AuthTokens>('/auth/dev-login', {
       method: 'POST'
     }),
   logout: () => request<{ok: boolean}>('/auth/logout', { method: 'POST' }),

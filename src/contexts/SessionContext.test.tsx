@@ -5,8 +5,16 @@ import { SessionProvider, useSession } from './SessionContext';
 import { act } from 'react-dom/test-utils';
 import type { UserAccount } from '../types';
 
+vi.mock('socket.io-client', () => ({
+  io: vi.fn(() => ({ disconnect: vi.fn() }))
+}));
+
+import { io } from 'socket.io-client';
+
 // Mock the api module
 vi.mock('../lib/api', () => ({
+  AUTH_TOKENS_REFRESHED_EVENT: 'bantai:tokens-refreshed',
+  SESSION_EXPIRED_EVENT: 'bantai:session-expired',
   api: {
     login: vi.fn(),
     devLogin: vi.fn(),
@@ -63,10 +71,14 @@ describe('SessionContext', () => {
       // Assert
       expect(api.login).toHaveBeenCalledWith('test@example.com', 'password');
       expect(window.localStorage.getItem('bantai-access-token')).toBe('test-token');
+      expect(window.localStorage.getItem('bantai-refresh-token')).toBe('test-refresh-token');
       expect(api.me).toHaveBeenCalled();
       expect(returnedUser).toEqual(mockUser);
       // The user state should be updated
       expect(result.current.user).toEqual(mockUser);
+      expect(io).toHaveBeenCalledWith('https://www.bantai.online/incidents', {
+        auth: { token: 'test-token' }
+      });
     });
 
     it('should throw error on invalid credentials', async () => {
@@ -155,6 +167,7 @@ describe('SessionContext', () => {
       // Now we are logged in
       expect(result.current.user).toEqual(mockUser);
       expect(window.localStorage.getItem('bantai-access-token')).toBe('test-token');
+      expect(window.localStorage.getItem('bantai-refresh-token')).toBe('test-refresh-token');
 
       // Now, log out
       vi.mocked(api.logout).mockResolvedValueOnce({ ok: true });
@@ -165,6 +178,7 @@ describe('SessionContext', () => {
       // Assert
       expect(api.logout).toHaveBeenCalled();
       expect(window.localStorage.getItem('bantai-access-token')).toBeNull();
+      expect(window.localStorage.getItem('bantai-refresh-token')).toBeNull();
       expect(result.current.user).toBeNull();
     });
   });
