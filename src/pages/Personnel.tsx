@@ -48,33 +48,24 @@ export function Personnel() {
   const [deactivatedIds, setDeactivatedIds] = useState<string[]>([]);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-  // Fetch responders by branch and command centers for the UI
+  // Fetch responders only for the selected or assigned command center.
   useEffect(() => {
     let cancelled = false;
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const centersData = isSuperadmin
-          ? await api.getCommandCenters()
-          : user?.command_center_id
-            ? [{ id: user.command_center_id, name: 'Assigned command center' }]
-            : [];
+        const centerId = scopeCenterId ?? user?.command_center_id ?? null;
+        const centersData = centerId
+          ? [{ id: centerId, name: 'Selected command center' }]
+          : [];
         if (!cancelled) {
           setCommandCenters(centersData);
         }
 
-        let nextUsers: UserAccount[] = [];
-        if (scopeCenterId) {
-          nextUsers = await api.getBranchResponders(scopeCenterId);
-        } else if (user?.command_center_id) {
-          nextUsers = await api.getBranchResponders(user.command_center_id);
-        } else if (isSuperadmin) {
-          const branchLists = await Promise.all(
-            centersData.map((center) => api.getBranchResponders(center.id))
-          );
-          nextUsers = branchLists.flat();
-        }
+        const nextUsers = centerId
+          ? await api.getBranchResponders(centerId)
+          : [];
 
         if (!cancelled) {
           setUsers(nextUsers);
@@ -94,7 +85,7 @@ export function Personnel() {
     return () => {
       cancelled = true;
     };
-  }, [scopeCenterId, isSuperadmin, user?.command_center_id]);
+  }, [scopeCenterId, user?.command_center_id]);
 
   // Sync deactivatedIds whenever users changes (new responders may be created, etc.).
   useEffect(() => {
@@ -321,7 +312,7 @@ export function Personnel() {
         isSuperadmin ?
         scopeCenterId ?
         `Responders and admins at ${scopeCenterId ? commandCenters.find(c => c.id === scopeCenterId)?.name : 'unknown'}` :
-        'Responders and admins across all command centers' :
+        'Select a command center to view personnel' :
         `Responders and admins at ${user?.command_center_id ? commandCenters.find(c => c.id === user.command_center_id)?.name : 'unknown'}`
         }
         actions={
@@ -351,7 +342,10 @@ export function Personnel() {
               className="w-full pl-8 sm:w-64" />
 
             </div>
-            <Button variant="primary" onClick={() => setAddOpen(true)}>
+            <Button
+            variant="primary"
+            onClick={() => setAddOpen(true)}
+            disabled={isSuperadmin && !scopeCenterId}>
               <PlusIcon className="h-4 w-4" />
               Add Responder
             </Button>
@@ -399,7 +393,7 @@ export function Personnel() {
           toast.success(`${name} provisioned. Temporary password: ${tempPassword}`);
         }}
         onError={(msg) => toast.error(msg)}
-        lockedCenterId={isSuperadmin ? null : user?.command_center_id ?? null}
+        lockedCenterId={scopeCenterId ?? (isSuperadmin ? null : user?.command_center_id ?? null)}
         commandCenters={commandCenters} />
 
       </motion.div>);
