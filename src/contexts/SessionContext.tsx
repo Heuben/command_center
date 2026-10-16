@@ -1,11 +1,4 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState
-} from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { UserAccount } from '../types';
 import { api } from '../lib/api';
 
@@ -72,7 +65,12 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
     api
       .me()
       .then((data) => {
-        if (!cancelled) setUser(data.user);
+        if (!cancelled) {
+          setUser(data.user);
+          if (data.user.role !== 'superadmin' && data.user.command_center_id) {
+            setBranchFilter(data.user.command_center_id);
+          }
+        }
       })
       .catch(() => {
         if (!cancelled) setUser(null);
@@ -84,6 +82,13 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.role !== 'superadmin' && user.command_center_id) {
+      setBranchFilter((current) => (current === 'all' || !current ? user.command_center_id ?? 'all' : current));
+    }
+  }, [user]);
 
   const signIn = useCallback(async (email: string, password: string): Promise<UserAccount> => {
     const trimmedEmail = email.trim().toLowerCase();
@@ -127,7 +132,7 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
       // Fetch user data after dev login as well
       const userData = await api.me();
       setUser(userData.user);
-      setBranchFilter('all');
+      setBranchFilter(userData.user.role === 'superadmin' ? 'all' : userData.user.command_center_id ?? 'all');
       return userData.user;
     } catch (error: any) {
       throw error;

@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * SkeletonGroup — render N skeleton rows / cards with consistent spacing.
  *
@@ -6,7 +7,6 @@
  * and text). When the parent transitions to real data, the skeleton
  * unmounts cleanly.
  */
-import React from 'react';
 import { motion } from 'framer-motion';
 import { Skeleton } from './Skeleton';
 import { fadeUp, useMotionVariants } from '../../lib/motion';

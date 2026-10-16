@@ -1,11 +1,9 @@
-import React, {
-  createContext,
+import React, {createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useState
-} from 'react';
+  useState} from 'react';
 import type {
   Alert,
   AlertOutcomeReview,

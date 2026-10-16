@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { ChevronDownIcon } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import type { Alert, AlertBranchResponse, BranchResponseStatus } from '../../types';

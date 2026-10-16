@@ -6,7 +6,6 @@
  * shimmer animation, and respects `prefers-reduced-motion` via the
  * `index.css` `@media` rule.
  */
-import React from 'react';
 import { twMerge } from 'tailwind-merge';
 
 type Tone = 'surface' | 'elevated' | 'muted';

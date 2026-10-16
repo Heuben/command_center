@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { IncidentReport } from '../../types';
 import { alertTypeLabel } from '../../utils/labels';
 import { formatDateTime } from '../../utils/time';

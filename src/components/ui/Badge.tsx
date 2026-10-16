@@ -2,24 +2,20 @@ import React from 'react';
 import { twMerge } from 'tailwind-merge';
 import type {
   AlertOutcome,
-  AlertType,
   AssignmentStatus,
   Availability,
   BranchResponseStatus,
-  DeviceStatus,
   ReportStatus,
-  ReviewStatus } from
-'../../types';
+  ReviewStatus
+} from '../../types';
 import {
-  alertTypeLabel,
   assignmentStatusLabel,
   availabilityLabel,
   branchStatusLabel,
-  deviceStatusLabel,
   outcomeLabel,
   reportStatusLabel,
-  reviewStatusLabel } from
-'../../utils/labels';
+  reviewStatusLabel
+} from '../../utils/labels';
 
 type Tone = 'neutral' | 'primary' | 'urgent' | 'success' | 'danger';
 

@@ -6,14 +6,12 @@
  * and the current list of toasts. It's wired into the app via
  * `<ToastProvider>` in AppLayout so every page can use `useToast()`.
  */
-import React, {
-  createContext,
+import React, {createContext,
   useCallback,
   useContext,
   useMemo,
   useRef,
-  useState
-} from 'react';
+  useState} from 'react';
 import type { Toast, ToastOptions } from '../components/ui/Toast';
 
 type Ctx = {

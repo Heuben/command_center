@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { DUR, EASE } from '../lib/motion';
@@ -37,6 +38,11 @@ const emptyDraft = (): {
 
 export function BranchManagement() {
   const { scopeCenterId, isSuperadmin, user } = useSession();
+
+  if (!isSuperadmin) {
+    return <Navigate to="/" replace />;
+  }
+
   const [commandCenters, setCommandCenters] = useState<CommandCenter[]>([]);
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +105,7 @@ export function BranchManagement() {
       setNotice(`${next.name} was updated.`);
     } else {
       const created = await api.createCenter(next);
-      setNotice(`${created.name} was registered.`);
+      setNotice(`${created.center.name} was registered.`);
     }
     setCreating(false);
     setEditing(null);
@@ -287,6 +293,7 @@ export function BranchManagement() {
         open={creating || !!editing}
         center={editing}
         adminUsers={assignableAdmins}
+        userName={userName}
         onCancel={() => {
           setCreating(false);
           setEditing(null);
@@ -313,6 +320,7 @@ function BranchForm({
   open,
   center,
   adminUsers,
+  userName,
   onCancel,
   onError,
   onSubmit
@@ -320,11 +328,11 @@ function BranchForm({
   open: boolean;
   center: CommandCenter | null;
   adminUsers: {id: string;email: string;role: string;}[];
+  userName: (id: string) => string;
   onCancel: () => void;
   onError: (msg: string) => void;
   onSubmit: (next: Omit<CommandCenter, 'id' | 'created_at'> & {id?: string;}) => Promise<void> | void;
 }) {
-  const { userName } = useDispatchData();
   const [draft, setDraft] = useState(() => emptyDraft());
   const [submitting, setSubmitting] = useState(false);
 

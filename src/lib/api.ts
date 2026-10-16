@@ -60,6 +60,15 @@ interface DashboardStatsDto {
   totalCollisionIncidents: number;
 }
 
+interface GlobalSettings {
+  infrastructureRegion: string;
+  apiBaseUrl: string;
+  webhookUrl: string;
+  aiConfidenceThreshold: number;
+  defaultRoutingMode: 'nearest' | 'balanced';
+  branchProvisioning: 'manual' | 'approved';
+}
+
 interface PaginatedAuditLogs {
   data: SystemAuditLog[];
   cursor: string | null;
@@ -88,7 +97,7 @@ export const api = {
       role: profile.role === 'RESPONDER' ? 'responder' :
             profile.role === 'ADMIN' ? 'admin' :
             'superadmin',
-      m_number: profile.m_number,
+      m_number: profile.m_number ?? undefined,
       command_center_id: profile.command_center_id,
       account_status: undefined,
       must_change_password: undefined,
@@ -126,9 +135,9 @@ export const api = {
   getCommandCenters: () => request<CommandCenter[]>('/command-centers'),
 
   // Settings (global) - placeholder; adjust based on actual backend
-  getSettings: () => request<AppState>('/settings'), // Adjust type as needed
-  updateSettings: (settings: Partial<AppState>) =>
-    request<AppState>('/settings', {
+  getSettings: () => request<GlobalSettings>('/settings'),
+  updateSettings: (settings: Partial<GlobalSettings>) =>
+    request<GlobalSettings>('/settings', {
       method: 'PATCH',
       body: JSON.stringify(settings)
     }),

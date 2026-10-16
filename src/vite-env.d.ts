@@ -21,6 +21,4 @@ declare module 'leaflet' {
     click?: (event: any) => void;
     [key: string]: any;
   }
-
-  export const [key: string]: any;
 }

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, {useMemo, useState} from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DownloadIcon } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
@@ -7,7 +7,7 @@ import { IncidentLogTable, type IncidentLogRow } from '../components/incidents/I
 import { PostIncidentReportsTable } from '../components/incidents/PostIncidentReportsTable';
 import { CivilianReportsTable } from '../components/incidents/CivilianReportsTable';
 import { Button, Card, PageHeader, Segmented } from '../components/ui/primitives';
-import { rowsToCsv, downloadCsv } from '../utils/csv';
+import { rowsToCsv, downloadCsv, type Column } from '../utils/csv';
 import type { CivilianReport, IncidentReport } from '../types';
 import { formatDateTime } from '../utils/time';
 import { DUR, EASE } from '../lib/motion';
@@ -43,18 +43,18 @@ export function IncidentHistory() {
   const pendingCivilian = civilianRows.filter((r) => r.status === 'pending').length;
 
   const exportIncidentLog = () => {
-    const cols = [
-    { key: 'alert_id', header: 'Alert ID' },
-    { key: 'type', header: 'Alert Type' },
-    { key: 'address', header: 'Address' },
-    { key: 'branch', header: 'Branch' },
-    { key: 'status', header: 'Status' },
-    { key: 'triggered', header: 'Triggered At' },
-    { key: 'acknowledged', header: 'Acknowledged At' },
-    { key: 'dispatched', header: 'Dispatched At' },
-    { key: 'arrived', header: 'Arrived At' },
-    { key: 'resolved', header: 'Resolved At' }] as
-    const;
+    const cols: Array<Column<Record<string, string>>> = [
+      { key: 'alert_id', header: 'Alert ID' },
+      { key: 'type', header: 'Alert Type' },
+      { key: 'address', header: 'Address' },
+      { key: 'branch', header: 'Branch' },
+      { key: 'status', header: 'Status' },
+      { key: 'triggered', header: 'Triggered At' },
+      { key: 'acknowledged', header: 'Acknowledged At' },
+      { key: 'dispatched', header: 'Dispatched At' },
+      { key: 'arrived', header: 'Arrived At' },
+      { key: 'resolved', header: 'Resolved At' }
+    ];
     const records = logRows.map((r) => ({
       alert_id: r.alert.id,
       type: r.alert.alert_type,
@@ -74,14 +74,14 @@ export function IncidentHistory() {
   };
 
   const exportReports = () => {
-    const cols = [
-    { key: 'id', header: 'Report ID' },
-    { key: 'alert_id', header: 'Alert ID' },
-    { key: 'branch', header: 'Branch' },
-    { key: 'summary', header: 'Summary' },
-    { key: 'status', header: 'Status' },
-    { key: 'submitted_at', header: 'Submitted At' }] as
-    const;
+    const cols: Array<Column<Record<string, string>>> = [
+      { key: 'id', header: 'Report ID' },
+      { key: 'alert_id', header: 'Alert ID' },
+      { key: 'branch', header: 'Branch' },
+      { key: 'summary', header: 'Summary' },
+      { key: 'status', header: 'Status' },
+      { key: 'submitted_at', header: 'Submitted At' }
+    ];
     const records: Record<string, string>[] = reportRows.map((r: IncidentReport) => ({
       id: r.id,
       alert_id: r.alert_id,
@@ -97,15 +97,15 @@ export function IncidentHistory() {
   };
 
   const exportCivilian = () => {
-    const cols = [
-    { key: 'id', header: 'Report ID' },
-    { key: 'branch', header: 'Branch' },
-    { key: 'civilian_name', header: 'Civilian Name' },
-    { key: 'location', header: 'Location' },
-    { key: 'statement', header: 'Statement' },
-    { key: 'status', header: 'Status' },
-    { key: 'submitted_at', header: 'Submitted At' }] as
-    const;
+    const cols: Array<Column<Record<string, string>>> = [
+      { key: 'id', header: 'Report ID' },
+      { key: 'branch', header: 'Branch' },
+      { key: 'civilian_name', header: 'Civilian Name' },
+      { key: 'location', header: 'Location' },
+      { key: 'statement', header: 'Statement' },
+      { key: 'status', header: 'Status' },
+      { key: 'submitted_at', header: 'Submitted At' }
+    ];
     const records: Record<string, string>[] = civilianRows.map((r: CivilianReport) => ({
       id: r.id,
       branch: showBranch ? centerName(r.command_center_id) : '',

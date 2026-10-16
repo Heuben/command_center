@@ -1,5 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+
+const MapContainerAny = MapContainer as any;
+const TileLayerAny = TileLayer as any;
+const CircleMarkerAny = CircleMarker as any;
 import { CrosshairIcon } from 'lucide-react';
 import type { LatLng } from '../../types';
 import { useSession } from '../../contexts/SessionContext';
@@ -93,7 +97,7 @@ export function LocationPicker({
 
 
 }: {lat: string;lng: string;onChange: (next: {lat: string;lng: string;}) => void;latInvalid?: boolean;lngInvalid?: boolean;}) {
-  const { theme } = useSession();
+  useSession();
 
   const latNum = Number(lat);
   const lngNum = Number(lng);
@@ -122,16 +126,17 @@ export function LocationPicker({
           </p>
         </div>
         <div className="h-56 w-full">
-          <MapContainer
+          <MapContainerAny
             center={[center.lat, center.lng]}
             zoom={14}
             scrollWheelZoom
             className="h-full w-full"
             attributionControl>
-            <TileLayer
+            <TileLayerAny
               url={OSM_TILES}
               attribution={ATTRIBUTION}
-              maxZoom={19} />
+              maxZoom={19}
+            />
             
             <ClickCapture
               onPick={(next) =>
@@ -141,29 +146,31 @@ export function LocationPicker({
             <PickerController marker={marker} />
             {marker &&
             <>
-                <CircleMarker
-                center={[marker.lat, marker.lng]}
-                radius={13}
-                pathOptions={{
-                  color: '#2563eb',
-                  weight: 2,
-                  fillColor: '#2563eb',
-                  fillOpacity: 0.14
-                }} />
+                <CircleMarkerAny
+                  center={[marker.lat, marker.lng]}
+                  radius={13}
+                  pathOptions={{
+                    color: '#2563eb',
+                    weight: 2,
+                    fillColor: '#2563eb',
+                    fillOpacity: 0.14
+                  }}
+                />
               
-                <CircleMarker
-                center={[marker.lat, marker.lng]}
-                radius={5}
-                pathOptions={{
-                  color: '#ffffff',
-                  weight: 2,
-                  fillColor: '#2563eb',
-                  fillOpacity: 1
-                }} />
+                <CircleMarkerAny
+                  center={[marker.lat, marker.lng]}
+                  radius={5}
+                  pathOptions={{
+                    color: '#ffffff',
+                    weight: 2,
+                    fillColor: '#2563eb',
+                    fillOpacity: 1
+                  }}
+                />
               
               </>
             }
-          </MapContainer>
+          </MapContainerAny>
         </div>
       </div>
 

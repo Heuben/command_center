@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { MapPinIcon } from 'lucide-react';
 import type { CivilianReport } from '../../types';
 import { useSession } from '../../contexts/SessionContext';
@@ -30,7 +30,7 @@ export function CivilianReportsTable({
   showBranch
 }: {rows: CivilianReport[];showBranch: boolean;}) {
   const [active, setActive] = useState<CivilianReport | null>(null);
-  const { centerName, userName } = useDispatchData();
+  const { centerName } = useDispatchData();
 
   const columns: Column<CivilianReport>[] = [
   {

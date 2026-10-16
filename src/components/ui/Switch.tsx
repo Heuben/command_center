@@ -3,7 +3,6 @@
  *
  * Uses role="switch" with aria-checked. The thumb slides smoothly via framer-motion.
  */
-import React from 'react';
 import { motion } from 'framer-motion';
 import { twMerge } from 'tailwind-merge';
 

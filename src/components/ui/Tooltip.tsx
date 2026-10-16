@@ -4,7 +4,7 @@
  * Position: top (default), bottom, left, right.
  * Uses the existing CSS token system for colors — no new dependencies.
  */
-import React, { useId, useState } from 'react';
+import React, {useId, useState} from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 type Position = 'top' | 'bottom' | 'left' | 'right';

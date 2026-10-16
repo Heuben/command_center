@@ -2,7 +2,8 @@ import { api } from './api';
 import { ApiError } from './api';
 
 // Mock fetch globally
-global.fetch = vi.fn();
+const mockedFetch = vi.fn();
+globalThis.fetch = mockedFetch as unknown as typeof fetch;
 
 describe('API Service', () => {
   const mockEmail = 'test@example.com';
@@ -23,7 +24,7 @@ describe('API Service', () => {
   describe('login', () => {
     it('should call the correct endpoint with correct parameters', async () => {
       // Mock successful response
-      fetch.mockResolvedValueOnce({
+      mockedFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
         status: 200
@@ -31,7 +32,7 @@ describe('API Service', () => {
 
       await api.login(mockEmail, mockPassword);
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(mockedFetch).toHaveBeenCalledWith(
         'https://www.bantai.online/api/v1/auth/local/signin',
         expect.objectContaining({
           method: 'POST',
@@ -45,7 +46,7 @@ describe('API Service', () => {
     });
 
     it('should return the access token and refresh token on success', async () => {
-      fetch.mockResolvedValueOnce({
+      mockedFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
         status: 200
@@ -57,7 +58,7 @@ describe('API Service', () => {
     });
 
     it('should store the access token in localStorage', async () => {
-      fetch.mockResolvedValueOnce({
+      mockedFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
         status: 200
@@ -70,7 +71,7 @@ describe('API Service', () => {
     });
 
     it('should throw an ApiError on HTTP error', async () => {
-      fetch.mockResolvedValueOnce({
+      mockedFetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Invalid credentials' }),
         status: 401
@@ -82,7 +83,7 @@ describe('API Service', () => {
     });
 
     it('should throw an ApiError on network error', async () => {
-      fetch.mockRejectedValueOnce(new Error('Network error'));
+      mockedFetch.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(api.login(mockEmail, mockPassword))
         .rejects
@@ -92,7 +93,7 @@ describe('API Service', () => {
 
   describe('devLogin', () => {
     it('should call the correct dev login endpoint', async () => {
-      fetch.mockResolvedValueOnce({
+      mockedFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
         status: 200
@@ -100,7 +101,7 @@ describe('API Service', () => {
 
       await api.devLogin();
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(mockedFetch).toHaveBeenCalledWith(
         'https://www.bantai.online/api/v1/auth/dev-login',
         expect.objectContaining({
           method: 'POST'
@@ -111,7 +112,7 @@ describe('API Service', () => {
 
   describe('logout', () => {
     it('should call the logout endpoint and clear token', async () => {
-      fetch.mockResolvedValueOnce({
+      mockedFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ ok: true }),
         status: 200
@@ -124,7 +125,7 @@ describe('API Service', () => {
 
       await api.logout();
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(mockedFetch).toHaveBeenCalledWith(
         'https://www.bantai.online/api/v1/auth/logout',
         expect.objectContaining({
           method: 'POST',
@@ -152,7 +153,7 @@ describe('API Service', () => {
         phone_verified_at: null
       };
 
-      fetch.mockResolvedValueOnce({
+      mockedFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockProfile,
         status: 200
@@ -165,7 +166,7 @@ describe('API Service', () => {
 
       const result = await api.me();
 
-      expect(fetch).toHaveBeenCalledWith(
+      expect(mockedFetch).toHaveBeenCalledWith(
         'https://www.bantai.online/api/v1/responders/profile',
         expect.objectContaining({
           headers: expect.objectContaining({

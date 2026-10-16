@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   BuildingIcon,
@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
 import { api } from '../lib/api';
-import type { Agency, UserAccount } from '../types';
+import type { UserAccount } from '../types';
 import { agencyLabel, agencyShort, fullName, rankDisplay, roleLabel } from '../utils/labels';
 import { DataTable } from '../components/ui/DataTable';
 import type { Column } from '../components/ui/DataTable';
@@ -38,7 +38,7 @@ export function Personnel() {
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [commandCenters, setCommandCenters] = useState<any[]>([]); // We'll type as CommandCenter[] later
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const toast = useToast();
   const [query, setQuery] = useState('');
   const [addOpen, setAddOpen] = useState(false);
@@ -404,7 +404,6 @@ function AddResponderModal({
   lockedCenterId: string | null;
   commandCenters: any[];
 }) {
-  const { user: currentUser } = useSession();
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
   const [email, setEmail] = useState('');
@@ -458,24 +457,21 @@ function AddResponderModal({
     }
     setSubmitting(true);
     try {
-      const result = await api.createUser(
-        {
-          f_name: first.trim(),
-          l_name: last.trim(),
-          role: 'responder',
-          email: email.trim(),
-          command_center_id: center,
-          account_status: 'active',
-          must_change_password: true,
-          r_profile: {
-            agency,
-            call_sign: callSign.trim() || null,
-            rank: agency === 'police' ? rank.trim() || 'PCpl' : 'none',
-            availability: 'off_duty'
-          }
-        },
-        currentUser?.id ?? ''
-      );
+      const result = await api.createUser({
+        f_name: first.trim(),
+        l_name: last.trim(),
+        role: 'responder',
+        email: email.trim(),
+        command_center_id: center,
+        account_status: 'active',
+        must_change_password: true,
+        r_profile: {
+          agency,
+          call_sign: callSign.trim() || null,
+          rank: agency === 'police' ? rank.trim() || 'PCpl' : 'none',
+          availability: 'off_duty'
+        }
+      });
       onCreated(`${first.trim()} ${last.trim()}`, result.tempPassword);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to create account.';

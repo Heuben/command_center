@@ -36,7 +36,6 @@ export function DataTable<T>({
   onRowClick,
   defaultSort,
   empty,
-  rowClassName,
   loading = false,
   caption
 }: Props<T>) {

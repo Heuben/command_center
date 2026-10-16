@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -20,6 +20,7 @@ import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { DUR, EASE } from '../lib/motion';
 import { useToast } from '../hooks/useToast';
+import { roleLabel } from '../utils/labels';
 
 type GlobalSettings = {
   infrastructureRegion: string;
@@ -142,7 +143,7 @@ export function Settings() {
     });
     setLocalSettings(stored);
     setSirenVolume(stored.sirenVolume);
-  }, [user.id, user.command_center_id, isSuperadmin]);
+  }, [user, isSuperadmin, setSirenVolume]);
 
   // Auto-dismiss the success/error banners after a few seconds.
   useEffect(() => {
@@ -228,6 +229,18 @@ export function Settings() {
       <PageHeader
         title="Settings"
         subtitle="Your profile, workstation preferences, and session." />
+
+      {globalLoading && (
+        <div className="mb-4 rounded-lg border border-line bg-surface px-4 py-3 text-[13px] text-ink-muted">
+          Loading system settings…
+        </div>
+      )}
+
+      {globalError && (
+        <div className="mb-4 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-[13px] text-danger" role="alert">
+          {globalError}
+        </div>
+      )}
 
       <AnimatePresence>
         {savedAt !== null && (

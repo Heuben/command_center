@@ -170,7 +170,7 @@ describe('<Login />', () => {
     });
 
     // Should navigate to home on success
-    expect(screen.getByRole('link', { href: '/' })).toBeInTheDocument();
+    expect(document.querySelector('a[href="/"]')).not.toBeNull();
   });
 
   // ── 9. Shows error on invalid credentials ────────────────────────────────

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import type { Alert, AlertBranchResponse } from '../../types';
 import { useDispatchData } from '../../contexts/DispatchContext';
 import { alertTypeLabel, confidenceDisplay } from '../../utils/labels';
@@ -33,7 +33,7 @@ export function IncidentLogTable({
   rows,
   showBranch
 }: {rows: IncidentLogRow[];showBranch: boolean;}) {
-  const { centerName, alertById } = useDispatchData();
+  const { centerName } = useDispatchData();
   const [active, setActive] = useState<IncidentLogRow | null>(null);
 
   const columns: Column<IncidentLogRow>[] = [

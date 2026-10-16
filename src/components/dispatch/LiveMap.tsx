@@ -4,6 +4,12 @@ import type { Alert, BranchResponseStatus, CommandCenter, LatLng, UserAccount } 
 import { useSession } from '../../contexts/SessionContext';
 import { alertTypeLabel, branchStatusLabel } from '../../utils/labels';
 
+const MapContainerAny = MapContainer as any;
+const TileLayerAny = TileLayer as any;
+const CircleAny = Circle as any;
+const CircleMarkerAny = CircleMarker as any;
+const TooltipAny = Tooltip as any;
+
 export type MapIncident = {
   alert: Alert;
   status: BranchResponseStatus;
@@ -99,16 +105,17 @@ export function LiveMap({
   const selected = incidents.find((i) => i.alert.id === selectedAlertId)?.alert.location ?? null;
 
   return (
-    <MapContainer
+    <MapContainerAny
       center={[14.6577, 120.9842]}
       zoom={14}
       zoomControl
       scrollWheelZoom
       className="h-full w-full">
-      <TileLayer
+      <TileLayerAny
         key={theme}
         url={OSM_TILES}
-        attribution={ATTRIBUTION} />
+        attribution={ATTRIBUTION}
+      />
       
 
       <MapController center={selected} />
@@ -116,38 +123,40 @@ export function LiveMap({
       {/* Station jurisdiction: command center location and its broadcast radius */}
       {centers.map((c) =>
       <React.Fragment key={c.id}>
-          <Circle
-          center={[c.location.lat, c.location.lng]}
-          radius={3000}
-          pathOptions={{
-            color: BRAND_MAP_COLOR,
-            weight: 1,
-            dashArray: '4 4',
-            fillColor: BRAND_MAP_COLOR,
-            fillOpacity: 0.04
-          }}
-          interactive={false} />
+          <CircleAny
+            center={[c.location.lat, c.location.lng]}
+            radius={3000}
+            pathOptions={{
+              color: BRAND_MAP_COLOR,
+              weight: 1,
+              dashArray: '4 4',
+              fillColor: BRAND_MAP_COLOR,
+              fillOpacity: 0.04
+            }}
+            interactive={false}
+          />
         
 
-          <CircleMarker
-          center={[c.location.lat, c.location.lng]}
-          radius={6}
-          pathOptions={{
-            color: BRAND_MAP_COLOR,
-            weight: 2,
-            fillColor: '#ffffff',
-            fillOpacity: 1
-          }}>
-            <Tooltip direction="top" offset={[0, -6]}>
+          <CircleMarkerAny
+            center={[c.location.lat, c.location.lng]}
+            radius={6}
+            pathOptions={{
+              color: BRAND_MAP_COLOR,
+              weight: 2,
+              fillColor: '#ffffff',
+              fillOpacity: 1
+            }}
+          >
+            <TooltipAny direction="top" offset={[0, -6]}>
               <span className="text-[12px] font-medium">{c.name} · Station</span>
-            </Tooltip>
-          </CircleMarker>
+            </TooltipAny>
+          </CircleMarkerAny>
         </React.Fragment>
       )}
 
       {responders.map((r) =>
       r.r_profile?.position ?
-      <CircleMarker
+      <CircleMarkerAny
         key={r.id}
         center={[r.r_profile.position.lat, r.r_profile.position.lng]}
         radius={5}
@@ -156,13 +165,14 @@ export function LiveMap({
           weight: 2,
           fillColor: r.r_profile.availability === 'dispatched' ? '#1d5be0' : '#15803d',
           fillOpacity: 1
-        }}>
-            <Tooltip direction="top" offset={[0, -6]}>
+        }}
+      >
+            <TooltipAny direction="top" offset={[0, -6]}>
               <span className="text-[12px] font-medium">
                 {r.r_profile.call_sign ?? `${r.f_name} ${r.l_name}`}
               </span>
-            </Tooltip>
-          </CircleMarker> :
+            </TooltipAny>
+          </CircleMarkerAny> :
       null
       )}
 
@@ -171,7 +181,7 @@ export function LiveMap({
         const color = statusColor[status];
         return (
           <React.Fragment key={alert.id}>
-            <CircleMarker
+            <CircleMarkerAny
               key={`${alert.id}-halo`}
               center={[alert.location.lat, alert.location.lng]}
               radius={status === 'pending' || active ? active ? 20 : 15 : 0}
@@ -181,10 +191,11 @@ export function LiveMap({
                 fillColor: color,
                 fillOpacity: status === 'pending' || active ? 0.16 : 0
               }}
-              interactive={false} />
+              interactive={false}
+            />
             
 
-            <CircleMarker
+            <CircleMarkerAny
               center={[alert.location.lat, alert.location.lng]}
               radius={active ? 10 : 8}
               eventHandlers={{ click: () => onSelect(alert.id) }}
@@ -193,16 +204,17 @@ export function LiveMap({
                 weight: 2,
                 fillColor: color,
                 fillOpacity: 1
-              }}>
-              <Tooltip direction="top" offset={[0, -8]}>
+              }}
+            >
+              <TooltipAny direction="top" offset={[0, -8]}>
                 <span className="text-[12px] font-medium">
                   {alertTypeLabel[alert.alert_type]} · {branchStatusLabel[status]}
                 </span>
-              </Tooltip>
-            </CircleMarker>
+              </TooltipAny>
+            </CircleMarkerAny>
           </React.Fragment>);
 
       })}
-    </MapContainer>);
+    </MapContainerAny>);
 
 }

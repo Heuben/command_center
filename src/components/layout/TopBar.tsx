@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOutIcon, MenuIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

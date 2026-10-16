@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDownIcon, ArrowUpIcon, MinusIcon } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';

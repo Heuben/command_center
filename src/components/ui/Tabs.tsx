@@ -4,7 +4,7 @@
  * Follows WAI-ARIA tabs pattern: role="tablist" / role="tab" / role="tabpanel".
  * The active indicator uses layoutId so it slides between tabs smoothly.
  */
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import { motion } from 'framer-motion';
 import { twMerge } from 'tailwind-merge';
 

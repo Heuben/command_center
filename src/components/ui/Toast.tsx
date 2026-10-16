@@ -8,7 +8,7 @@
  * Animations honor `prefers-reduced-motion` via the `useMotionVariants`
  * hook. Auto-dismiss timer is managed in `ToastContext`.
  */
-import React, { useEffect, useId } from 'react';
+import React, {useEffect, useId} from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   CheckCircle2,
