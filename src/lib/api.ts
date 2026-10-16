@@ -57,9 +57,11 @@ export interface ResponderTableRow {
   f_name: string;
   l_name: string;
   m_name: string | null;
-  role: 'RESPONDER' | 'ADMIN' | 'SUPER';
-  agency: 'POLICE' | 'BARANGAY_TANOD' | 'MDRRMO';
-  availability: 'ON_DUTY' | 'OFF_DUTY' | 'DISPATCHED';
+  role: 'responder' | 'admin' | 'super';
+  email: string;
+  rank: string;
+  agency: 'police' | 'barangay_tanod' | 'mdrrmo';
+  availability: 'on_duty' | 'off_duty' | 'dispatched';
 }
 
 interface DashboardStatsDto {
@@ -103,6 +105,7 @@ export const api = {
       id: profile.id,
       f_name: profile.f_name,
       l_name: profile.l_name,
+      m_name: profile.m_name,
       email: profile.email,
       role: profile.role === 'RESPONDER' ? 'responder' :
             profile.role === 'ADMIN' ? 'admin' :
@@ -159,17 +162,18 @@ export const api = {
       id: row.id,
       f_name: row.f_name,
       l_name: row.l_name,
-      email: '',
-      role: row.role === 'SUPER' ? 'superadmin' : row.role === 'ADMIN' ? 'admin' : 'responder',
+      m_name: row.m_name,
+      email: row.email,
+      role: row.role === 'super' ? 'superadmin' : row.role === 'admin' ? 'admin' : 'responder',
       m_number: undefined,
       command_center_id: centerId,
       account_status: undefined,
       must_change_password: undefined,
       r_profile: {
-        agency: row.agency === 'POLICE' ? 'police' : row.agency === 'BARANGAY_TANOD' ? 'barangay_tanod' : 'mdrrmo',
+        agency: row.agency,
         call_sign: null,
-        rank: 'none',
-        availability: row.availability === 'ON_DUTY' ? 'on_duty' : row.availability === 'OFF_DUTY' ? 'off_duty' : 'dispatched'
+        rank: row.rank,
+        availability: row.availability
       }
     }));
   },

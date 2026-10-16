@@ -167,8 +167,8 @@ export const serviceProviderLabel: Record<string, string> = {
   move_it: 'Move It'
 };
 
-export function fullName(user: {f_name: string;l_name: string;}): string {
-  return `${user.f_name} ${user.l_name}`;
+export function fullName(user: {f_name: string;l_name: string;m_name?: string | null;}): string {
+  return [user.f_name, user.m_name, user.l_name].filter(Boolean).join(' ');
 }
 
 export function rankDisplay(rank: string, agency: Agency): string {

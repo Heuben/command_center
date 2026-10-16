@@ -193,4 +193,40 @@ describe('API Service', () => {
       });
     });
   });
+
+  describe('getBranchResponders', () => {
+    it('maps the lowercase branch responder response without losing middle names', async () => {
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => [{
+          id: '749d4c75-5507-42c6-ae4c-47549993248f',
+          f_name: 'Juanita',
+          l_name: 'Aspiras',
+          m_name: 'Cruz',
+          role: 'responder',
+          email: 'aspirasjuanita81@gmail.com',
+          rank: 'PGEN',
+          agency: 'police',
+          availability: 'off_duty'
+        }],
+        status: 200
+      } as Response);
+
+      const responders = await api.getBranchResponders('7cb70f0a-777a-4048-9c11-10d7da83e985');
+
+      expect(responders[0]).toMatchObject({
+        id: '749d4c75-5507-42c6-ae4c-47549993248f',
+        f_name: 'Juanita',
+        l_name: 'Aspiras',
+        m_name: 'Cruz',
+        role: 'responder',
+        email: 'aspirasjuanita81@gmail.com',
+        r_profile: {
+          rank: 'PGEN',
+          agency: 'police',
+          availability: 'off_duty'
+        }
+      });
+    });
+  });
 });

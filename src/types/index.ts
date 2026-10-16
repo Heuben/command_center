@@ -43,6 +43,7 @@ export type UserAccount = {
   id: string;
   f_name: string;
   l_name: string;
+  m_name?: string | null;
   role: Role;
   email: string;
   m_number?: string;
