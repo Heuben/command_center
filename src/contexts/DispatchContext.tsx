@@ -1,7 +1,6 @@
 import React, {createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState} from 'react';
 import type {
@@ -14,7 +13,6 @@ import type {
   UserAccount
 } from '../types';
 import { api } from '../lib/api';
-import { useSession } from './SessionContext';
 
 const EMPTY: AppState = {
   users: [],
@@ -37,7 +35,6 @@ type DispatchValue = AppState & {
   centerById: (id: string | null | undefined) => CommandCenter | undefined;
   centerName: (id: string | null | undefined) => string;
   alertById: (id: string) => Alert | undefined;
-  refresh: () => Promise<void>;
   acknowledge: (alertId: string, centerId: string, actorId: string) => Promise<void>;
   dispatchResponders: (
     alertId: string,
@@ -77,42 +74,8 @@ type DispatchValue = AppState & {
 const DispatchContext = createContext<DispatchValue | null>(null);
 
 export function DispatchProvider({ children }: {children: React.ReactNode;}) {
-  const { user } = useSession();
-  const [state, setState] = useState<AppState>(EMPTY);
-  const [ready, setReady] = useState(false);
-
-  const refresh = useCallback(async () => {
-    if (!user) {
-      setState(EMPTY);
-      setReady(true);
-      return;
-    }
-    const next = await api.state();
-    setState(next);
-    setReady(true);
-  }, [user]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setReady(false);
-    refresh().catch(() => {
-      if (!cancelled) {
-        setState(EMPTY);
-        setReady(true);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [refresh]);
-
-  useEffect(() => {
-    if (!user) return;
-    const id = window.setInterval(() => {
-      refresh().catch(() => undefined);
-    }, 8000);
-    return () => window.clearInterval(id);
-  }, [user, refresh]);
+  const [state] = useState<AppState>(EMPTY);
+  const ready = true;
 
   const userById = useCallback(
     (id: string | null | undefined) => {
@@ -151,9 +114,8 @@ export function DispatchProvider({ children }: {children: React.ReactNode;}) {
   const acknowledge = useCallback(
     async (alertId: string, centerId: string) => {
       await api.acknowledge(alertId, centerId);
-      await refresh();
     },
-    [refresh]
+    []
   );
 
   const dispatchResponders = useCallback(
@@ -166,25 +128,22 @@ export function DispatchProvider({ children }: {children: React.ReactNode;}) {
     ) => {
       if (responderIds.length === 0) return;
       await api.dispatchResponders(alertId, centerId, responderIds, leadId);
-      await refresh();
     },
-    [refresh]
+    []
   );
 
   const reassignResponder = useCallback(
     async (declinedAssignmentId: string, newResponderId: string) => {
       await api.reassignResponder(declinedAssignmentId, newResponderId);
-      await refresh();
     },
-    [refresh]
+    []
   );
 
   const resolveBranch = useCallback(
     async (alertId: string, centerId: string) => {
       await api.resolveBranch(alertId, centerId);
-      await refresh();
     },
-    [refresh]
+    []
   );
 
   const reviewOutcome = useCallback(
@@ -195,68 +154,60 @@ export function DispatchProvider({ children }: {children: React.ReactNode;}) {
       notes: string
     ) => {
       await api.reviewOutcome(reviewId, decision, notes);
-      await refresh();
     },
-    [refresh]
+    []
   );
 
   const acknowledgeCivilianReport = useCallback(
     async (reportId: string) => {
       await api.acknowledgeCivilianReport(reportId);
-      await refresh();
     },
-    [refresh]
+    []
   );
 
   const createUser = useCallback(
     async (input: Omit<UserAccount, 'id'>) => {
       const result = await api.createUser(input);
-      await refresh();
       return result;
     },
-    [refresh]
+    []
   );
 
   const updateUser = useCallback(
     async (id: string, patch: Partial<UserAccount>) => {
       await api.updateUser(id, patch);
-      await refresh();
     },
-    [refresh]
+    []
   );
 
   const updateReport = useCallback(
     async (reportId: string, patch: Partial<IncidentReport>) => {
       const result = await api.updateReport(reportId, patch);
-      await refresh();
       return (result as {report?: IncidentReport;}).report ?? null;
     },
-    [refresh]
+    []
   );
 
   const createCenter = useCallback(
     async (input: Omit<CommandCenter, 'id' | 'created_at'>) => {
       const result = await api.createCenter(input);
-      await refresh();
       return result.center;
     },
-    [refresh]
+    []
   );
 
   const updateCenter = useCallback(
     async (id: string, patch: Partial<CommandCenter>) => {
       await api.updateCenter(id, patch);
-      await refresh();
     },
-    [refresh]
+    []
   );
 
   const deleteCenter = useCallback(
     async (id: string) => {
       await api.deleteCenter(id);
-      await refresh();
     },
-    [refresh]
+    []
   );
 
   const value = useMemo<DispatchValue>(
@@ -269,7 +220,6 @@ export function DispatchProvider({ children }: {children: React.ReactNode;}) {
       centerById,
       centerName,
       alertById,
-      refresh,
       acknowledge,
       dispatchResponders,
       reassignResponder,
@@ -291,7 +241,6 @@ export function DispatchProvider({ children }: {children: React.ReactNode;}) {
       centerById,
       centerName,
       alertById,
-      refresh,
       acknowledge,
       dispatchResponders,
       reassignResponder,

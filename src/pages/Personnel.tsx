@@ -55,7 +55,11 @@ export function Personnel() {
       setLoading(true);
       setError(null);
       try {
-        const centersData = await api.getCommandCenters();
+        const centersData = isSuperadmin
+          ? await api.getCommandCenters()
+          : user?.command_center_id
+            ? [{ id: user.command_center_id, name: 'Assigned command center' }]
+            : [];
         if (!cancelled) {
           setCommandCenters(centersData);
         }

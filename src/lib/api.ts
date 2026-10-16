@@ -9,7 +9,7 @@ export class ApiError extends Error {
 // Hardcoded base URL for the Bantai ICC API as requested
 const API_BASE_URL = 'https://www.bantai.online/api/v1';
 
-import type { SystemAuditLog, UserAccount, CommandCenter, AppState, AuditCategory, AuditAction } from '../types';
+import type { SystemAuditLog, UserAccount, CommandCenter, AuditCategory, AuditAction } from '../types';
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   // Get access token from localStorage if available
@@ -184,27 +184,6 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(settings)
     }),
-  state: async () => {
-    try {
-      return await request<AppState>('/state');
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        return {
-          users: [],
-          commandCenters: [],
-          alerts: [],
-          branchResponses: [],
-          assignments: [],
-          reviews: [],
-          civilianReports: [],
-          reports: [],
-          logs: [],
-          devices: []
-        } satisfies AppState;
-      }
-      throw error;
-    }
-  },
   createCenter: (body: unknown) =>
     request<{center: CommandCenter}>('/command-centers', {
       method: 'POST',
