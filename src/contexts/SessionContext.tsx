@@ -75,6 +75,21 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
 
   useEffect(() => {
     let cancelled = false;
+    let hasStoredTokens = false;
+    try {
+      hasStoredTokens = !!(
+        window.localStorage.getItem('bantai-access-token') ||
+        window.localStorage.getItem('bantai-refresh-token')
+      );
+    } catch {
+      hasStoredTokens = false;
+    }
+
+    if (!hasStoredTokens) {
+      setReady(true);
+      return;
+    }
+
     api
       .me()
       .then((data) => {

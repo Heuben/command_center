@@ -1,12 +1,21 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { SessionProvider, useSession } from './SessionContext';
 import { act } from 'react-dom/test-utils';
 import type { UserAccount } from '../types';
 
 vi.mock('socket.io-client', () => ({
-  io: vi.fn(() => ({ disconnect: vi.fn() }))
+  io: vi.fn(() => ({
+    id: 'mock-socket-id',
+    on: vi.fn(),
+    off: vi.fn(),
+    disconnect: vi.fn(),
+    io: {
+      on: vi.fn(),
+      off: vi.fn()
+    }
+  }))
 }));
 
 import { io } from 'socket.io-client';
@@ -52,6 +61,14 @@ describe('SessionContext', () => {
     if (typeof window !== 'undefined') {
       window.localStorage.clear();
     }
+  });
+
+  it('skips profile restoration when no auth tokens are stored', async () => {
+    const { result } = renderHook(() => useSession(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.ready).toBe(true));
+
+    expect(api.me).not.toHaveBeenCalled();
   });
 
   describe('signIn', () => {
