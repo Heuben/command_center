@@ -46,10 +46,26 @@ interface ResponderProfileRow {
   l_name: string;
   m_name: string | null;
   email: string;
-  role: 'RESPONDER' | 'ADMIN' | 'SUPER';
+  role: 'RESPONDER' | 'ADMIN' | 'SUPER' | 'DRIVER' | 'responder' | 'admin' | 'super' | 'superadmin' | 'driver';
   command_center_id: string | null;
   m_number: string | null;
   phone_verified_at: Date | null;
+}
+
+function mapProfileRole(role: ResponderProfileRow['role']): UserAccount['role'] {
+  switch (role.toLowerCase()) {
+    case 'responder':
+      return 'responder';
+    case 'admin':
+      return 'admin';
+    case 'super':
+    case 'superadmin':
+      return 'superadmin';
+    case 'driver':
+      return 'driver';
+    default:
+      throw new ApiError('Unsupported profile role.', 500);
+  }
 }
 
 export interface ResponderTableRow {
@@ -107,9 +123,7 @@ export const api = {
       l_name: profile.l_name,
       m_name: profile.m_name,
       email: profile.email,
-      role: profile.role === 'RESPONDER' ? 'responder' :
-            profile.role === 'ADMIN' ? 'admin' :
-            'superadmin',
+      role: mapProfileRole(profile.role),
       m_number: profile.m_number ?? undefined,
       command_center_id: profile.command_center_id,
       account_status: undefined,

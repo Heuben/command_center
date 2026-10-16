@@ -181,6 +181,7 @@ describe('API Service', () => {
           id: mockProfile.id,
           f_name: mockProfile.f_name,
           l_name: mockProfile.l_name,
+          m_name: mockProfile.m_name,
           email: mockProfile.email,
           role: 'superadmin', // mapped from SUPER
           m_number: mockProfile.m_number,
@@ -191,6 +192,29 @@ describe('API Service', () => {
           d_profile: undefined,
         }
       });
+    });
+
+    it('maps a lowercase admin profile to the admin role', async () => {
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'admin-id',
+          f_name: 'Branch',
+          l_name: 'Admin',
+          m_name: null,
+          email: 'admin@example.com',
+          role: 'admin',
+          command_center_id: 'center-id',
+          m_number: null,
+          phone_verified_at: null
+        }),
+        status: 200
+      } as Response);
+
+      const result = await api.me();
+
+      expect(result.user.role).toBe('admin');
+      expect(result.user.command_center_id).toBe('center-id');
     });
   });
 

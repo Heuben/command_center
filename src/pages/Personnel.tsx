@@ -253,25 +253,6 @@ export function Personnel() {
     rankDisplay(r.r_profile?.rank ?? 'none', r.r_profile?.agency ?? 'police'),
     render: (r) => r.r_profile ? rankDisplay(r.r_profile.rank, r.r_profile.agency) : '—'
   },
-  ...(isSuperadmin && !scopeCenterId ?
-  [
-  {
-    key: 'branch',
-    header: 'Branch',
-    sortable: true,
-    sortValue: (r: UserAccount) => {
-      // Find the center name from commandCenters state
-      const center = commandCenters.find((c) => c.id === r.command_center_id);
-      return center ? center.name : '';
-    },
-    render: (r: UserAccount) => {
-      const center = commandCenters.find((c) => c.id === r.command_center_id);
-      return <span className="text-[13px] text-ink-muted">{center ? center.name : ''}</span>;
-    }
-
-  }] :
-
-  []),
   {
     key: 'duty',
     header: 'Duty Status',
@@ -311,9 +292,9 @@ export function Personnel() {
         subtitle={
         isSuperadmin ?
         scopeCenterId ?
-        `Responders and admins at ${scopeCenterId ? commandCenters.find(c => c.id === scopeCenterId)?.name : 'unknown'}` :
+        'Responders and admins at the selected command center' :
         'Select a command center to view personnel' :
-        `Responders and admins at ${user?.command_center_id ? commandCenters.find(c => c.id === user.command_center_id)?.name : 'unknown'}`
+        'Responders and admins at your command center'
         }
         actions={
         <>
