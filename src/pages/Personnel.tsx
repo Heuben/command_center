@@ -48,20 +48,32 @@ export function Personnel() {
   const [deactivatedIds, setDeactivatedIds] = useState<string[]>([]);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
-  // Fetch users and command centers
+  // Fetch responders by branch and command centers for the UI
   useEffect(() => {
     let cancelled = false;
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch users
-        const usersData = await api.getUsers();
-        // Fetch command centers (needed for the modal and for displaying branch)
         const centersData = await api.getCommandCenters();
         if (!cancelled) {
-          setUsers(usersData);
           setCommandCenters(centersData);
+        }
+
+        let nextUsers: UserAccount[] = [];
+        if (scopeCenterId) {
+          nextUsers = await api.getBranchResponders(scopeCenterId);
+        } else if (user?.command_center_id) {
+          nextUsers = await api.getBranchResponders(user.command_center_id);
+        } else if (isSuperadmin) {
+          const branchLists = await Promise.all(
+            centersData.map((center) => api.getBranchResponders(center.id))
+          );
+          nextUsers = branchLists.flat();
+        }
+
+        if (!cancelled) {
+          setUsers(nextUsers);
           setIsFirstLoad(false);
         }
       } catch (err) {
@@ -78,7 +90,7 @@ export function Personnel() {
     return () => {
       cancelled = true;
     };
-  }, [scopeCenterId, isSuperadmin]); // Refetch when scopeCenterId or admin status changes
+  }, [scopeCenterId, isSuperadmin, user?.command_center_id]);
 
   // Sync deactivatedIds whenever users changes (new responders may be created, etc.).
   useEffect(() => {

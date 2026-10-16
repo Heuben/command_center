@@ -52,6 +52,16 @@ interface ResponderProfileRow {
   phone_verified_at: Date | null;
 }
 
+export interface ResponderTableRow {
+  id: string;
+  f_name: string;
+  l_name: string;
+  m_name: string | null;
+  role: 'RESPONDER' | 'ADMIN' | 'SUPER';
+  agency: 'POLICE' | 'BARANGAY_TANOD' | 'MDRRMO';
+  availability: 'ON_DUTY' | 'OFF_DUTY' | 'DISPATCHED';
+}
+
 interface DashboardStatsDto {
   totalIncidents: number;
   totalActivePersonnel: number;
@@ -128,8 +138,41 @@ export const api = {
     return request<PaginatedAuditLogs>(url.pathname + url.search, { method: 'GET' });
   },
 
-  // Personnel management: get all users
-  getUsers: () => request<UserAccount[]>('/users'),
+  // Personnel management: get all users or branch-scoped responders
+  getUsers: async (centerId?: string) => {
+    if (centerId) {
+      return api.getBranchResponders(centerId);
+    }
+
+    try {
+      return await request<UserAccount[]>('/users');
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return [] as UserAccount[];
+      }
+      throw error;
+    }
+  },
+  getBranchResponders: async (centerId: string): Promise<UserAccount[]> => {
+    const rows = await request<ResponderTableRow[]>(`/command-centers/${centerId}/responders`);
+    return (rows ?? []).map((row) => ({
+      id: row.id,
+      f_name: row.f_name,
+      l_name: row.l_name,
+      email: '',
+      role: row.role === 'SUPER' ? 'superadmin' : row.role === 'ADMIN' ? 'admin' : 'responder',
+      m_number: undefined,
+      command_center_id: centerId,
+      account_status: undefined,
+      must_change_password: undefined,
+      r_profile: {
+        agency: row.agency === 'POLICE' ? 'police' : row.agency === 'BARANGAY_TANOD' ? 'barangay_tanod' : 'mdrrmo',
+        call_sign: null,
+        rank: 'none',
+        availability: row.availability === 'ON_DUTY' ? 'on_duty' : row.availability === 'OFF_DUTY' ? 'off_duty' : 'dispatched'
+      }
+    }));
+  },
 
   // Branch management: get all command centers
   getCommandCenters: () => request<CommandCenter[]>('/command-centers'),
@@ -141,7 +184,27 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(settings)
     }),
-  state: () => request<AppState>('/state'),
+  state: async () => {
+    try {
+      return await request<AppState>('/state');
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return {
+          users: [],
+          commandCenters: [],
+          alerts: [],
+          branchResponses: [],
+          assignments: [],
+          reviews: [],
+          civilianReports: [],
+          reports: [],
+          logs: [],
+          devices: []
+        } satisfies AppState;
+      }
+      throw error;
+    }
+  },
   createCenter: (body: unknown) =>
     request<{center: CommandCenter}>('/command-centers', {
       method: 'POST',
