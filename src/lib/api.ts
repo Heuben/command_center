@@ -319,7 +319,7 @@ export const api = {
   ): Promise<RespondersStatusPage> => {
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
     const page = await request<{data: StatusResponderRow[];nextCursor: string | null}>(
-      `/command-center/${centerId}/responders/status/${status}${query}`
+      `/command-centers/${centerId}/responders/status/${status}${query}`
     );
     return {
       data: (page.data ?? []).map((row) => ({

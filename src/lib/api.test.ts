@@ -352,7 +352,7 @@ describe('API Service', () => {
       const result = await api.getRespondersByStatus(centerId, 'deactivated', cursor);
 
       expect(mockedFetch).toHaveBeenCalledWith(
-        `https://www.bantai.online/api/v1/command-center/${centerId}/responders/status/deactivated?cursor=${cursor}`,
+        `https://www.bantai.online/api/v1/command-centers/${centerId}/responders/status/deactivated?cursor=${cursor}`,
         expect.objectContaining({ credentials: 'include' })
       );
       expect(result).toMatchObject({
@@ -394,7 +394,7 @@ describe('API Service', () => {
       const result = await api.getRespondersByStatus(centerId, 'pending_activation');
 
       expect(mockedFetch.mock.calls[0][0]).toBe(
-        `https://www.bantai.online/api/v1/command-center/${centerId}/responders/status/pending_activation`
+        `https://www.bantai.online/api/v1/command-centers/${centerId}/responders/status/pending_activation`
       );
       expect(result.data[0]).toMatchObject({
         id: 'user-uuid',
@@ -428,7 +428,7 @@ describe('API Service', () => {
       const result = await api.getRespondersByStatus(centerId, 'active');
 
       expect(mockedFetch.mock.calls[0][0]).toBe(
-        `https://www.bantai.online/api/v1/command-center/${centerId}/responders/status/active`
+        `https://www.bantai.online/api/v1/command-centers/${centerId}/responders/status/active`
       );
       expect(result.data[0]).toMatchObject({
         id: 'user-uuid',
