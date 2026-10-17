@@ -48,7 +48,7 @@ export type UserAccount = {
   email: string;
   m_number?: string;
   command_center_id: string | null;
-  account_status?: 'active' | 'deactivated';
+  account_status?: 'active' | 'pending_activation' | 'deactivated';
   must_change_password?: boolean;
   r_profile?: ResponderProfile;
   d_profile?: DriverProfile;

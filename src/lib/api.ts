@@ -9,7 +9,7 @@ export class ApiError extends Error {
 // Hardcoded base URL for the Bantai ICC API as requested
 const API_BASE_URL = 'https://www.bantai.online/api/v1';
 
-import type { SystemAuditLog, UserAccount, CommandCenter, AuditCategory, AuditAction } from '../types';
+import type { SystemAuditLog, UserAccount, CommandCenter, AuditCategory, AuditAction, Agency } from '../types';
 
 export interface AuthTokens {
   accessToken: string;
@@ -153,10 +153,52 @@ export interface ResponderTableRow {
   l_name: string;
   m_name: string | null;
   role: 'responder' | 'admin' | 'super';
+  account_status: 'active' | 'pending_activation' | 'deactivated';
   email: string;
   rank: string;
   agency: 'police' | 'barangay_tanod' | 'mdrrmo';
   availability: 'on_duty' | 'off_duty' | 'dispatched';
+}
+
+export type ResponderAccountStatus = 'active' | 'deactivated' | 'pending_activation';
+
+interface StatusResponderRow {
+  id: string;
+  f_name: string;
+  l_name: string;
+  m_name: string | null;
+  role: string;
+  account_status: ResponderAccountStatus;
+  email: string;
+  rank: string;
+  agency: string;
+  availability: 'on_duty' | 'off_duty' | 'dispatched';
+}
+
+export interface RespondersStatusPage {
+  data: UserAccount[];
+  nextCursor: string | null;
+}
+
+function mapAgency(value: string): Agency {
+  const normalized = value.toLowerCase().replace(/[^a-z]/g, '');
+  if (normalized.includes('police')) return 'police';
+  if (normalized.includes('barangay') || normalized.includes('tanod')) return 'barangay_tanod';
+  if (normalized.includes('mdrrmo')) return 'mdrrmo';
+  throw new ApiError('Unsupported responder agency.', 500);
+}
+
+export interface CreateResponderDto {
+  f_name: string;
+  l_name: string;
+  m_name?: string;
+  email: string;
+  role?: 'responder' | 'admin';
+  agency?: Agency;
+  call_sign?: string;
+  rank?: string;
+  m_number?: string;
+  command_center_id?: string;
 }
 
 interface DashboardStatsDto {
@@ -260,7 +302,7 @@ export const api = {
       role: row.role === 'super' ? 'superadmin' : row.role === 'admin' ? 'admin' : 'responder',
       m_number: undefined,
       command_center_id: centerId,
-      account_status: undefined,
+      account_status: row.account_status,
       must_change_password: undefined,
       r_profile: {
         agency: row.agency,
@@ -269,6 +311,37 @@ export const api = {
         availability: row.availability
       }
     }));
+  },
+  getRespondersByStatus: async (
+    centerId: string,
+    status: ResponderAccountStatus,
+    cursor?: string | null
+  ): Promise<RespondersStatusPage> => {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    const page = await request<{data: StatusResponderRow[];nextCursor: string | null}>(
+      `/command-center/${centerId}/responders/status/${status}${query}`
+    );
+    return {
+      data: (page.data ?? []).map((row) => ({
+        id: row.id,
+        f_name: row.f_name,
+        l_name: row.l_name,
+        m_name: row.m_name,
+        email: row.email,
+        role: row.role.toLowerCase() === 'admin' ? 'admin' : 'responder',
+        m_number: undefined,
+        command_center_id: centerId,
+        account_status: row.account_status,
+        must_change_password: undefined,
+        r_profile: {
+          agency: mapAgency(row.agency),
+          call_sign: null,
+          rank: row.rank,
+          availability: row.availability
+        }
+      })),
+      nextCursor: page.nextCursor ?? null
+    };
   },
 
   // Branch management: get all command centers
@@ -295,6 +368,11 @@ export const api = {
     request<{ok: boolean}>(`/command-centers/${id}`, { method: 'DELETE' }),
   createUser: (body: unknown) =>
     request<{user: UserAccount;tempPassword: string}>('/users', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  createResponder: (body: CreateResponderDto) =>
+    request<{user: UserAccount;tempPassword: string}>('/responders', {
       method: 'POST',
       body: JSON.stringify(body)
     }),

@@ -33,18 +33,29 @@ import type { RowAction } from '../components/ui/RowActions';
 import { useToast } from '../hooks/useToast';
 import { useMotionVariants, fadeUp, DUR, EASE } from '../lib/motion';
 
+type PersonnelStatusFilter = 'all' | 'active' | 'pending_activation' | 'deactivated';
+type PagedPersonnelStatus = Extract<PersonnelStatusFilter, 'active' | 'pending_activation' | 'deactivated'>;
+type PersonnelStatusPage = {users: UserAccount[];cursor: string | null;hasMore: boolean;};
+
 export function Personnel() {
   const { scopeCenterId, isSuperadmin, user } = useSession();
   const [users, setUsers] = useState<UserAccount[]>([]);
+  const [statusPages, setStatusPages] = useState<Record<PagedPersonnelStatus, PersonnelStatusPage>>({
+    active: { users: [], cursor: null, hasMore: false },
+    pending_activation: { users: [], cursor: null, hasMore: false },
+    deactivated: { users: [], cursor: null, hasMore: false }
+  });
+  const [statusPageLoading, setStatusPageLoading] = useState(false);
+  const [loadingMoreStatusPage, setLoadingMoreStatusPage] = useState(false);
   const [commandCenters, setCommandCenters] = useState<any[]>([]); // We'll type as CommandCenter[] later
   const [loading, setLoading] = useState(true);
-  const [, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const toast = useToast();
   const [query, setQuery] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [created, setCreated] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'deactivated'>('all');
+  const [statusFilter, setStatusFilter] = useState<PersonnelStatusFilter>('all');
   const [deactivatedIds, setDeactivatedIds] = useState<string[]>([]);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
 
@@ -87,6 +98,50 @@ export function Personnel() {
     };
   }, [scopeCenterId, user?.command_center_id]);
 
+  useEffect(() => {
+    if (statusFilter === 'all') return;
+    const pageStatus: PagedPersonnelStatus = statusFilter;
+
+    const centerId = scopeCenterId ?? user?.command_center_id ?? null;
+    if (!centerId) {
+      setStatusPages((current) => ({
+        ...current,
+        [pageStatus]: { users: [], cursor: null, hasMore: false }
+      }));
+      setStatusPageLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setStatusPageLoading(true);
+    setError(null);
+    setStatusPages((current) => ({
+      ...current,
+      [pageStatus]: { users: [], cursor: null, hasMore: false }
+    }));
+
+    api.getRespondersByStatus(centerId, pageStatus)
+      .then((page) => {
+        if (cancelled) return;
+        setStatusPages((current) => ({
+          ...current,
+          [pageStatus]: { users: page.data, cursor: page.nextCursor, hasMore: !!page.nextCursor }
+        }));
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : `Failed to load ${pageStatus} personnel`);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setStatusPageLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [statusFilter, scopeCenterId, user?.command_center_id]);
+
   // Sync deactivatedIds whenever users changes (new responders may be created, etc.).
   useEffect(() => {
     setDeactivatedIds((prev) => {
@@ -95,7 +150,8 @@ export function Personnel() {
     });
   }, [users]);
 
-  const isDeactivated = (id: string) => deactivatedIds.includes(id);
+  const isDeactivated = (id: string) =>
+    deactivatedIds.includes(id) || statusPages.deactivated.users.some((person) => person.id === id);
 
   useEffect(() => {
     if (!isFirstLoad) setIsFirstLoad(false);
@@ -114,6 +170,24 @@ export function Personnel() {
     );
     try {
       await api.updateUser(person.id, { account_status: active ? 'active' : 'deactivated' });
+      setUsers((current) => current.map((user) =>
+        user.id === person.id
+          ? { ...user, account_status: active ? 'active' : 'deactivated' }
+          : user
+      ));
+      if (active) {
+        setStatusPages((current) => ({
+          ...current,
+          deactivated: {
+            ...current.deactivated,
+            users: current.deactivated.users.filter((user) => user.id !== person.id)
+          },
+          pending_activation: {
+            ...current.pending_activation,
+            users: current.pending_activation.users.filter((user) => user.id !== person.id)
+          }
+        }));
+      }
       toast.success(
         active ?
           `${fullName(person)}'s account was reactivated and can sign in again.` :
@@ -175,17 +249,35 @@ export function Personnel() {
     filter((u) => u.role === 'responder' || u.role === 'admin').
     filter((u) => !scopeCenterId || u.command_center_id === scopeCenterId);
 
-  const deactivatedCount = inScope.filter((u) => deactivatedIds.includes(u.id)).length;
+  const loadMoreStatusPage = async () => {
+    if (statusFilter === 'all') return;
+    const pageStatus: PagedPersonnelStatus = statusFilter;
+    const currentPage = statusPages[pageStatus];
+    const centerId = scopeCenterId ?? user?.command_center_id ?? null;
+    if (!centerId || !currentPage.cursor || loadingMoreStatusPage) return;
 
-  const rows = inScope.
-    filter((u) =>
-      statusFilter === 'all' ?
-        true :
-        statusFilter === 'deactivated' ?
-          deactivatedIds.includes(u.id) :
-          !deactivatedIds.includes(u.id)
-    ).
-    filter((u) =>
+    setLoadingMoreStatusPage(true);
+    setError(null);
+    try {
+      const page = await api.getRespondersByStatus(centerId, pageStatus, currentPage.cursor);
+      setStatusPages((current) => ({
+        ...current,
+        [pageStatus]: {
+          users: [...current[pageStatus].users, ...page.data],
+          cursor: page.nextCursor,
+          hasMore: !!page.nextCursor
+        }
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to load more ${pageStatus} personnel`);
+    } finally {
+      setLoadingMoreStatusPage(false);
+    }
+  };
+
+  const statusRows = statusFilter === 'all' ? inScope : statusPages[statusFilter].users;
+
+  const rows = statusRows.filter((u) =>
       query ?
         `${fullName(u)} ${u.r_profile?.call_sign ?? ''} ${u.email}`.
           toLowerCase().
@@ -208,6 +300,11 @@ export function Personnel() {
             {isDeactivated(r.id) &&
           <Badge tone="danger" variant="soft">
               Deactivated
+            </Badge>
+          }
+            {!isDeactivated(r.id) && r.account_status === 'pending_activation' &&
+          <Badge tone="urgent" variant="soft">
+              Pending Activation
             </Badge>
           }
           </p>
@@ -261,6 +358,8 @@ export function Personnel() {
     render: (r) =>
     isDeactivated(r.id) ?
     <span className="text-[13px] text-ink-faint">No access</span> :
+    r.account_status === 'pending_activation' ?
+    <span className="text-[13px] text-ink-faint">Pending activation</span> :
     r.r_profile ?
     <DutyBadge availability={r.r_profile.availability} /> :
 
@@ -298,18 +397,15 @@ export function Personnel() {
         }
         actions={
         <>
-            <Segmented<'all' | 'active' | 'deactivated'>
+            <Segmented<'all' | 'active' | 'pending_activation' | 'deactivated'>
             ariaLabel="Filter by account status"
             value={statusFilter}
             onChange={setStatusFilter}
             options={[
             { value: 'all', label: 'All', count: inScope.length },
-            {
-              value: 'active',
-              label: 'Active',
-              count: inScope.length - deactivatedCount
-            },
-            { value: 'deactivated', label: 'Deactivated', count: deactivatedCount }]
+            { value: 'active', label: 'Active' },
+            { value: 'pending_activation', label: 'Pending Activation' },
+            { value: 'deactivated', label: 'Deactivated' }]
             } />
 
 
@@ -328,7 +424,7 @@ export function Personnel() {
             onClick={() => setAddOpen(true)}
             disabled={isSuperadmin && !scopeCenterId}>
               <PlusIcon className="h-4 w-4" />
-              Add Responder
+              Add Personnel
             </Button>
           </>
         } />
@@ -349,6 +445,11 @@ export function Personnel() {
       </AnimatePresence>
 
       <Card className="overflow-hidden">
+        {error && (
+          <p role="alert" className="border-b border-danger/25 bg-danger-soft/50 px-4 py-3 text-[13px] text-danger">
+            {error}
+          </p>
+        )}
         <DataTable
           columns={columns}
           rows={rows}
@@ -361,13 +462,21 @@ export function Personnel() {
             description="Adjust your search or add a responder to this branch." />
 
           }
-          loading={loading || isFirstLoad}
-          caption={loading || isFirstLoad ? 'Loading personnel' : undefined} />
+          loading={statusFilter !== 'all' ? statusPageLoading : loading || isFirstLoad}
+          caption={statusFilter !== 'all' ? statusPageLoading ? `Loading ${statusFilter} personnel` : undefined : loading || isFirstLoad ? 'Loading personnel' : undefined} />
+        {statusFilter !== 'all' && statusPages[statusFilter].hasMore && (
+          <div className="flex justify-center py-4">
+            <Button onClick={loadMoreStatusPage} disabled={loadingMoreStatusPage}>
+              {loadingMoreStatusPage ? 'Loading…' : 'Load more'}
+            </Button>
+          </div>
+        )}
       </Card>
 
       <AddResponderModal
         open={addOpen}
         onClose={() => setAddOpen(false)}
+        isSuperadmin={isSuperadmin}
         onCreated={(name, tempPassword) => {
           setCreated(`${name} · temporary password ${tempPassword}`);
           setAddOpen(false);
@@ -383,6 +492,7 @@ export function Personnel() {
 function AddResponderModal({
   open,
   onClose,
+  isSuperadmin,
   onCreated,
   onError,
   lockedCenterId,
@@ -390,6 +500,7 @@ function AddResponderModal({
 }: {
   open: boolean;
   onClose: () => void;
+  isSuperadmin: boolean;
   onCreated: (name: string, tempPassword: string) => void;
   onError: (msg: string) => void;
   lockedCenterId: string | null;
@@ -398,6 +509,7 @@ function AddResponderModal({
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
   const [email, setEmail] = useState('');
+  const [accountRole, setAccountRole] = useState<'responder' | 'admin'>('responder');
   const [agency, setAgency] = useState<'barangay_tanod' | 'police' | 'mdrrmo'>('barangay_tanod');
   const [callSign, setCallSign] = useState('');
   const [rank, setRank] = useState('');
@@ -409,6 +521,7 @@ function AddResponderModal({
       setFirst('');
       setLast('');
       setEmail('');
+      setAccountRole('responder');
       setAgency('barangay_tanod');
       setCallSign('');
       setRank('');
@@ -417,16 +530,23 @@ function AddResponderModal({
     }
   }, [open, lockedCenterId, commandCenters]);
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const emailValid = email.trim().length <= 150 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const nameValid = (value: string) =>
+    value.trim().length <= 50 && /^[\p{L}\s-]+$/u.test(value.trim());
   const emailTaken = false; // We don't have the user list here, so we'll skip this check for now.
   // In a real app, we might want to check for email duplication via an API call, but we'll omit for simplicity.
   const canSubmit = !!(
     first.trim() &&
     last.trim() &&
+    nameValid(first) &&
+    nameValid(last) &&
     emailValid &&
     !emailTaken &&
     !submitting &&
-    center
+    (!isSuperadmin || center) &&
+    (accountRole === 'admin' ||
+      ((agency === 'barangay_tanod' || !!callSign.trim()) &&
+        (agency !== 'police' || !!rank.trim())))
   );
 
   const handleCreate = async () => {
@@ -434,35 +554,45 @@ function AddResponderModal({
       onError('First name, last name, and email are required.');
       return;
     }
+    if (!nameValid(first) || !nameValid(last)) {
+      onError('Names may contain only letters, spaces, and hyphens, up to 50 characters.');
+      return;
+    }
     if (!emailValid) {
-      onError('Enter a valid work email address.');
+      onError('Enter a valid email address up to 150 characters long.');
       return;
     }
     if (emailTaken) {
       onError('A user with that email already exists.');
       return;
     }
-    if (!center) {
+    if (isSuperadmin && !center) {
       onError('Create a command center before provisioning responders.');
+      return;
+    }
+    if (accountRole === 'responder' && agency !== 'barangay_tanod' && !callSign.trim()) {
+      onError('A call sign is required for police and MDRRMO responders.');
+      return;
+    }
+    if (accountRole === 'responder' && agency === 'police' && !rank.trim()) {
+      onError('A rank is required for police responders.');
       return;
     }
     setSubmitting(true);
     try {
-      const result = await api.createUser({
+      const payload = {
         f_name: first.trim(),
         l_name: last.trim(),
-        role: 'responder',
-        email: email.trim(),
-        command_center_id: center,
-        account_status: 'active',
-        must_change_password: true,
-        r_profile: {
+        role: accountRole,
+        email: email.trim().toLowerCase(),
+        ...(isSuperadmin ? { command_center_id: center } : {}),
+        ...(accountRole === 'responder' ? {
           agency,
-          call_sign: callSign.trim() || null,
-          rank: agency === 'police' ? rank.trim() || 'PCpl' : 'none',
-          availability: 'off_duty'
-        }
-      });
+          ...(callSign.trim() ? { call_sign: callSign.trim() } : {}),
+          ...(agency === 'police' && rank.trim() ? { rank: rank.trim() } : {})
+        } : {})
+      };
+      const result = await api.createResponder(payload);
       onCreated(`${first.trim()} ${last.trim()}`, result.tempPassword);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to create account.';
@@ -475,8 +605,8 @@ function AddResponderModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Add Responder"
-      subtitle="Provisions a branch-scoped account with a temporary password."
+      title="Add Personnel"
+      subtitle="Provisions a command-center account with a temporary password."
       footer={
       <>
           <Button onClick={onClose} disabled={submitting}>
@@ -488,6 +618,17 @@ function AddResponderModal({
         </>
       }>
       <div className="grid grid-cols-2 gap-4">
+        <div className="col-span-2">
+          <Label htmlFor="account-role">Account Type</Label>
+          <Select
+            id="account-role"
+            className="w-full"
+            value={accountRole}
+            onChange={(e) => setAccountRole(e.target.value as 'responder' | 'admin')}>
+            <option value="responder">Responder</option>
+            <option value="admin">Admin</option>
+          </Select>
+        </div>
         <div>
           <Label htmlFor="first">First Name</Label>
           <Input id="first" value={first} onChange={(e) => setFirst(e.target.value)} />
@@ -501,12 +642,13 @@ function AddResponderModal({
           <Input
             id="new-email"
             type="email"
+            maxLength={150}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="name@station.bantai.gov.ph" />
 
         </div>
-        <div>
+        {accountRole === 'responder' && <div>
           <Label htmlFor="agency">Agency</Label>
           <Select
             id="agency"
@@ -517,27 +659,27 @@ function AddResponderModal({
             <option value="police">Philippine National Police</option>
             <option value="mdrrmo">MDRRMO</option>
           </Select>
-        </div>
-        <div>
+        </div>}
+        {accountRole === 'responder' && <div>
           <Label htmlFor="callsign">Call Sign</Label>
           <Input
             id="callsign"
             value={callSign}
+            maxLength={50}
             onChange={(e) => setCallSign(e.target.value)}
             placeholder="BRGY-171-7" />
 
-        </div>
-        <div>
+        </div>}
+        {accountRole === 'responder' && agency === 'police' && <div>
           <Label htmlFor="rank">Rank</Label>
           <Input
             id="rank"
             value={rank}
-            disabled={agency !== 'police'}
             onChange={(e) => setRank(e.target.value)}
-            placeholder={agency === 'police' ? 'PCpl' : 'Not applicable'} />
+            placeholder="PCpl" />
 
-        </div>
-        <div>
+        </div>}
+        {isSuperadmin && <div className="col-span-2">
           <Label htmlFor="center">Command Center</Label>
           <Select
             id="center"
@@ -553,7 +695,7 @@ function AddResponderModal({
               </option>
             )}
           </Select>
-        </div>
+        </div>}
         <div className="col-span-2 rounded-md border border-line bg-canvas px-3 py-2.5">
           <p className="text-[11px] uppercase tracking-wide text-ink-faint">Temporary Password</p>
           <p className="mt-1 text-[13px] text-ink">A one-time password will be generated on create.</p>

@@ -148,6 +148,37 @@ describe('API Service', () => {
     });
   });
 
+  describe('createResponder', () => {
+    it('posts the DTO to the responders endpoint', async () => {
+      const payload = {
+        f_name: 'Taylor',
+        l_name: 'Reyes',
+        email: 'taylor@example.com',
+        role: 'responder' as const,
+        agency: 'police' as const,
+        call_sign: 'PNP-12',
+        rank: 'PCpl',
+        command_center_id: 'center-id'
+      };
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ user: {}, tempPassword: 'temporary' }),
+        status: 201
+      } as Response);
+
+      await api.createResponder(payload);
+
+      expect(mockedFetch).toHaveBeenCalledWith(
+        'https://www.bantai.online/api/v1/responders',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(payload),
+          credentials: 'include'
+        })
+      );
+    });
+  });
+
   describe('logout', () => {
     it('should call the logout endpoint and clear token', async () => {
       mockedFetch.mockResolvedValueOnce({
@@ -266,6 +297,7 @@ describe('API Service', () => {
           l_name: 'Aspiras',
           m_name: 'Cruz',
           role: 'responder',
+          account_status: 'pending_activation',
           email: 'aspirasjuanita81@gmail.com',
           rank: 'PGEN',
           agency: 'police',
@@ -282,12 +314,126 @@ describe('API Service', () => {
         l_name: 'Aspiras',
         m_name: 'Cruz',
         role: 'responder',
+        account_status: 'pending_activation',
         email: 'aspirasjuanita81@gmail.com',
         r_profile: {
           rank: 'PGEN',
           agency: 'police',
           availability: 'off_duty'
         }
+      });
+    });
+  });
+
+  describe('getRespondersByStatus', () => {
+    it('maps the paginated deactivated response and sends its cursor', async () => {
+      const centerId = '7cb70f0a-777a-4048-9c11-10d7da83e985';
+      const cursor = 'encoded-next-cursor';
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [{
+            id: '749d4c75-5507-42c6-ae4c-47549993248f',
+            f_name: 'John',
+            l_name: 'Doe',
+            m_name: 'Middle',
+            role: 'responder',
+            account_status: 'deactivated',
+            email: 'john@example.com',
+            rank: 'Officer',
+            agency: 'Police Department',
+            availability: 'off_duty'
+          }],
+          nextCursor: cursor
+        }),
+        status: 200
+      } as Response);
+
+      const result = await api.getRespondersByStatus(centerId, 'deactivated', cursor);
+
+      expect(mockedFetch).toHaveBeenCalledWith(
+        `https://www.bantai.online/api/v1/command-center/${centerId}/responders/status/deactivated?cursor=${cursor}`,
+        expect.objectContaining({ credentials: 'include' })
+      );
+      expect(result).toMatchObject({
+        nextCursor: cursor,
+        data: [{
+          id: '749d4c75-5507-42c6-ae4c-47549993248f',
+          account_status: 'deactivated',
+          r_profile: {
+            agency: 'police',
+            rank: 'Officer',
+            availability: 'off_duty'
+          }
+        }]
+      });
+    });
+
+    it('requests and maps pending_activation responders', async () => {
+      const centerId = '123e4567-e89b-12d3-a456-426614174000';
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [{
+            id: 'user-uuid',
+            f_name: 'John',
+            l_name: 'Doe',
+            m_name: 'Middle',
+            role: 'responder',
+            account_status: 'pending_activation',
+            email: 'john@example.com',
+            rank: 'Officer',
+            agency: 'Police Department',
+            availability: 'off_duty'
+          }],
+          nextCursor: null
+        }),
+        status: 200
+      } as Response);
+
+      const result = await api.getRespondersByStatus(centerId, 'pending_activation');
+
+      expect(mockedFetch.mock.calls[0][0]).toBe(
+        `https://www.bantai.online/api/v1/command-center/${centerId}/responders/status/pending_activation`
+      );
+      expect(result.data[0]).toMatchObject({
+        id: 'user-uuid',
+        account_status: 'pending_activation',
+        r_profile: { agency: 'police', rank: 'Officer' }
+      });
+    });
+
+    it('requests and maps active responders', async () => {
+      const centerId = '123e4567-e89b-12d3-a456-426614174000';
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [{
+            id: 'user-uuid',
+            f_name: 'John',
+            l_name: 'Doe',
+            m_name: 'Middle',
+            role: 'responder',
+            account_status: 'deactivated',
+            email: 'john@example.com',
+            rank: 'Officer',
+            agency: 'Police Department',
+            availability: 'off_duty'
+          }],
+          nextCursor: null
+        }),
+        status: 200
+      } as Response);
+
+      const result = await api.getRespondersByStatus(centerId, 'active');
+
+      expect(mockedFetch.mock.calls[0][0]).toBe(
+        `https://www.bantai.online/api/v1/command-center/${centerId}/responders/status/active`
+      );
+      expect(result.data[0]).toMatchObject({
+        id: 'user-uuid',
+        account_status: 'deactivated',
+        r_profile: { agency: 'police', rank: 'Officer' }
       });
     });
   });
