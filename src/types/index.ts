@@ -207,6 +207,7 @@ export type AuditAction =
 'CREATE_USER' |
 'UPDATE_USER' |
 'CHANGE_ROLE' |
+'ACTIVATE_ACCOUNT' |
 'DEACTIVATE_USER' |
 'ALERT_RECEIVED' |
 'ACKNOWLEDGE_ALERT' |
@@ -232,6 +233,7 @@ export type AuditTargetEntity =
 export type SystemAuditLog = {
   id: string;
   actor_id: string | null;
+  actor_name?: string | null;
   command_center_id: string | null;
   action: AuditAction;
   target_entity: AuditTargetEntity;

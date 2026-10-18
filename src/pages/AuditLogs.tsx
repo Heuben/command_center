@@ -137,11 +137,7 @@ export function AuditLogs() {
     ];
     const records = logs.map((l) => ({
       created_at: formatDateTime(l.created_at),
-      actor: l.actor_id ? (() => {
-        // We don't have userById function here, so we'll just show the ID or 'System'
-        // In a real app, we might want to fetch user details, but for export we'll use the ID
-        return l.actor_id;
-      })() : 'System',
+      actor: l.actor_name ?? l.actor_id ?? 'System',
       action: actionLabel[l.action],
       category: categoryLabel[actionCategory[l.action]],
       target_entity: targetEntityLabel[l.target_entity],
@@ -185,10 +181,9 @@ export function AuditLogs() {
     key: 'actor',
     header: 'Actor',
     sortable: true,
-    sortValue: (l) => l.actor_id ? l.actor_id : 'System',
+    sortValue: (l) => l.actor_name ?? l.actor_id ?? 'System',
     render: (l) => {
-      // We don't have userById here, so we'll show the ID or 'System'
-      if (!l.actor_id) {
+      if (!l.actor_name && !l.actor_id) {
         return (
           <div className={cellStack}>
             <span className="inline-flex items-center gap-1.5 text-[13px] leading-[1.25] italic text-ink-muted">
@@ -201,7 +196,7 @@ export function AuditLogs() {
       return (
         <div className={cellStack}>
           <div className="min-w-0">
-            <p className="truncate text-[13px] leading-[1.25] font-medium text-ink">{l.actor_id}</p>
+            <p className="truncate text-[13px] leading-[1.25] font-medium text-ink">{l.actor_name ?? l.actor_id}</p>
             {/* We don't have roleLabel without userById, so we'll skip */}
           </div>
         </div>);
@@ -256,7 +251,7 @@ export function AuditLogs() {
     sortValue: (l) => l.reference,
     render: (l) =>
     <div className={cellStack}>
-        <p className="font-mono text-[12px] leading-[1.25] text-ink">{l.reference}</p>
+      <p className="block max-w-[120px] truncate font-mono text-[12px] leading-[1.25] text-ink" title={l.reference}>{l.reference}</p>
         {spacer}
       </div>
 
@@ -452,9 +447,9 @@ export function AuditLogs() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="mb-1 text-[11px] uppercase tracking-wide text-ink-faint">Actor</p>
-                {selected.actor_id ? (
+                {selected.actor_name || selected.actor_id ? (
                   <p className="text-[13px] font-medium text-ink">
-                    {selected.actor_id} —{' '}
+                    {selected.actor_name ?? selected.actor_id}
                     {/* We don't have roleLabel without userById */}
                   </p>
                 ) : (

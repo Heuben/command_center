@@ -9,7 +9,7 @@ export class ApiError extends Error {
 // Hardcoded base URL for the Bantai ICC API as requested
 const API_BASE_URL = 'https://www.bantai.online/api/v1';
 
-import type { SystemAuditLog, UserAccount, CommandCenter, AuditCategory, AuditAction, Agency } from '../types';
+import type { SystemAuditLog, UserAccount, CommandCenter, AuditCategory, AuditAction, AuditTargetEntity, Agency } from '../types';
 
 export interface AuthTokens {
   accessToken: string;
@@ -224,6 +224,24 @@ interface PaginatedAuditLogs {
   hasNextPage: boolean;
 }
 
+interface AuditLogDto {
+  id: string;
+  actorId: string | null;
+  actorName: string | null;
+  commandCenterId: string | null;
+  action: AuditAction;
+  targetEntity: AuditTargetEntity;
+  targetId: string;
+  oldPayload: Record<string, unknown> | null;
+  newPayload: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+interface AuditLogsResponse {
+  data: AuditLogDto[];
+  nextCursor: string | null;
+}
+
 export const api = {
   login: (email: string, password: string) =>
     request<AuthTokens>('/auth/local/signin', {
@@ -263,7 +281,7 @@ export const api = {
   },
 
   // Audit logs
-  auditLogs: (limit?: number, cursor?: string | null, commandCenterId?: string, category?: AuditCategory, action?: AuditAction, actor?: string | null, from?: string, to?: string) => {
+  auditLogs: async (limit?: number, cursor?: string | null, commandCenterId?: string, category?: AuditCategory, action?: AuditAction, actor?: string | null, from?: string, to?: string): Promise<PaginatedAuditLogs> => {
     const url = new URL('/audit-logs', API_BASE_URL);
     if (limit !== undefined) url.searchParams.set('limit', String(limit));
     if (cursor !== null && cursor !== undefined) url.searchParams.set('cursor', cursor);
@@ -273,7 +291,24 @@ export const api = {
     if (actor !== null && actor !== undefined) url.searchParams.set('actor', actor);
     if (from !== undefined && from !== '') url.searchParams.set('from', from);
     if (to !== undefined && to !== '') url.searchParams.set('to', to);
-    return request<PaginatedAuditLogs>(url.pathname + url.search, { method: 'GET' });
+    const response = await request<AuditLogsResponse>(url.pathname + url.search, { method: 'GET' });
+    return {
+      data: (response.data ?? []).map((row) => ({
+        id: row.id,
+        actor_id: row.actorId,
+        actor_name: row.actorName,
+        command_center_id: row.commandCenterId,
+        action: row.action,
+        target_entity: row.targetEntity,
+        target_id: row.targetId,
+        reference: row.targetId,
+        created_at: row.createdAt,
+        old_value: row.oldPayload,
+        new_value: row.newPayload
+      })),
+      cursor: response.nextCursor ?? null,
+      hasNextPage: !!response.nextCursor
+    };
   },
 
   // Personnel management: get all users or branch-scoped responders

@@ -129,6 +129,50 @@ describe('API Service', () => {
     });
   });
 
+  describe('auditLogs', () => {
+    it('maps the camelCase API response and nextCursor to the UI audit-log shape', async () => {
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: [{
+            id: 'b30c7eb8-f036-4d5e-8d7a-68713443bfab',
+            actorId: '628bacfd-7e4c-4240-a5a9-38793c590a48',
+            actorName: 'Jungle Aspiras',
+            commandCenterId: '7cb70f0a-777a-4048-9c11-10d7da83e985',
+            action: 'ACTIVATE_ACCOUNT',
+            targetEntity: 'user_account',
+            targetId: '628bacfd-7e4c-4240-a5a9-38793c590a48',
+            oldPayload: null,
+            newPayload: null,
+            createdAt: '2026-10-18T19:25:14.889Z'
+          }],
+          nextCursor: null
+        }),
+        status: 200
+      } as Response);
+
+      const result = await api.auditLogs(50, null, '7cb70f0a-777a-4048-9c11-10d7da83e985');
+
+      expect(result).toEqual({
+        data: [{
+          id: 'b30c7eb8-f036-4d5e-8d7a-68713443bfab',
+          actor_id: '628bacfd-7e4c-4240-a5a9-38793c590a48',
+          actor_name: 'Jungle Aspiras',
+          command_center_id: '7cb70f0a-777a-4048-9c11-10d7da83e985',
+          action: 'ACTIVATE_ACCOUNT',
+          target_entity: 'user_account',
+          target_id: '628bacfd-7e4c-4240-a5a9-38793c590a48',
+          reference: '628bacfd-7e4c-4240-a5a9-38793c590a48',
+          created_at: '2026-10-18T19:25:14.889Z',
+          old_value: null,
+          new_value: null
+        }],
+        cursor: null,
+        hasNextPage: false
+      });
+    });
+  });
+
   describe('devLogin', () => {
     it('should call the correct dev login endpoint', async () => {
       mockedFetch.mockResolvedValueOnce({
