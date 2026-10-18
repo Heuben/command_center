@@ -39,6 +39,7 @@ type PersonnelStatusPage = {users: UserAccount[];cursor: string | null;hasMore: 
 
 export function Personnel() {
   const { scopeCenterId, isSuperadmin, user } = useSession();
+  const personnelCenterId = scopeCenterId ?? user?.command_center_id ?? null;
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [statusPages, setStatusPages] = useState<Record<PagedPersonnelStatus, PersonnelStatusPage>>({
     active: { users: [], cursor: null, hasMore: false },
@@ -66,7 +67,7 @@ export function Personnel() {
       setLoading(true);
       setError(null);
       try {
-        const centerId = scopeCenterId ?? user?.command_center_id ?? null;
+        const centerId = personnelCenterId;
         const centersData = centerId
           ? [{ id: centerId, name: 'Selected command center' }]
           : [];
@@ -96,13 +97,13 @@ export function Personnel() {
     return () => {
       cancelled = true;
     };
-  }, [scopeCenterId, user?.command_center_id]);
+  }, [personnelCenterId]);
 
   useEffect(() => {
     if (statusFilter === 'all') return;
     const pageStatus: PagedPersonnelStatus = statusFilter;
 
-    const centerId = scopeCenterId ?? user?.command_center_id ?? null;
+    const centerId = personnelCenterId;
     if (!centerId) {
       setStatusPages((current) => ({
         ...current,
@@ -140,7 +141,7 @@ export function Personnel() {
     return () => {
       cancelled = true;
     };
-  }, [statusFilter, scopeCenterId, user?.command_center_id]);
+  }, [statusFilter, personnelCenterId]);
 
   // Sync deactivatedIds whenever users changes (new responders may be created, etc.).
   useEffect(() => {
@@ -165,29 +166,45 @@ export function Personnel() {
   }, [created]);
 
   const setAccountActive = async (person: UserAccount, active: boolean) => {
+    const centerId = person.command_center_id ?? personnelCenterId;
+    if (!centerId) {
+      toast.error('Select a command center before changing account status.');
+      return;
+    }
+
     setDeactivatedIds((prev) =>
       active ? prev.filter((id) => id !== person.id) : [...prev, person.id]
     );
     try {
-      await api.updateUser(person.id, { account_status: active ? 'active' : 'deactivated' });
+      if (active) {
+        await api.activateResponder(centerId, person.id);
+      } else {
+        await api.deactivateResponder(centerId, person.id);
+      }
       setUsers((current) => current.map((user) =>
         user.id === person.id
           ? { ...user, account_status: active ? 'active' : 'deactivated' }
           : user
       ));
-      if (active) {
-        setStatusPages((current) => ({
-          ...current,
-          deactivated: {
-            ...current.deactivated,
-            users: current.deactivated.users.filter((user) => user.id !== person.id)
-          },
-          pending_activation: {
-            ...current.pending_activation,
-            users: current.pending_activation.users.filter((user) => user.id !== person.id)
-          }
-        }));
-      }
+      const nextStatus: PagedPersonnelStatus = active ? 'active' : 'deactivated';
+      const updatedPerson = {
+        ...person,
+        account_status: active ? 'active' : 'deactivated'
+      } satisfies UserAccount;
+      setStatusPages((current) => {
+        const next = { ...current };
+        for (const status of Object.keys(next) as PagedPersonnelStatus[]) {
+          next[status] = {
+            ...next[status],
+            users: next[status].users.filter((user) => user.id !== person.id)
+          };
+        }
+        next[nextStatus] = {
+          ...next[nextStatus],
+          users: [updatedPerson, ...next[nextStatus].users]
+        };
+        return next;
+      });
       toast.success(
         active ?
           `${fullName(person)}'s account was reactivated and can sign in again.` :
@@ -253,7 +270,7 @@ export function Personnel() {
     if (statusFilter === 'all') return;
     const pageStatus: PagedPersonnelStatus = statusFilter;
     const currentPage = statusPages[pageStatus];
-    const centerId = scopeCenterId ?? user?.command_center_id ?? null;
+    const centerId = personnelCenterId;
     if (!centerId || !currentPage.cursor || loadingMoreStatusPage) return;
 
     setLoadingMoreStatusPage(true);
@@ -459,7 +476,11 @@ export function Personnel() {
           empty={
           <EmptyState
             title="No personnel found"
-            description="Adjust your search or add a responder to this branch." />
+            description={
+              statusFilter !== 'all' && !personnelCenterId
+                ? 'Select a command center to load personnel for this status.'
+                : 'Adjust your search or add a responder to this branch.'
+            } />
 
           }
           loading={statusFilter !== 'all' ? statusPageLoading : loading || isFirstLoad}

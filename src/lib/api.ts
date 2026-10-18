@@ -381,6 +381,14 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(body)
     }),
+  activateResponder: (centerId: string, responderId: string) =>
+    request<void>(`/command-centers/${centerId}/responders/${responderId}/activate`, {
+      method: 'PATCH'
+    }),
+  deactivateResponder: (centerId: string, responderId: string) =>
+    request<void>(`/command-centers/${centerId}/responders/${responderId}/deactivate`, {
+      method: 'PATCH'
+    }),
   acknowledge: (alertId: string, command_center_id: string) =>
     request(`/alerts/${alertId}/acknowledge`, {
       method: 'POST',

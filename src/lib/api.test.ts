@@ -437,4 +437,26 @@ describe('API Service', () => {
       });
     });
   });
+
+  describe('responder account status actions', () => {
+    it.each(['activate', 'deactivate'] as const)(
+      'PATCHes the responder %s endpoint using the command center and responder IDs',
+      async (action) => {
+        const centerId = '7cb70f0a-777a-4048-9c11-10d7da83e985';
+        const responderId = '52272e0b-7374-41db-9e3c-fa7c5972c3d9';
+        mockedFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({}),
+          status: 204
+        } as Response);
+
+        await api[`${action}Responder`](centerId, responderId);
+
+        expect(mockedFetch).toHaveBeenCalledWith(
+          `https://www.bantai.online/api/v1/command-centers/${centerId}/responders/${responderId}/${action}`,
+          expect.objectContaining({ method: 'PATCH', credentials: 'include' })
+        );
+      }
+    );
+  });
 });
