@@ -130,7 +130,8 @@ describe('API Service', () => {
   });
 
   describe('auditLogs', () => {
-    it('maps the camelCase API response and nextCursor to the UI audit-log shape', async () => {
+    it('sends the stored access token and maps the camelCase API response', async () => {
+      window.localStorage.setItem('bantai-access-token', 'audit-access-token');
       mockedFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -153,6 +154,8 @@ describe('API Service', () => {
 
       const result = await api.auditLogs(50, null, '7cb70f0a-777a-4048-9c11-10d7da83e985');
 
+      expect(new Headers(mockedFetch.mock.calls[0][1]?.headers).get('Authorization'))
+        .toBe('Bearer audit-access-token');
       expect(result).toEqual({
         data: [{
           id: 'b30c7eb8-f036-4d5e-8d7a-68713443bfab',
