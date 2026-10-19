@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { SessionProvider } from './contexts/SessionContext';
+import { CommandCentersProvider } from './contexts/CommandCenterContext';
 import { DispatchProvider } from './contexts/DispatchContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AppLayout } from './components/layout/AppLayout';
@@ -15,9 +16,10 @@ import { Settings } from './pages/Settings';
 export function App() {
   return (
     <SessionProvider>
-      <DispatchProvider>
-        <ToastProvider>
-          <BrowserRouter>
+      <CommandCentersProvider>
+        <DispatchProvider>
+          <ToastProvider>
+            <BrowserRouter>
           <div className="h-full w-full bg-canvas font-sans text-ink antialiased">
             <Routes>
               <Route
@@ -43,9 +45,10 @@ export function App() {
               </Route>
             </Routes>
           </div>
-        </BrowserRouter>
-        </ToastProvider>
-      </DispatchProvider>
+            </BrowserRouter>
+          </ToastProvider>
+        </DispatchProvider>
+      </CommandCentersProvider>
     </SessionProvider>);
 
 }

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { DUR, EASE } from '../lib/motion';
 import { useSession } from '../contexts/SessionContext';
+import { useCommandCenters } from '../contexts/CommandCenterContext';
 import { api } from '../lib/api';
 import type { CommandCenter, UserAccount } from '../types';
 import { centerTypeLabel } from '../utils/labels';
@@ -38,13 +39,14 @@ const emptyDraft = (): {
 
 export function BranchManagement() {
   const { scopeCenterId, isSuperadmin, user } = useSession();
+  const { commandCenters, ready: commandCentersReady, refresh: refreshCommandCenters } = useCommandCenters();
 
   if (!isSuperadmin) {
     return <Navigate to="/" replace />;
   }
 
-  const [commandCenters, setCommandCenters] = useState<CommandCenter[]>([]);
   const [users, setUsers] = useState<UserAccount[]>([]);
+  const [locationLabels, setLocationLabels] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -52,19 +54,15 @@ export function BranchManagement() {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<CommandCenter | null>(null);
 
-  // Fetch command centers and users
+  // Fetch users and rely on the command-center context for the live branch catalog.
   useEffect(() => {
     let cancelled = false;
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [centersData, usersData] = await Promise.all([
-          api.getCommandCenters(),
-          api.getUsers()
-        ]);
+        const usersData = await api.getUsers();
         if (!cancelled) {
-          setCommandCenters(centersData);
           setUsers(usersData);
         }
       } catch (err) {
@@ -81,7 +79,40 @@ export function BranchManagement() {
     return () => {
       cancelled = true;
     };
-  }, [scopeCenterId, isSuperadmin]); // Refetch when scopeCenterId or admin status changes (though data is global, we might want to refetch if the user changes?)
+  }, [scopeCenterId, isSuperadmin]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadLocationLabels = async () => {
+      const nextLabels: Record<string, string> = {};
+      for (const center of commandCenters) {
+        if (!Number.isFinite(center.location.lat) || !Number.isFinite(center.location.lng)) {
+          nextLabels[center.id] = center.branch || `${center.location.lat}, ${center.location.lng}`;
+          continue;
+        }
+
+        try {
+          const label = await api.reverseGeocode(center.location.lat, center.location.lng);
+          if (!cancelled) {
+            nextLabels[center.id] = label;
+          }
+        } catch {
+          if (!cancelled) {
+            nextLabels[center.id] = `${center.location.lat.toFixed(5)}, ${center.location.lng.toFixed(5)}`;
+          }
+        }
+      }
+
+      if (!cancelled) {
+        setLocationLabels(nextLabels);
+      }
+    };
+
+    void loadLocationLabels();
+    return () => {
+      cancelled = true;
+    };
+  }, [commandCenters]);
 
   // Compute admin users (role: admin)
   const adminUsers = users.filter((u) => u.role === 'admin');
@@ -113,8 +144,7 @@ export function BranchManagement() {
     // We'll refetch command centers to get the latest data
     setLoading(true);
     try {
-      const centersData = await api.getCommandCenters();
-      setCommandCenters(centersData);
+      await refreshCommandCenters();
     } catch (err) {
       console.error('Failed to refetch command centers:', err);
     } finally {
@@ -142,8 +172,7 @@ export function BranchManagement() {
     // Refetch command centers after deletion
     setLoading(true);
     try {
-      const centersData = await api.getCommandCenters();
-      setCommandCenters(centersData);
+      await refreshCommandCenters();
     } catch (err) {
       console.error('Failed to refetch command centers after delete:', err);
     } finally {
@@ -195,11 +224,14 @@ export function BranchManagement() {
   {
     key: 'location',
     header: 'Location',
-    render: (c) =>
-    <span className="text-[12px] text-ink-muted">
-          {c.branch}
-        </span>
+    render: (c) => {
+      const label =
+        locationLabels[c.id] ||
+        `${c.location.lat.toFixed(5)}, ${c.location.lng.toFixed(5)}` ||
+        c.branch;
 
+      return <span className="text-[12px] text-ink-muted">{label}</span>;
+    }
   },
   {
     key: 'created',
@@ -285,7 +317,7 @@ export function BranchManagement() {
           rows={commandCenters}
           rowKey={(c) => c.id}
           defaultSort={{ key: 'name', dir: 'asc' }}
-          loading={loading} />
+          loading={loading || !commandCentersReady} />
 
       </Card>
 

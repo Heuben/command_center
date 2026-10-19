@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogOutIcon, MenuIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from '../../contexts/SessionContext';
-import { useDispatchData } from '../../contexts/DispatchContext';
+import { useCommandCenters } from '../../contexts/CommandCenterContext';
 import { fullName, roleLabel } from '../../utils/labels';
 import { Button, Select } from '../ui/primitives';
 import { formatClock } from '../../utils/time';
@@ -12,7 +12,7 @@ import { Modal } from '../ui/Modal';
 export function TopBar({ onMenu }: {onMenu?: () => void;}) {
   const { user, isSuperadmin, branchFilter, setBranchFilter, theme, setTheme, signOut, now } =
   useSession();
-  const { commandCenters, centerName } = useDispatchData();
+  const { commandCenters, centerName } = useCommandCenters();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
 

@@ -22,6 +22,7 @@ export const SESSION_EXPIRED_EVENT = 'bantai:session-expired';
 const ACCESS_TOKEN_KEY = 'bantai-access-token';
 const REFRESH_TOKEN_KEY = 'bantai-refresh-token';
 let refreshInFlight: Promise<AuthTokens | null> | null = null;
+const reverseGeocodeCache = new Map<string, Promise<string>>();
 
 function saveAuthTokens(tokens: AuthTokens): void {
   if (typeof window === 'undefined') return;
@@ -186,6 +187,33 @@ function mapAgency(value: string): Agency {
   if (normalized.includes('barangay') || normalized.includes('tanod')) return 'barangay_tanod';
   if (normalized.includes('mdrrmo')) return 'mdrrmo';
   throw new ApiError('Unsupported responder agency.', 500);
+}
+
+function normalizeLocation(rawLocation: unknown): { lat: number; lng: number } {
+  if (!rawLocation || typeof rawLocation !== 'object') {
+    return { lat: 0, lng: 0 };
+  }
+
+  const location = rawLocation as Record<string, unknown>;
+  const lat = Number(location.lat ?? location.latitude ?? location.latitide ?? 0);
+  const lng = Number(location.lng ?? location.longitude ?? location.longtitude ?? location.lon ?? 0);
+
+  return {
+    lat: Number.isFinite(lat) ? lat : 0,
+    lng: Number.isFinite(lng) ? lng : 0,
+  };
+}
+
+function normalizeCommandCenter(raw: Partial<CommandCenter> & Record<string, unknown>): CommandCenter {
+  return {
+    id: String(raw.id ?? ''),
+    name: String(raw.name ?? 'Unnamed Command Center'),
+    branch: String(raw.branch ?? ''),
+    type: (raw.type as CommandCenter['type']) ?? 'barangay',
+    location: normalizeLocation(raw.location),
+    admin_ids: Array.isArray(raw.admin_ids) ? raw.admin_ids.filter((id): id is string => typeof id === 'string') : [],
+    created_at: String(raw.created_at ?? new Date().toISOString())
+  };
 }
 
 export interface CreateResponderDto {
@@ -380,7 +408,65 @@ export const api = {
   },
 
   // Branch management: get all command centers
-  getCommandCenters: () => request<CommandCenter[]>('/command-centers'),
+  getCommandCenters: async () => {
+    const centers = await request<Array<Partial<CommandCenter> & Record<string, unknown>>>('/command-centers');
+    return centers.map(normalizeCommandCenter);
+  },
+  reverseGeocode: async (lat: number, lng: number): Promise<string> => {
+    const safeLat = Number(lat);
+    const safeLng = Number(lng);
+    if (!Number.isFinite(safeLat) || !Number.isFinite(safeLng)) {
+      return `${lat}, ${lng}`;
+    }
+
+    const key = `${safeLat.toFixed(5)},${safeLng.toFixed(5)}`;
+    const cached = reverseGeocodeCache.get(key);
+    if (cached) return cached;
+
+    const requestPromise = (async () => {
+      const url = new URL('https://nominatim.openstreetmap.org/reverse');
+      url.search = new URLSearchParams({
+        format: 'jsonv2',
+        lat: String(safeLat),
+        lon: String(safeLng),
+        zoom: '18'
+      }).toString();
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Accept-Language': 'en'
+        }
+      });
+
+      const fallback = `${safeLat.toFixed(5)}, ${safeLng.toFixed(5)}`;
+      if (!response.ok) {
+        console.warn('[bantai:geo] reverse geocode failed', { lat: safeLat, lng: safeLng, status: response.status });
+        return fallback;
+      }
+
+      const data = await response.json().catch(() => null) as { display_name?: string } | null;
+      const resolved = data?.display_name || fallback;
+      if (typeof window !== 'undefined') {
+        (window as any).__bantaiDebug = {
+          ...(window as any).__bantaiDebug,
+          reverseGeocode: {
+            ...(window as any).__bantaiDebug?.reverseGeocode,
+            [key]: {
+              lat: safeLat,
+              lng: safeLng,
+              display_name: resolved,
+              fetched_at: new Date().toISOString(),
+            }
+          }
+        };
+      }
+      console.debug('[bantai:geo] resolved', { key, resolved });
+      return resolved;
+    })();
+
+    reverseGeocodeCache.set(key, requestPromise);
+    return requestPromise;
+  },
 
   // Settings (global) - placeholder; adjust based on actual backend
   getSettings: () => request<GlobalSettings>('/settings'),
@@ -389,16 +475,34 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(settings)
     }),
-  createCenter: (body: unknown) =>
-    request<{center: CommandCenter}>('/command-centers', {
+  createCenter: (body: unknown) => {
+    const payload = body as Partial<CommandCenter> & { location?: { lat?: number; lng?: number } };
+    const location = payload.location ?? { lat: 0, lng: 0 };
+    return request<{center: CommandCenter}>('/command-centers', {
       method: 'POST',
-      body: JSON.stringify(body)
-    }),
-  updateCenter: (id: string, body: unknown) =>
-    request<{center: CommandCenter}>(`/command-centers/${id}`, {
+      body: JSON.stringify({
+        ...payload,
+        location: {
+          latitude: Number(location.lat ?? 0),
+          longitude: Number(location.lng ?? 0),
+        }
+      })
+    });
+  },
+  updateCenter: (id: string, body: unknown) => {
+    const payload = body as Partial<CommandCenter> & { location?: { lat?: number; lng?: number } };
+    const location = payload.location ?? { lat: 0, lng: 0 };
+    return request<{center: CommandCenter}>(`/command-centers/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(body)
-    }),
+      body: JSON.stringify({
+        ...payload,
+        location: {
+          latitude: Number(location.lat ?? 0),
+          longitude: Number(location.lng ?? 0),
+        }
+      })
+    });
+  },
   deleteCenter: (id: string) =>
     request<{ok: boolean}>(`/command-centers/${id}`, { method: 'DELETE' }),
   createUser: (body: unknown) =>

@@ -10,7 +10,6 @@ import {
   MoonIcon,
   ServerCogIcon,
   SunIcon,
-  Volume2Icon,
   WebhookIcon
 } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
@@ -35,7 +34,6 @@ type LocalSettings = {
   workstationName: string;
   branchNotes: string;
   audioAlertsEnabled: boolean;
-  sirenVolume: number;
 };
 
 const LOCAL_SETTINGS_KEY_PREFIX = 'bantai-local-settings:';
@@ -55,11 +53,9 @@ function readStored<T>(key: string, fallback: T): T {
 }
 
 export function Settings() {
-  const { user, theme, setTheme, sirenVolume, setSirenVolume, signOut, isSuperadmin } =
-    useSession();
+  const { user, theme, setTheme, signOut, isSuperadmin } = useSession();
   const toast = useToast();
   const navigate = useNavigate();
-  const [testing, setTesting] = useState(false);
 
   // Global settings from API
   const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
@@ -84,8 +80,7 @@ export function Settings() {
   const [localSettings, setLocalSettings] = useState<LocalSettings>({
     workstationName: 'Command Center Workstation',
     branchNotes: '',
-    audioAlertsEnabled: true,
-    sirenVolume: 70
+    audioAlertsEnabled: true
   });
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -138,12 +133,10 @@ export function Settings() {
     const stored = readStored(key, {
       workstationName: 'Command Center Workstation',
       branchNotes: '',
-      audioAlertsEnabled: true,
-      sirenVolume: 70
+      audioAlertsEnabled: true
     });
     setLocalSettings(stored);
-    setSirenVolume(stored.sirenVolume);
-  }, [user, isSuperadmin, setSirenVolume]);
+  }, [user, isSuperadmin]);
 
   // Auto-dismiss the success/error banners after a few seconds.
   useEffect(() => {
@@ -205,7 +198,7 @@ export function Settings() {
         const key = localSettingsKey(user.id, branchId);
         window.localStorage.setItem(
           key,
-          JSON.stringify({ ...localSettings, sirenVolume })
+          JSON.stringify(localSettings)
         );
         toast.success('Local workstation settings saved.');
       }
@@ -504,48 +497,6 @@ export function Settings() {
                       }>
                 <MoonIcon className="h-4 w-4" /> Dark
               </button>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <SectionTitle>Alert Siren</SectionTitle>
-          <div className="space-y-4 p-4">
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <Label htmlFor="siren" className="mb-0">
-                  Siren Volume
-                </Label>
-                <span className="text-[13px] font-medium tabular-nums text-ink">
-                  {sirenVolume}%
-                </span>
-              </div>
-              <input
-                    id="siren"
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={sirenVolume}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      setSirenVolume(value);
-                      setLocalSettings((prev) => ({ ...prev, sirenVolume: value }));
-                    }}
-                    className="w-full accent-[rgb(var(--primary))]" />
-
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-[13px] text-ink-muted">
-                Plays when a new alert reaches this branch's queue.
-              </p>
-              <Button
-                    onClick={() => {
-                      setTesting(true);
-                      window.setTimeout(() => setTesting(false), 1200);
-                    }}>
-                <Volume2Icon className="h-4 w-4" />
-                {testing ? 'Playing…' : 'Test Siren'}
-              </Button>
             </div>
           </div>
         </Card>

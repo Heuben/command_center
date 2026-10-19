@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CircleMarker, MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 
 const MapContainerAny = MapContainer as any;
@@ -7,6 +7,7 @@ const CircleMarkerAny = CircleMarker as any;
 import { CrosshairIcon } from 'lucide-react';
 import type { LatLng } from '../../types';
 import { useSession } from '../../contexts/SessionContext';
+import { api } from '../../lib/api';
 import { Input, Label } from './primitives';
 
 const OSM_TILES = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -98,6 +99,7 @@ export function LocationPicker({
 
 }: {lat: string;lng: string;onChange: (next: {lat: string;lng: string;}) => void;latInvalid?: boolean;lngInvalid?: boolean;}) {
   useSession();
+  const [resolvedAddress, setResolvedAddress] = useState<string>('');
 
   const latNum = Number(lat);
   const lngNum = Number(lng);
@@ -112,6 +114,25 @@ export function LocationPicker({
   null;
 
   const center = marker ?? DEFAULT_CENTER;
+
+  useEffect(() => {
+    if (!marker) {
+      setResolvedAddress('');
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      const label = await api.reverseGeocode(marker.lat, marker.lng);
+      if (!cancelled) {
+        setResolvedAddress(label);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [marker?.lat, marker?.lng]);
 
   return (
     <div className="space-y-3">
@@ -173,6 +194,12 @@ export function LocationPicker({
           </MapContainerAny>
         </div>
       </div>
+
+      {resolvedAddress && (
+        <p className="text-[12px] text-ink-muted">
+          Address: <span className="text-ink">{resolvedAddress}</span>
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
