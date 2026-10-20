@@ -243,19 +243,6 @@ export function AuditLogs() {
       </div>
 
   },
-  {
-    key: 'reference',
-    header: 'Reference',
-    sortable: true,
-    width: '120px',
-    sortValue: (l) => l.reference,
-    render: (l) =>
-    <div className={cellStack}>
-      <p className="block max-w-[120px] truncate font-mono text-[12px] leading-[1.25] text-ink" title={l.reference}>{l.reference}</p>
-        {spacer}
-      </div>
-
-  },
   ...(isSuperadmin && !scopeCenterId ?
   [{
     key: 'branch',

@@ -3,12 +3,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   BrainCircuitIcon,
-  Building2Icon,
   Globe2Icon,
-  KeyRoundIcon,
   LogOutIcon,
   MoonIcon,
-  ServerCogIcon,
   SunIcon,
   WebhookIcon
 } from 'lucide-react';
@@ -29,28 +26,6 @@ type GlobalSettings = {
   defaultRoutingMode: 'nearest' | 'balanced';
   branchProvisioning: 'manual' | 'approved';
 };
-
-type LocalSettings = {
-  workstationName: string;
-  branchNotes: string;
-  audioAlertsEnabled: boolean;
-};
-
-const LOCAL_SETTINGS_KEY_PREFIX = 'bantai-local-settings:';
-
-function localSettingsKey(userId: string, centerId: string) {
-  return `${LOCAL_SETTINGS_KEY_PREFIX}${userId}:${centerId}`;
-}
-
-function readStored<T>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') return fallback;
-  try {
-    const stored = window.localStorage.getItem(key);
-    return stored ? { ...fallback, ...JSON.parse(stored) } : fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 export function Settings() {
   const { user, theme, setTheme, signOut, isSuperadmin } = useSession();
@@ -77,11 +52,6 @@ export function Settings() {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
-  const [localSettings, setLocalSettings] = useState<LocalSettings>({
-    workstationName: 'Command Center Workstation',
-    branchNotes: '',
-    audioAlertsEnabled: true
-  });
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Fetch global settings on mount and when user changes (if needed)
@@ -122,22 +92,6 @@ export function Settings() {
     setEmail(user.email);
   }, [user]);
 
-  // Load local settings from localStorage when user or command center changes
-  useEffect(() => {
-    if (!user) return;
-    // We don't have the user's command center ID from the session? Actually, we have it in the session via scopeCenterId and isSuperadmin.
-    // We'll get the branchId from the session (we'll compute it below).
-    // We'll compute the branchId here as well.
-    const branchId = isSuperadmin ? 'system' : (user.command_center_id ?? 'system');
-    const key = localSettingsKey(user.id, branchId);
-    const stored = readStored(key, {
-      workstationName: 'Command Center Workstation',
-      branchNotes: '',
-      audioAlertsEnabled: true
-    });
-    setLocalSettings(stored);
-  }, [user, isSuperadmin]);
-
   // Auto-dismiss the success/error banners after a few seconds.
   useEffect(() => {
     if (savedAt === null && error === null) return;
@@ -150,7 +104,6 @@ export function Settings() {
 
   if (!user) return null;
 
-  const branchId = isSuperadmin ? 'system' : (user.command_center_id ?? 'system');
   const centerName = isSuperadmin ? 'All Branches (system-wide)' : (user.command_center_id ? `Branch ${user.command_center_id}` : 'System');
 
   const submitProfile = (e: React.FormEvent) => {
@@ -184,24 +137,15 @@ export function Settings() {
     })();
   };
 
-  const handleSaveSettings = async (scope: 'global' | 'local') => {
-    if (!isSuperadmin && scope === 'global') {
+  const handleSaveSettings = async () => {
+    if (!isSuperadmin) {
       toast.error('Superadmin restricted: global settings cannot be changed by admins.');
       return;
     }
     setSavingSettings(true);
     try {
-      if (scope === 'global') {
-        await api.updateSettings(globalSettings);
-        toast.success('System settings saved.');
-      } else {
-        const key = localSettingsKey(user.id, branchId);
-        window.localStorage.setItem(
-          key,
-          JSON.stringify(localSettings)
-        );
-        toast.success('Local workstation settings saved.');
-      }
+      await api.updateSettings(globalSettings);
+      toast.success('System settings saved.');
     } catch {
       toast.error('Settings could not be saved.');
     } finally {
@@ -263,28 +207,6 @@ export function Settings() {
 
       {isSuperadmin &&
       <div className="mb-5 grid gap-5 xl:grid-cols-2">
-        <Card>
-          <SectionTitle>
-            <span className="inline-flex items-center gap-2"><ServerCogIcon className="h-4 w-4" /> Global Infrastructure</span>
-          </SectionTitle>
-          <div className="grid gap-4 p-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="infrastructure-region">Operations Region</Label>
-              <Input
-                id="infrastructure-region"
-                value={globalSettings.infrastructureRegion}
-                onChange={(e) => updateGlobal('infrastructureRegion', e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor="api-base-url">API Base URL</Label>
-              <Input
-                id="api-base-url"
-                value={globalSettings.apiBaseUrl}
-                onChange={(e) => updateGlobal('apiBaseUrl', e.target.value)} />
-            </div>
-          </div>
-        </Card>
-
         <Card>
           <SectionTitle>
             <span className="inline-flex items-center gap-2"><WebhookIcon className="h-4 w-4" /> API / Webhook Config</span>
@@ -349,25 +271,11 @@ export function Settings() {
           </div>
         </Card>
 
-        <Card className="xl:col-span-2">
-          <SectionTitle>
-            <span className="inline-flex items-center gap-2"><Building2Icon className="h-4 w-4" /> Branch CRUD Settings</span>
-          </SectionTitle>
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <div>
-              <p className="text-[13px] font-medium text-ink">System-wide branch administration</p>
-              <p className="text-[13px] text-ink-muted">Create, rename, archive, and reassign command centers.</p>
-            </div>
-            <Button variant="secondary" onClick={() => navigate('/branches')}>
-              Manage Branches
-            </Button>
-          </div>
-          <div className="flex justify-end border-t border-line px-4 py-3">
-            <Button type="button" variant="primary" disabled={savingSettings} onClick={() => handleSaveSettings('global')}>
+        <div className="flex justify-end xl:col-span-2">
+            <Button type="button" variant="primary" disabled={savingSettings} onClick={handleSaveSettings}>
               {savingSettings ? 'Saving…' : 'Save System Settings'}
             </Button>
-          </div>
-        </Card>
+        </div>
       </div>}
 
       <div className="gap-5 xl:grid-cols-3">
@@ -423,52 +331,6 @@ export function Settings() {
         </form>
 
         <div className="space-y-5">
-        <Card>
-          <SectionTitle>
-            <span className="inline-flex items-center gap-2"><KeyRoundIcon className="h-4 w-4" /> Local Branch &amp; Workstation</span>
-          </SectionTitle>
-          <div className="space-y-4 p-4">
-            <div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <p className="mb-1.5 text-[13px] font-medium text-ink-muted">Branch profile</p>
-                  <Badge variant="dot">
-                    {isSuperadmin ? 'All Branches (system-wide)' : (user.command_center_id ? `Branch ${user.command_center_id}` : 'System')}
-                  </Badge>
-                </div>
-                <div>
-                  <Label htmlFor="workstation-name">Workstation name</Label>
-                  <Input
-                    id="workstation-name"
-                    value={localSettings.workstationName}
-                    onChange={(e) => setLocalSettings((prev) => ({ ...prev, workstationName: e.target.value }))} />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="branch-notes">Local branch notes</Label>
-                <Input
-                  id="branch-notes"
-                  value={localSettings.branchNotes}
-                  onChange={(e) => setLocalSettings((prev) => ({ ...prev, branchNotes: e.target.value }))}
-                  placeholder="Optional notes for this workstation" />
-              </div>
-              <label className="flex cursor-pointer items-center gap-2 text-[13px] text-ink-muted">
-                <input
-                  type="checkbox"
-                  checked={localSettings.audioAlertsEnabled}
-                  onChange={(e) => setLocalSettings((prev) => ({ ...prev, audioAlertsEnabled: e.target.checked }))}
-                  className="h-4 w-4 rounded border-line accent-[rgb(var(--primary))]" />
-                Enable audio alerts on this workstation
-              </label>
-              <div className="flex justify-end border-t border-line pt-3">
-                <Button type="button" variant="primary" disabled={savingSettings} onClick={() => handleSaveSettings('local')}>
-                  {savingSettings ? 'Saving…' : 'Save Local Settings'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-
         <Card>
           <SectionTitle>Appearance</SectionTitle>
           <div className="flex flex-wrap items-center justify-between gap-4 p-4">

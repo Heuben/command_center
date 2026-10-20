@@ -149,11 +149,11 @@ export function IncidentHistory() {
     civilian:
     <CategoryCard
       key="civilian"
-      title="Civilian Reports"
+      title="Manual SOS Reports"
       description="Reports and media submitted by civilians."
       count={civilianRows.length}
       pending={pendingCivilian}
-      exportLabel="Civilian Reports"
+      exportLabel="Manual SOS Reports"
       onExport={exportCivilian}>
         <CivilianReportsTable rows={civilianRows} showBranch={showBranch} />
       </CategoryCard>
@@ -178,7 +178,7 @@ export function IncidentHistory() {
           { value: 'all', label: 'All' },
           { value: 'log', label: 'Incident Log', count: logRows.length },
           { value: 'reports', label: 'Post-Incident Reports', count: reportRows.length },
-          { value: 'civilian', label: 'Civilian Reports', count: civilianRows.length }]
+          { value: 'civilian', label: 'Manual SOS Reports', count: civilianRows.length }]
           } />
 
         } />
