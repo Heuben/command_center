@@ -173,6 +173,31 @@ describe('<Login />', () => {
     expect(document.querySelector('a[href="/"]')).not.toBeNull();
   });
 
+  it('submits passwords without enforcing a minimum length', async () => {
+    const user = userEvent.setup();
+    mockSignIn.mockResolvedValue({
+      id: '1',
+      f_name: 'Aiko',
+      l_name: 'Santos',
+      role: 'admin',
+      email: 'aiko@example.com',
+      command_center_id: 'branch-1',
+      account_status: 'active',
+    });
+    renderLogin();
+
+    await user.type(screen.getByRole('textbox', { name: /email/i }), 'aiko@example.com');
+    await user.type(screen.getByLabelText('Password'), 'x');
+    expect(screen.queryByText('Weak', { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText('Fair', { exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByText('Strong', { exact: true })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(mockSignIn).toHaveBeenCalledWith('aiko@example.com', 'x');
+    });
+  });
+
   // ── 9. Shows error on invalid credentials ────────────────────────────────
   it('shows an error message on invalid credentials', async () => {
     const user = userEvent.setup();
@@ -307,25 +332,6 @@ describe('<Login />', () => {
     await user.clear(screen.getByRole('textbox', { name: /work email/i }));
     await user.type(screen.getByRole('textbox', { name: /work email/i }), 'heuben.clyde.b.dagami@bantai.gov.ph');
     expect(screen.queryByText(/enter a valid email address/i)).toBeNull();
-  });
-
-  // ── 21. Password strength meter appears when password is entered ────────────
-  it('shows the password strength meter when a password is typed', async () => {
-    const user = userEvent.setup();
-    renderLogin();
-
-    await user.type(screen.getByLabelText('Password'), 'weakpass');
-    // "Weak" label appears in the strength meter
-    expect(screen.getByText('Weak')).toBeInTheDocument();
-  });
-
-  // ── 22. Strong password shows "Strong" label ────────────────────────────────
-  it('shows "Strong" for a strong password', async () => {
-    const user = userEvent.setup();
-    renderLogin();
-
-    await user.type(screen.getByLabelText('Password'), 'VeryStr0ng!Pass#2026');
-    expect(screen.getByText('Strong')).toBeInTheDocument();
   });
 
   // ── 23. Remember me checkbox is present ────────────────────────────────────

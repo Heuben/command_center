@@ -1,4 +1,4 @@
-import React, {useEffect, useId, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useId, useRef, useState} from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   EyeIcon,
@@ -29,38 +29,6 @@ function emailError(value: string): string | null {
   if (!EMAIL_RE.test(value.trim())) return 'Enter a valid email address.';
   return null;
 }
-
-function passwordError(value: string): string | null {
-  if (!value) return null;
-  if (value.length < 8) return 'Password must be at least 8 characters.';
-  return null;
-}
-
-/* -------------------------------------------------------------------------- */
-/* Password strength                                                           */
-/* -------------------------------------------------------------------------- */
-
-type Strength = 'empty' | 'weak' | 'fair' | 'strong';
-
-function strengthOf(pw: string): Strength {
-  if (!pw) return 'empty';
-  let score = 0;
-  if (pw.length >= 8) score += 1;
-  if (pw.length >= 12) score += 1;
-  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 1;
-  if (/\d/.test(pw)) score += 1;
-  if (/[^A-Za-z0-9]/.test(pw)) score += 1;
-  if (score <= 2) return 'weak';
-  if (score <= 3) return 'fair';
-  return 'strong';
-}
-
-const STRENGTH_META: Record<Strength, { label: string; color: string; width: string }> = {
-  empty:  { label: '',         color: 'bg-ink-faint/30', width: 'w-0'    },
-  weak:   { label: 'Weak',     color: 'bg-danger',       width: 'w-1/3'  },
-  fair:   { label: 'Fair',     color: 'bg-urgent',       width: 'w-2/3'  },
-  strong: { label: 'Strong',   color: 'bg-success',      width: 'w-full'  },
-};
 
 /* -------------------------------------------------------------------------- */
 /* Decorative sub-components                                                   */
@@ -159,10 +127,6 @@ export function Login() {
 
   // Validation
   const emailFieldError = emailError(email);
-  const passwordFieldError = passwordError(password);
-  const passwordStrength = useMemo(() => strengthOf(password), [password]);
-  const strengthMeta = STRENGTH_META[passwordStrength];
-
   // Refs
   const emailRef = useRef<HTMLInputElement>(null);
 
@@ -171,7 +135,6 @@ export function Login() {
   const passwordId = useId();
   const errorId = useId();
   const emailErrorId = useId();
-  const passwordErrorId = useId();
   const rememberId = useId();
 
   // Auto-focus email on mount
@@ -202,11 +165,6 @@ export function Login() {
       setFormError('Enter your password.');
       return;
     }
-    if (passwordFieldError) {
-      setFormError(passwordFieldError);
-      return;
-    }
-
     // Persist / clear remembered email
     try {
       if (remember) {
@@ -385,9 +343,6 @@ export function Login() {
                     }}
                     placeholder="••••••••"
                     className="h-11 pl-9 pr-10"
-                    invalid={!!passwordFieldError}
-                    aria-invalid={!!passwordFieldError}
-                    aria-describedby={passwordFieldError ? passwordErrorId : undefined}
                     disabled={busy}
                   />
                   <button
@@ -404,34 +359,6 @@ export function Login() {
                   </button>
                 </div>
 
-                {/* Password strength meter */}
-                {password && (
-                  <div className="flex items-center gap-2 pt-1">
-                    <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-ink-faint/15">
-                      <div
-                        className={`absolute inset-y-0 left-0 rounded-full transition-all duration-300 ${strengthMeta.color} ${strengthMeta.width}`}
-                        aria-hidden="true"
-                      />
-                    </div>
-                    <span
-                      className={`text-[11px] font-semibold uppercase tracking-wide ${
-                        passwordStrength === 'weak' ? 'text-danger' :
-                        passwordStrength === 'fair' ? 'text-urgent' :
-                        passwordStrength === 'strong' ? 'text-success' :
-                        'text-ink-faint'
-                      }`}
-                      aria-live="polite"
-                    >
-                      {strengthMeta.label}
-                    </span>
-                  </div>
-                )}
-
-                {passwordFieldError && (
-                  <p id={passwordErrorId} className="text-[12px] font-medium text-danger">
-                    {passwordFieldError}
-                  </p>
-                )}
               </div>
             </FadeIn>
 
