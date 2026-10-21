@@ -20,8 +20,13 @@ bootstrapAdmin();
 const PORT = Number(process.env.BANTAI_API_PORT || 8787);
 const COOKIE = 'bantai_session';
 const INGEST_KEY = process.env.BANTAI_INGEST_KEY || '';
+const PASSWORD_RESET_DELIVERY_URL = process.env.BANTAI_PASSWORD_RESET_DELIVERY_URL || '';
+const PASSWORD_RESET_DELIVERY_TOKEN = process.env.BANTAI_PASSWORD_RESET_DELIVERY_TOKEN || '';
 const isProd = process.env.NODE_ENV === 'production';
 const isDev = process.env.NODE_ENV === 'development';
+const PASSWORD_RESET_APP_URL =
+  process.env.BANTAI_APP_URL || 'http://localhost:5173';
+const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
 
 const app = express();
 app.use(
@@ -85,6 +90,166 @@ function setSession(res, userId) {
 }
 
 app.get('/api/health', (_req, res) => {
+  res.json({ ok: true });
+});
+
+app.post('/api/auth/password-reset/request', async (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Enter a valid email address.' });
+  }
+
+  if (isProd) {
+    let deliveryConfigured = false;
+    try {
+      deliveryConfigured =
+        !!process.env.BANTAI_APP_URL &&
+        new URL(process.env.BANTAI_APP_URL).protocol === 'https:' &&
+        !!PASSWORD_RESET_DELIVERY_URL &&
+        new URL(PASSWORD_RESET_DELIVERY_URL).protocol === 'https:';
+    } catch {
+      deliveryConfigured = false;
+    }
+    if (!deliveryConfigured) {
+      return res.status(503).json({ error: 'Password reset delivery is not configured.' });
+    }
+  }
+
+  db.prepare('DELETE FROM password_resets WHERE expires_at <= ? OR used_at IS NOT NULL').run(
+    Date.now()
+  );
+  const user = db
+    .prepare(
+      `SELECT * FROM users
+       WHERE lower(email) = ? AND account_status = 'active'
+         AND role IN ('admin', 'superadmin')`
+    )
+    .get(email);
+  if (!user) {
+    return res.json({ ok: true });
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const expiresAt = Date.now() + PASSWORD_RESET_TTL_MS;
+  const createdAt = nowIso();
+  const resetUrl = new URL('/forgot-password', PASSWORD_RESET_APP_URL);
+  resetUrl.searchParams.set('token', token);
+  const createReset = db.transaction(() => {
+    db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(user.id);
+    db.prepare(
+      `INSERT INTO password_resets (token_hash, user_id, expires_at, created_at)
+       VALUES (?, ?, ?, ?)`
+    ).run(tokenHash, user.id, expiresAt, createdAt);
+  });
+  createReset();
+
+  if (isDev) {
+    console.info(`Password reset link for ${user.email}: ${resetUrl.toString()}`);
+  } else {
+    const headers = new Headers({ 'Content-Type': 'application/json' });
+    if (PASSWORD_RESET_DELIVERY_TOKEN) {
+      headers.set('Authorization', `Bearer ${PASSWORD_RESET_DELIVERY_TOKEN}`);
+    }
+
+    try {
+      const delivery = await fetch(PASSWORD_RESET_DELIVERY_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          to: user.email,
+          subject: 'Reset your BANTAI Command Center password',
+          text: `Use this link to reset your password. It expires in 30 minutes:\n\n${resetUrl.toString()}`
+        })
+      });
+      if (!delivery.ok) {
+        db.prepare('DELETE FROM password_resets WHERE token_hash = ?').run(tokenHash);
+        console.error(`Password reset delivery failed with HTTP ${delivery.status}.`);
+        return res.status(502).json({ error: 'Password reset email could not be sent. Try again later.' });
+      }
+    } catch (error) {
+      db.prepare('DELETE FROM password_resets WHERE token_hash = ?').run(tokenHash);
+      console.error(
+        'Password reset delivery failed.',
+        error instanceof Error ? error.name : 'Unknown error'
+      );
+      return res.status(502).json({ error: 'Password reset email could not be sent. Try again later.' });
+    }
+  }
+
+  res.json({ ok: true });
+});
+
+app.post('/api/auth/password-reset/confirm', (req, res) => {
+  const token = String(req.body?.token || '');
+  const password = String(req.body?.password || '');
+  if (!/^[a-f0-9]{64}$/.test(token)) {
+    return res.status(400).json({ error: 'This password reset link is invalid or has expired.' });
+  }
+  if (password.length < 12 || password.length > 128) {
+    return res.status(400).json({ error: 'Password must be between 12 and 128 characters.' });
+  }
+
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const validReset = db
+    .prepare(
+      `SELECT 1 FROM password_resets
+       JOIN users ON users.id = password_resets.user_id
+       WHERE password_resets.token_hash = ?
+         AND password_resets.used_at IS NULL
+         AND password_resets.expires_at > ?
+         AND users.account_status = 'active'
+         AND users.role IN ('admin', 'superadmin')`
+    )
+    .get(tokenHash, Date.now());
+  if (!validReset) {
+    return res.status(400).json({ error: 'This password reset link is invalid or has expired.' });
+  }
+
+  const passwordHash = bcrypt.hashSync(password, 12);
+  const completeReset = db.transaction(() => {
+    const reset = db
+      .prepare(
+        `SELECT password_resets.user_id, users.command_center_id
+         FROM password_resets
+         JOIN users ON users.id = password_resets.user_id
+         WHERE password_resets.token_hash = ?
+           AND password_resets.used_at IS NULL
+           AND password_resets.expires_at > ?
+           AND users.account_status = 'active'
+           AND users.role IN ('admin', 'superadmin')`
+      )
+      .get(tokenHash, Date.now());
+    if (!reset) return false;
+
+    const usedAt = Date.now();
+    const markedUsed = db
+      .prepare(
+        `UPDATE password_resets SET used_at = ?
+         WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?`
+      )
+      .run(usedAt, tokenHash, usedAt);
+    if (markedUsed.changes !== 1) return false;
+
+    db.prepare(
+      'UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?'
+    ).run(passwordHash, reset.user_id);
+    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(reset.user_id);
+    db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(reset.user_id);
+    writeAudit({
+      actor_id: reset.user_id,
+      command_center_id: reset.command_center_id,
+      action: 'RESET_PASSWORD',
+      target_entity: 'user',
+      target_id: reset.user_id,
+      reference: 'password-reset'
+    });
+    return true;
+  });
+
+  if (!completeReset()) {
+    return res.status(400).json({ error: 'This password reset link is invalid or has expired.' });
+  }
   res.json({ ok: true });
 });
 

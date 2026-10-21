@@ -1,8 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDownIcon, ChevronUpIcon, ChevronsUpDownIcon } from 'lucide-react';
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronUpIcon,
+  ChevronsUpDownIcon
+} from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { Skeleton } from './Skeleton';
+
+const PAGE_SIZE = 20;
 
 export type Column<T> = {
   key: string;
@@ -43,6 +51,7 @@ export function DataTable<T>({
   const [sort, setSort] = useState<{key: string;dir: 'asc' | 'desc';} | null>(
     defaultSort ?? null
   );
+  const [cursorStack, setCursorStack] = useState<(string | null)[]>([null]);
 
   const sorted = useMemo(() => {
     if (!sort) return rows;
@@ -64,10 +73,18 @@ export function DataTable<T>({
     return copy;
   }, [rows, sort, columns]);
 
+  const currentCursor = cursorStack[cursorStack.length - 1] ?? null;
+  const cursorIndex = currentCursor === null ?
+  0 :
+  sorted.findIndex((row) => rowKey(row) === currentCursor);
+  const startIndex = cursorIndex < 0 ? 0 : cursorIndex;
+  const pageRows = sorted.slice(startIndex, startIndex + PAGE_SIZE);
+
   const toggle = (key: string) => {
     setSort((prev) =>
     prev?.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }
     );
+    setCursorStack([null]);
   };
 
   return (
@@ -159,7 +176,7 @@ export function DataTable<T>({
           ) :
 
           <AnimatePresence initial={false}>
-            {sorted.map((row, i) =>
+            {pageRows.map((row, i) =>
             <motion.tr
               key={rowKey(row)}
               layout="position"
@@ -217,6 +234,38 @@ export function DataTable<T>({
         </tbody>
       </table>
       {!loading && sorted.length === 0 && empty}
+      {!loading && sorted.length > PAGE_SIZE &&
+      <div className="flex items-center justify-between border-t border-line px-4 py-3">
+          <p className="text-[12px] text-ink-muted" aria-live="polite">
+            Showing {startIndex + 1}–{startIndex + pageRows.length} of {sorted.length}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCursorStack((current) => current.slice(0, -1))}
+              disabled={cursorStack.length <= 1}
+              className="inline-flex items-center gap-1 rounded border border-line px-3 py-1.5 text-[12px] font-medium text-ink transition-colors hover:bg-ink/[0.04] disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Previous 20 rows">
+              <ChevronLeftIcon className="h-3.5 w-3.5" />
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const nextCursor = sorted[startIndex + PAGE_SIZE];
+                if (nextCursor) {
+                  setCursorStack((current) => [...current, rowKey(nextCursor)]);
+                }
+              }}
+              disabled={startIndex + PAGE_SIZE >= sorted.length}
+              className="inline-flex items-center gap-1 rounded border border-line px-3 py-1.5 text-[12px] font-medium text-ink transition-colors hover:bg-ink/[0.04] disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Next 20 rows">
+              Next
+              <ChevronRightIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      }
     </div>);
 
 }

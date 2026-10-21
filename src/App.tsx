@@ -6,6 +6,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Login } from './pages/Login';
+import { PasswordReset } from './pages/PasswordReset';
 import { Dashboard } from './pages/Dashboard';
 import { Personnel } from './pages/Personnel';
 import { AuditLogs } from './pages/AuditLogs';
@@ -26,6 +27,13 @@ export function App() {
                 element={
                 <ErrorBoundary>
                     <Login />
+                  </ErrorBoundary>
+                } />
+              <Route
+                path="/forgot-password"
+                element={
+                  <ErrorBoundary>
+                    <PasswordReset />
                   </ErrorBoundary>
                 } />
               

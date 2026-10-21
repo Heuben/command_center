@@ -87,14 +87,15 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const trimmedEmail = email.trim().toLowerCase();
-    const trimmedPassword = password.trim();
-    if (!trimmedEmail || !trimmedPassword) return false;
+    if (!trimmedEmail || !password || password.length > 128) return false;
     try {
-      const data = await api.login(trimmedEmail, trimmedPassword);
-      setUser(data.user);
+      const data = await api.login(trimmedEmail, password);
+      const user = data.user ?? (await api.me()).user;
+      setUser(user);
       setBranchFilter('all');
       return true;
     } catch {
+      api.clearAccessToken();
       return false;
     }
   }, []);
@@ -103,6 +104,8 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
     if (!import.meta.env.DEV) return false;
     try {
       const data = await api.devLogin();
+      api.clearAccessToken();
+      if (!data.user) return false;
       setUser(data.user);
       setBranchFilter('all');
       return true;
@@ -117,6 +120,7 @@ export function SessionProvider({ children }: {children: React.ReactNode;}) {
     } catch {
       /* session already gone */
     }
+    api.clearAccessToken();
     setUser(null);
   }, []);
 

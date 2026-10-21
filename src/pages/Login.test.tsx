@@ -242,7 +242,10 @@ describe('<Login />', () => {
   // ── 14. Shows "Forgot password?" link ──────────────────────────────────
   it('renders the forgot password link', () => {
     renderLogin();
-    expect(screen.getByRole('button', { name: /forgot password/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /forgot password/i })).toHaveAttribute(
+      'href',
+      '/forgot-password'
+    );
   });
 
   // ── 15. Renders left branding panel in desktop view ──────────────────────

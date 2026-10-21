@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
   EyeIcon,
   EyeOffIcon,
@@ -32,7 +32,7 @@ function emailError(value: string): string | null {
 
 function passwordError(value: string): string | null {
   if (!value) return null;
-  if (value.length < 8) return 'Password must be at least 8 characters.';
+  if (value.length > 128) return 'Password must be 128 characters or fewer.';
   return null;
 }
 
@@ -357,12 +357,12 @@ export function Login() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor={passwordId} className="text-[13px]">Password</Label>
-                  <button
-                    type="button"
+                  <Link
+                    to="/forgot-password"
                     className="rounded px-1 text-[11px] font-medium text-danger hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas"
                   >
                     Forgot password?
-                  </button>
+                  </Link>
                 </div>
                 <div className="relative">
                   <LockIcon

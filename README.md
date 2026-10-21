@@ -14,6 +14,58 @@ available in production. The Vite development server proxies `/api` requests to
 the local API on port `8787`. You can also run the API alone with
 `npm run dev:api` when needed.
 
+## JWT backend authentication
+
+For the JWT backend, configure the auth endpoint paths in `.env.local` (or the
+deployment environment), for example:
+
+```text
+VITE_AUTH_LOGIN_PATH=https://www.bantai.online/api/v1/auth/local/signin
+VITE_AUTH_REFRESH_PATH=/api/v1/auth/refresh
+VITE_AUTH_ME_PATH=/api/v1/auth/me
+VITE_AUTH_LOGOUT_PATH=/api/v1/auth/logout
+VITE_RESPONDER_PROFILE_PATH=https://www.bantai.online/api/v1/responders/profile
+```
+
+The login endpoint defaults to
+`https://www.bantai.online/api/v1/auth/local/signin` and accepts `{ "email",
+"password" }`. The frontend keeps the access token in memory and sends it as a
+Bearer token. It does not persist the refresh token in browser storage; refresh
+requests rely on the backend's HttpOnly `refresh_token` cookie and include
+credentials. The backend must allow credentialed requests from the frontend
+origin. The profile endpoint should return `{ "user": ... }` for the current
+account. Set the logout path to the backend's logout endpoint if it provides
+one.
+
+Responder profile changes use `PATCH /api/v1/responders/profile` with the
+access token in the Authorization header. The backend derives the responder ID
+from the token's `sub` claim, so the client sends only the profile patch body.
+This endpoint is restricted to users with the `RESPONDER` role.
+
+## Password recovery
+
+The login page links to `/forgot-password`. The local SQLite API implements
+`POST /api/auth/password-reset/request` and
+`POST /api/auth/password-reset/confirm`; its `password_resets` table stores only
+SHA-256 token hashes. Links expire after 30 minutes and can only be used once.
+Completing a reset updates the account password and revokes its active local
+sessions. Requests return the same success response whether or not an eligible
+staff account exists.
+
+In development, the reset link is printed by the local API. For production,
+configure `BANTAI_APP_URL` and `BANTAI_PASSWORD_RESET_DELIVERY_URL`. The delivery
+URL must accept a JSON `POST` with `to`, `subject`, and `text` fields and return
+a successful HTTP status after sending the email. Optionally set
+`BANTAI_PASSWORD_RESET_DELIVERY_TOKEN` to send it as a Bearer token. Do not
+expose these server variables to the Vite frontend.
+
+The frontend defaults to the local SQLite routes. When using the external JWT
+authentication service above, set
+`VITE_AUTH_PASSWORD_RESET_REQUEST_PATH` and
+`VITE_AUTH_PASSWORD_RESET_CONFIRM_PATH` to that service's matching endpoints;
+those endpoints must implement the same request and confirmation contract.
+The local reset API changes local SQLite accounts only.
+
 ## Live dispatch
 
 Live dispatch controls are disabled. The dashboard retains links and summary counts for incident
