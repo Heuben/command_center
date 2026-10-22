@@ -7,7 +7,6 @@ import {
   LogOutIcon,
   PlusIcon,
   SearchIcon,
-  UserCogIcon,
   XCircleIcon
 } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
@@ -221,11 +220,6 @@ export function Personnel() {
 
   /** Admins cannot move personnel out of their own jurisdiction, so branch reassignment is superadmin-only. */
   const rowActions = (person: UserAccount): RowAction[] => [
-  {
-    label: 'Modify Role',
-    icon: UserCogIcon,
-    onSelect: () => toast.info(`Role change requested for ${fullName(person)}.`)
-  },
   ...(isSuperadmin ?
   [
   {
