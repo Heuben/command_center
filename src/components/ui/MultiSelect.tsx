@@ -18,6 +18,8 @@ type Props = {
   className?: string;
   panelClassName?: string;
   searchable?: boolean;
+  onOpen?: () => void;
+  statusMessage?: string;
   /** Renders the trigger as a plain button (used for the "Filter Actor" control). */
   variant?: 'field' | 'button';
   icon?: React.ReactNode;
@@ -32,6 +34,8 @@ export function MultiSelect({
   className,
   panelClassName,
   searchable = false,
+  onOpen,
+  statusMessage,
   variant = 'field',
   icon
 }: Props) {
@@ -81,7 +85,10 @@ export function MultiSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          if (!open) onOpen?.();
+          setOpen((o) => !o);
+        }}
         className={twMerge(
           'inline-flex h-9 w-full items-center justify-between gap-2 rounded-md border px-3 text-sm transition-colors duration-150 ease-out',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
@@ -159,6 +166,12 @@ export function MultiSelect({
           <li className="px-3 py-4 text-center text-[13px] text-ink-muted">No matches</li>
           }
           </ul>
+
+          {statusMessage && (
+            <p role="status" className="border-t border-line px-3 py-2 text-[12px] text-ink-muted">
+              {statusMessage}
+            </p>
+          )}
 
           <div className="flex items-center justify-between border-t border-line px-3 py-2">
             <span className="text-[12px] tabular-nums text-ink-faint">

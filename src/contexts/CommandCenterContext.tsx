@@ -19,7 +19,7 @@ export function CommandCentersProvider({ children }: { children: React.ReactNode
   const [ready, setReady] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (!user || !isSuperadmin) {
+    if (!user) {
       setCommandCenters([]);
       setReady(true);
       return;
@@ -27,7 +27,9 @@ export function CommandCentersProvider({ children }: { children: React.ReactNode
 
     setReady(false);
     try {
-      const data = await api.getCommandCenters();
+      const data = isSuperadmin
+        ? await api.getCommandCenters()
+        : [];
       setCommandCenters(data);
       if (typeof window !== 'undefined') {
         (window as any).__bantaiDebug = {
@@ -59,8 +61,14 @@ export function CommandCentersProvider({ children }: { children: React.ReactNode
   );
 
   const centerName = useCallback(
-    (id: string | null | undefined) => centerById(id)?.name ?? 'System-wide',
-    [centerById]
+    (id: string | null | undefined) => {
+      if (!id) return 'System-wide';
+      return centerById(id)?.name ??
+        (user?.command_center_id === id && user.command_center_name
+          ? user.command_center_name
+          : 'System-wide');
+    },
+    [centerById, user]
   );
 
   const value = useMemo<CommandCenterContextValue>(

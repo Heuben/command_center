@@ -84,7 +84,8 @@ export const agencyShort: Record<Agency, string> = {
 export const availabilityLabel: Record<Availability, string> = {
   on_duty: 'On Duty',
   off_duty: 'Off Duty',
-  dispatched: 'Dispatched'
+  dispatched: 'Dispatched',
+  en_route: 'En Route'
 };
 
 export const deviceStatusLabel: Record<DeviceStatus, string> = {

@@ -313,11 +313,6 @@ export function Personnel() {
               Deactivated
             </Badge>
           }
-            {!isDeactivated(r.id) && r.account_status === 'pending_activation' &&
-          <Badge tone="urgent" variant="soft">
-              Pending Activation
-            </Badge>
-          }
           </p>
           <p className="truncate text-[12px] text-ink-muted">{r.email}</p>
         </div>

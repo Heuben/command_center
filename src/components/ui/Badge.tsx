@@ -180,7 +180,8 @@ const outcomeTone: Record<AlertOutcome, Tone> = {
 const availabilityTone: Record<Availability, Tone> = {
   on_duty: 'success',
   off_duty: 'neutral',
-  dispatched: 'primary'
+  dispatched: 'primary',
+  en_route: 'primary'
 };
 
 export function OutcomeBadge({ outcome }: {outcome: AlertOutcome;}) {

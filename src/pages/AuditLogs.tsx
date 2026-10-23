@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CogIcon, DownloadIcon, UserSearchIcon, XIcon } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
+import { useCommandCenters } from '../contexts/CommandCenterContext';
 import { api } from '../lib/api';
 import type { AuditAction, AuditCategory, SystemAuditLog } from '../types';
 import {
@@ -14,6 +15,7 @@ import { formatDateTime } from '../utils/time';
 import { DataTable } from '../components/ui/DataTable';
 import type { Column } from '../components/ui/DataTable';
 import { MultiSelect } from '../components/ui/MultiSelect';
+import type { MultiSelectOption } from '../components/ui/MultiSelect';
 import { Button, Card, EmptyState, Input, Label, PageHeader } from '../components/ui/primitives';
 import { Drawer } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
@@ -48,6 +50,7 @@ const ACTOR_SYSTEM = '__system__';
 
 export function AuditLogs() {
   const { isSuperadmin, scopeCenterId } = useSession();
+  const { centerName, ready: commandCentersReady } = useCommandCenters();
   const [logs, setLogs] = useState<SystemAuditLog[]>([]);
   const cursorRef = useRef<string | null>(null);
   const [hasNextPage, setHasNextPage] = useState(false);
@@ -58,9 +61,51 @@ export function AuditLogs() {
   const [categories, setCategories] = useState<string[]>([]);
   const [actions, setActions] = useState<string[]>([]);
   const [actors, setActors] = useState<string[]>([]); // stores actor_id or ACTOR_SYSTEM
+  const [actorOptions, setActorOptions] = useState<MultiSelectOption[]>([
+    { value: ACTOR_SYSTEM, label: 'System (automated)' }
+  ]);
+  const [actorOptionsLoading, setActorOptionsLoading] = useState(false);
+  const [actorOptionsError, setActorOptionsError] = useState<string | null>(null);
+  const actorOptionsRequestId = useRef(0);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [selected, setSelected] = useState<SystemAuditLog | null>(null);
+
+  useEffect(() => {
+    actorOptionsRequestId.current += 1;
+    setActors([]);
+    setActorOptions([{ value: ACTOR_SYSTEM, label: 'System (automated)' }]);
+    setActorOptionsError(null);
+    setActorOptionsLoading(false);
+  }, [scopeCenterId]);
+
+  const loadActorOptions = useCallback(async () => {
+    if (!scopeCenterId) {
+      setActorOptionsError('Select a command center from Branch Context to load actors.');
+      return;
+    }
+
+    const requestId = ++actorOptionsRequestId.current;
+    setActorOptionsLoading(true);
+    setActorOptionsError(null);
+    try {
+      const branchActors = await api.getBranchActors(scopeCenterId);
+      if (requestId === actorOptionsRequestId.current) {
+        setActorOptions([
+          { value: ACTOR_SYSTEM, label: 'System (automated)' },
+          ...branchActors.map(({ id, name }) => ({ value: id, label: name }))
+        ]);
+      }
+    } catch (err) {
+      if (requestId === actorOptionsRequestId.current) {
+        setActorOptionsError(err instanceof Error ? err.message : 'Failed to load actors.');
+      }
+    } finally {
+      if (requestId === actorOptionsRequestId.current) {
+        setActorOptionsLoading(false);
+      }
+    }
+  }, [scopeCenterId]);
 
   // Build filter object for API
   const filters = {
@@ -69,7 +114,7 @@ export function AuditLogs() {
     actor: actors.length ? (actors[0] === ACTOR_SYSTEM ? null : actors[0]) : undefined,
     from: from ? new Date(from).toISOString() : undefined,
     to: to ? new Date(`${to}T23:59:59Z`).toISOString() : undefined,
-    commandCenterId: isSuperadmin && scopeCenterId ? scopeCenterId : undefined
+    commandCenterId: scopeCenterId ?? undefined
   };
 
   // Fetch logs function
@@ -269,9 +314,15 @@ export function AuditLogs() {
         subtitle={
         isSuperadmin ?
         scopeCenterId ?
-        `Every recorded action at ${scopeCenterId}` :
+        `Every recorded action at ${centerName(scopeCenterId)}` :
         'Every recorded action across all command centers' :
-        `Every recorded action at ${scopeCenterId}`
+        `Every recorded action at ${
+          scopeCenterId
+            ? commandCentersReady
+              ? centerName(scopeCenterId)
+              : 'Loading command center…'
+            : 'your command center'
+        }`
         } />
 
       <Card className="mb-4 p-4">
@@ -331,13 +382,15 @@ export function AuditLogs() {
               ariaLabel="Filter by actor"
               placeholder="Filter Actor"
               icon={<UserSearchIcon className="h-4 w-4 shrink-0 opacity-70" />}
-              options={[
-                { value: ACTOR_SYSTEM, label: 'System (automated)', hint: '' }
-                // We don't have user list here, so we can't populate actor options from state
-                // We'll leave it as just the system option for now
-              ]}
+              options={actorOptions}
               selected={actors}
               onChange={setActors}
+              onOpen={() => void loadActorOptions()}
+              statusMessage={
+                actorOptionsLoading
+                  ? 'Loading actors…'
+                  : actorOptionsError ?? undefined
+              }
               searchable
               className="w-full sm:w-[190px]"
               panelClassName="min-w-[280px]" />

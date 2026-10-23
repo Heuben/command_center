@@ -128,6 +128,7 @@ interface ResponderProfileRow {
   email: string;
   role: 'RESPONDER' | 'ADMIN' | 'SUPER' | 'DRIVER' | 'responder' | 'admin' | 'super' | 'superadmin' | 'driver';
   command_center_id: string | null;
+  command_center_name?: string | null;
   m_number: string | null;
   phone_verified_at: Date | null;
 }
@@ -158,7 +159,7 @@ export interface ResponderTableRow {
   email: string;
   rank: string;
   agency: 'police' | 'barangay_tanod' | 'mdrrmo';
-  availability: 'on_duty' | 'off_duty' | 'dispatched';
+  availability: ResponderAvailability;
 }
 
 export type ResponderAccountStatus = 'active' | 'deactivated' | 'pending_activation';
@@ -173,12 +174,36 @@ interface StatusResponderRow {
   email: string;
   rank: string;
   agency: string;
-  availability: 'on_duty' | 'off_duty' | 'dispatched';
+  availability: ResponderAvailability;
 }
 
 export interface RespondersStatusPage {
   data: UserAccount[];
   nextCursor: string | null;
+}
+
+export type ResponderAvailability = 'on_duty' | 'off_duty' | 'dispatched' | 'en_route';
+
+export interface ResponderFilters {
+  status?: ResponderAccountStatus[];
+  availability?: ResponderAvailability[];
+  agency?: Agency[];
+  search?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  updatedFrom?: string;
+  updatedTo?: string;
+  lastActiveFrom?: string;
+  lastActiveTo?: string;
+  onShift?: boolean;
+  includeSoftDeleted?: boolean;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface CommandCenterActor {
+  id: string;
+  name: string;
 }
 
 function mapAgency(value: string): Agency {
@@ -187,6 +212,45 @@ function mapAgency(value: string): Agency {
   if (normalized.includes('barangay') || normalized.includes('tanod')) return 'barangay_tanod';
   if (normalized.includes('mdrrmo')) return 'mdrrmo';
   throw new ApiError('Unsupported responder agency.', 500);
+}
+
+function mapResponderRow(row: StatusResponderRow, centerId: string): UserAccount {
+  return {
+    id: row.id,
+    f_name: row.f_name,
+    l_name: row.l_name,
+    m_name: row.m_name,
+    email: row.email,
+    role: row.role.toLowerCase() === 'admin' ? 'admin' : 'responder',
+    m_number: undefined,
+    command_center_id: centerId,
+    account_status: row.account_status,
+    must_change_password: undefined,
+    r_profile: {
+      agency: mapAgency(row.agency),
+      call_sign: null,
+      rank: row.rank,
+      availability: row.availability
+    }
+  };
+}
+
+function appendQueryValue(params: URLSearchParams, key: string, value: string | undefined): void {
+  if (value !== undefined && value !== '') params.set(key, value);
+}
+
+function mapCommandCenterInput(
+  payload: Partial<Pick<CommandCenter, 'name' | 'type' | 'branch' | 'location'>>
+): Record<string, unknown> {
+  const { name, type, branch, location } = payload;
+  return {
+    ...(name !== undefined ? { name } : {}),
+    ...(type !== undefined ? { type } : {}),
+    ...(branch !== undefined ? { branch } : {}),
+    ...(location !== undefined
+      ? { location: { latitude: location.lat, longitude: location.lng } }
+      : {})
+  };
 }
 
 function normalizeLocation(rawLocation: unknown): { lat: number; lng: number } {
@@ -293,6 +357,9 @@ export const api = {
       role: mapProfileRole(profile.role),
       m_number: profile.m_number ?? undefined,
       command_center_id: profile.command_center_id,
+      ...(profile.command_center_name !== undefined
+        ? { command_center_name: profile.command_center_name }
+        : {}),
       account_status: undefined,
       must_change_password: undefined,
       r_profile: undefined,
@@ -378,33 +445,101 @@ export const api = {
   getRespondersByStatus: async (
     centerId: string,
     status: ResponderAccountStatus,
-    cursor?: string | null
+    cursor?: string | null,
+    limit?: number
   ): Promise<RespondersStatusPage> => {
-    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    const params = new URLSearchParams();
+    if (limit !== undefined) params.set('limit', String(limit));
+    if (cursor) params.set('cursor', cursor);
+    const serializedParams = params.toString();
+    const query = serializedParams ? `?${serializedParams}` : '';
     const page = await request<{data: StatusResponderRow[];nextCursor: string | null}>(
-      `/command-centers/${centerId}/responders/status/${status}${query}`
+      `/command-centers/${encodeURIComponent(centerId)}/responders/status/${encodeURIComponent(status)}${query}`
     );
     return {
-      data: (page.data ?? []).map((row) => ({
-        id: row.id,
-        f_name: row.f_name,
-        l_name: row.l_name,
-        m_name: row.m_name,
-        email: row.email,
-        role: row.role.toLowerCase() === 'admin' ? 'admin' : 'responder',
-        m_number: undefined,
-        command_center_id: centerId,
-        account_status: row.account_status,
-        must_change_password: undefined,
-        r_profile: {
-          agency: mapAgency(row.agency),
-          call_sign: null,
-          rank: row.rank,
-          availability: row.availability
-        }
-      })),
+      data: (page.data ?? []).map((row) => mapResponderRow(row, centerId)),
       nextCursor: page.nextCursor ?? null
     };
+  },
+  getBranchRespondersPaginated: async (
+    centerId: string,
+    limit?: number,
+    cursor?: string | null
+  ): Promise<RespondersStatusPage> => {
+    const params = new URLSearchParams();
+    if (limit !== undefined) params.set('limit', String(limit));
+    if (cursor) params.set('cursor', cursor);
+    const serializedParams = params.toString();
+    const query = serializedParams ? `?${serializedParams}` : '';
+    const page = await request<{data: StatusResponderRow[];nextCursor: string | null}>(
+      `/command-centers/${encodeURIComponent(centerId)}/responders/paginated${query}`
+    );
+    return {
+      data: (page.data ?? []).map((row) => mapResponderRow(row, centerId)),
+      nextCursor: page.nextCursor ?? null
+    };
+  },
+  filterBranchResponders: async (
+    centerId: string,
+    filters: ResponderFilters = {}
+  ): Promise<RespondersStatusPage> => {
+    const params = new URLSearchParams();
+    filters.status?.forEach((value) => params.append('status', value));
+    filters.availability?.forEach((value) => params.append('availability', value));
+    filters.agency?.forEach((value) => params.append('agency', value));
+    appendQueryValue(params, 'search', filters.search);
+    appendQueryValue(params, 'createdFrom', filters.createdFrom);
+    appendQueryValue(params, 'createdTo', filters.createdTo);
+    appendQueryValue(params, 'updatedFrom', filters.updatedFrom);
+    appendQueryValue(params, 'updatedTo', filters.updatedTo);
+    appendQueryValue(params, 'lastActiveFrom', filters.lastActiveFrom);
+    appendQueryValue(params, 'lastActiveTo', filters.lastActiveTo);
+    if (filters.onShift !== undefined) params.set('onShift', String(filters.onShift));
+    if (filters.includeSoftDeleted !== undefined) {
+      params.set('includeSoftDeleted', String(filters.includeSoftDeleted));
+    }
+    if (filters.limit !== undefined) params.set('limit', String(filters.limit));
+    appendQueryValue(params, 'cursor', filters.cursor);
+    const serializedParams = params.toString();
+    const query = serializedParams ? `?${serializedParams}` : '';
+    const page = await request<{data: StatusResponderRow[];nextCursor: string | null}>(
+      `/command-centers/${encodeURIComponent(centerId)}/responders/filter${query}`
+    );
+    return {
+      data: (page.data ?? []).map((row) => mapResponderRow(row, centerId)),
+      nextCursor: page.nextCursor ?? null
+    };
+  },
+  getBranchActors: (centerId: string) =>
+    request<CommandCenterActor[]>(`/command-centers/${encodeURIComponent(centerId)}/actors`),
+  deactivateResponder: (centerId: string, responderId: string) =>
+    request<void>(
+      `/command-centers/${encodeURIComponent(centerId)}/responders/${encodeURIComponent(responderId)}/deactivate`,
+      { method: 'PATCH' }
+    ),
+  activateResponder: (centerId: string, responderId: string) =>
+    request<void>(
+      `/command-centers/${encodeURIComponent(centerId)}/responders/${encodeURIComponent(responderId)}/activate`,
+      { method: 'PATCH' }
+    ),
+  revokeResponderSessions: (centerId: string, responderId: string) =>
+    request<void>(
+      `/command-centers/${encodeURIComponent(centerId)}/responders/${encodeURIComponent(responderId)}/revoke-sessions`,
+      { method: 'POST' }
+    ),
+  forceResponderPasswordReset: (centerId: string, responderId: string) =>
+    request<void>(
+      `/command-centers/${encodeURIComponent(centerId)}/responders/${encodeURIComponent(responderId)}/force-password-reset`,
+      { method: 'POST' }
+    ),
+  updateResponderEmail: (centerId: string, responderId: string, email: string) =>
+    request<void>(
+      `/command-centers/${encodeURIComponent(centerId)}/responders/${encodeURIComponent(responderId)}/email`,
+      { method: 'PATCH', body: JSON.stringify({ email }) }
+    ),
+  getMyCommandCenter: async (): Promise<CommandCenter> => {
+    const center = await request<Partial<CommandCenter> & Record<string, unknown>>('/command-centers/me');
+    return normalizeCommandCenter(center);
   },
 
   // Branch management: get all command centers
@@ -475,36 +610,20 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(settings)
     }),
-  createCenter: (body: unknown) => {
-    const payload = body as Partial<CommandCenter> & { location?: { lat?: number; lng?: number } };
-    const location = payload.location ?? { lat: 0, lng: 0 };
+  createCenter: (body: Pick<CommandCenter, 'name' | 'type' | 'branch' | 'location'>) => {
     return request<{center: CommandCenter}>('/command-centers', {
       method: 'POST',
-      body: JSON.stringify({
-        ...payload,
-        location: {
-          latitude: Number(location.lat ?? 0),
-          longitude: Number(location.lng ?? 0),
-        }
-      })
+      body: JSON.stringify(mapCommandCenterInput(body))
     });
   },
-  updateCenter: (id: string, body: unknown) => {
-    const payload = body as Partial<CommandCenter> & { location?: { lat?: number; lng?: number } };
-    const location = payload.location ?? { lat: 0, lng: 0 };
-    return request<{center: CommandCenter}>(`/command-centers/${id}`, {
+  updateCenter: (id: string, body: Partial<Pick<CommandCenter, 'name' | 'type' | 'branch' | 'location'>>) => {
+    return request<{center: CommandCenter}>(`/command-centers/${encodeURIComponent(id)}`, {
       method: 'PATCH',
-      body: JSON.stringify({
-        ...payload,
-        location: {
-          latitude: Number(location.lat ?? 0),
-          longitude: Number(location.lng ?? 0),
-        }
-      })
+      body: JSON.stringify(mapCommandCenterInput(body))
     });
   },
   deleteCenter: (id: string) =>
-    request<{ok: boolean}>(`/command-centers/${id}`, { method: 'DELETE' }),
+    request<void>(`/command-centers/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   createUser: (body: unknown) =>
     request<{user: UserAccount;tempPassword: string}>('/users', {
       method: 'POST',
@@ -519,14 +638,6 @@ export const api = {
     request<{user: UserAccount}>(`/users/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(body)
-    }),
-  activateResponder: (centerId: string, responderId: string) =>
-    request<void>(`/command-centers/${centerId}/responders/${responderId}/activate`, {
-      method: 'PATCH'
-    }),
-  deactivateResponder: (centerId: string, responderId: string) =>
-    request<void>(`/command-centers/${centerId}/responders/${responderId}/deactivate`, {
-      method: 'PATCH'
     }),
   acknowledge: (alertId: string, command_center_id: string) =>
     request(`/alerts/${alertId}/acknowledge`, {

@@ -92,6 +92,7 @@ describe('API Service', () => {
     });
   });
 
+
   describe('token refresh', () => {
     it('refreshes tokens after a 401 and retries the original request once', async () => {
       window.localStorage.setItem('bantai-access-token', 'expired-access-token');
@@ -321,6 +322,7 @@ describe('API Service', () => {
           email: 'admin@example.com',
           role: 'admin',
           command_center_id: 'center-id',
+          command_center_name: 'Novaliches Emergency Command Center',
           m_number: null,
           phone_verified_at: null
         }),
@@ -331,6 +333,7 @@ describe('API Service', () => {
 
       expect(result.user.role).toBe('admin');
       expect(result.user.command_center_id).toBe('center-id');
+      expect(result.user.command_center_name).toBe('Novaliches Emergency Command Center');
     });
   });
 
@@ -505,5 +508,198 @@ describe('API Service', () => {
         );
       }
     );
+  });
+
+  describe('command center endpoint coverage', () => {
+    const centerId = 'center-id';
+    const responderId = 'responder-id';
+
+    const responderRow = {
+      id: responderId,
+      f_name: 'Taylor',
+      l_name: 'Reyes',
+      m_name: null,
+      role: 'responder',
+      account_status: 'active',
+      email: 'taylor@example.com',
+      rank: 'Officer',
+      agency: 'police',
+      availability: 'en_route'
+    };
+
+    it('fetches paginated responders and maps en-route availability', async () => {
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [responderRow], nextCursor: 'next/page' }),
+        status: 200
+      } as Response);
+
+      const page = await api.getBranchRespondersPaginated(centerId, 25, 'cursor value');
+
+      expect(mockedFetch.mock.calls[0][0]).toBe(
+        `https://www.bantai.online/api/v1/command-centers/${centerId}/responders/paginated?limit=25&cursor=cursor+value`
+      );
+      expect(page).toMatchObject({
+        nextCursor: 'next/page',
+        data: [{
+          id: responderId,
+          account_status: 'active',
+          r_profile: { availability: 'en_route' }
+        }]
+      });
+    });
+
+    it('serializes all responder filter options, including repeated enum values and false booleans', async () => {
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [responderRow], nextCursor: null }),
+        status: 200
+      } as Response);
+
+      await api.filterBranchResponders(centerId, {
+        status: ['active', 'deactivated'],
+        availability: ['on_duty', 'en_route'],
+        agency: ['police', 'mdrrmo'],
+        search: 'Taylor Reyes',
+        createdFrom: '2026-09-01',
+        createdTo: '2026-10-23',
+        updatedFrom: '2026-10-01T00:00:00Z',
+        updatedTo: '2026-10-23T23:59:59Z',
+        lastActiveFrom: '2026-10-01',
+        lastActiveTo: '2026-10-23',
+        onShift: false,
+        includeSoftDeleted: true,
+        limit: 50,
+        cursor: 'next/page'
+      });
+
+      const requestedUrl = new URL(mockedFetch.mock.calls[0][0] as string);
+      expect(requestedUrl.pathname).toBe(`/api/v1/command-centers/${centerId}/responders/filter`);
+      expect(requestedUrl.searchParams.getAll('status')).toEqual(['active', 'deactivated']);
+      expect(requestedUrl.searchParams.getAll('availability')).toEqual(['on_duty', 'en_route']);
+      expect(requestedUrl.searchParams.getAll('agency')).toEqual(['police', 'mdrrmo']);
+      expect(requestedUrl.searchParams.get('search')).toBe('Taylor Reyes');
+      expect(requestedUrl.searchParams.get('createdFrom')).toBe('2026-09-01');
+      expect(requestedUrl.searchParams.get('createdTo')).toBe('2026-10-23');
+      expect(requestedUrl.searchParams.get('updatedFrom')).toBe('2026-10-01T00:00:00Z');
+      expect(requestedUrl.searchParams.get('updatedTo')).toBe('2026-10-23T23:59:59Z');
+      expect(requestedUrl.searchParams.get('lastActiveFrom')).toBe('2026-10-01');
+      expect(requestedUrl.searchParams.get('lastActiveTo')).toBe('2026-10-23');
+      expect(requestedUrl.searchParams.get('onShift')).toBe('false');
+      expect(requestedUrl.searchParams.get('includeSoftDeleted')).toBe('true');
+      expect(requestedUrl.searchParams.get('limit')).toBe('50');
+      expect(requestedUrl.searchParams.get('cursor')).toBe('next/page');
+    });
+
+    it('gets branch actors and the authenticated user command center', async () => {
+      mockedFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [{ id: 'actor-id', name: 'Taylor Reyes' }],
+          status: 200
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            id: centerId,
+            name: 'Central',
+            type: 'barangay',
+            branch: 'Central District',
+            location: { latitude: 14.676, longitude: 121.0437 },
+            admin_ids: [],
+            created_at: '2026-10-23T00:00:00Z'
+          }),
+          status: 200
+        } as Response);
+
+      await expect(api.getBranchActors(centerId)).resolves.toEqual([
+        { id: 'actor-id', name: 'Taylor Reyes' }
+      ]);
+      await expect(api.getMyCommandCenter()).resolves.toMatchObject({
+        id: centerId,
+        location: { lat: 14.676, lng: 121.0437 }
+      });
+
+      expect(mockedFetch.mock.calls[0][0]).toBe(
+        `https://www.bantai.online/api/v1/command-centers/${centerId}/actors`
+      );
+      expect(mockedFetch.mock.calls[1][0]).toBe(
+        'https://www.bantai.online/api/v1/command-centers/me'
+      );
+    });
+
+    it.each([
+      ['revokeResponderSessions', 'revoke-sessions', 'POST'],
+      ['forceResponderPasswordReset', 'force-password-reset', 'POST']
+    ] as const)('calls the %s action endpoint', async (methodName, route, httpMethod) => {
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({}),
+        status: 204
+      } as Response);
+
+      await api[methodName](centerId, responderId);
+
+      expect(mockedFetch).toHaveBeenCalledWith(
+        `https://www.bantai.online/api/v1/command-centers/${centerId}/responders/${responderId}/${route}`,
+        expect.objectContaining({ method: httpMethod })
+      );
+    });
+
+    it('updates a responder email with the endpoint DTO', async () => {
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({}),
+        status: 200
+      } as Response);
+
+      await api.updateResponderEmail(centerId, responderId, 'new@example.com');
+
+      expect(mockedFetch).toHaveBeenCalledWith(
+        `https://www.bantai.online/api/v1/command-centers/${centerId}/responders/${responderId}/email`,
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({ email: 'new@example.com' })
+        })
+      );
+    });
+
+    it('sends only the command center DTO fields and maps location coordinates', async () => {
+      mockedFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ center: {} }),
+          status: 201
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ center: {} }),
+          status: 200
+        } as Response);
+
+      const centerWithAdminAssignment = {
+        name: 'Central',
+        type: 'barangay',
+        branch: 'Central District',
+        location: { lat: 14.676, lng: 121.0437 },
+        admin_ids: ['admin-id']
+      } as const;
+      await api.createCenter(centerWithAdminAssignment);
+      await api.updateCenter(centerId, {
+        name: 'Updated Central',
+        location: { lat: 14.7, lng: 121.1 }
+      });
+
+      expect(JSON.parse(mockedFetch.mock.calls[0][1]?.body as string)).toEqual({
+        name: 'Central',
+        type: 'barangay',
+        branch: 'Central District',
+        location: { latitude: 14.676, longitude: 121.0437 }
+      });
+      expect(JSON.parse(mockedFetch.mock.calls[1][1]?.body as string)).toEqual({
+        name: 'Updated Central',
+        location: { latitude: 14.7, longitude: 121.1 }
+      });
+    });
   });
 });

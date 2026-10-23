@@ -14,7 +14,7 @@ export type CommandCenter = {
 
 export type Role = 'superadmin' | 'admin' | 'responder' | 'driver';
 export type Agency = 'police' | 'barangay_tanod' | 'mdrrmo';
-export type Availability = 'on_duty' | 'off_duty' | 'dispatched';
+export type Availability = 'on_duty' | 'off_duty' | 'dispatched' | 'en_route';
 
 export type ResponderProfile = {
   agency: Agency;
@@ -48,6 +48,7 @@ export type UserAccount = {
   email: string;
   m_number?: string;
   command_center_id: string | null;
+  command_center_name?: string | null;
   account_status?: 'active' | 'pending_activation' | 'deactivated';
   must_change_password?: boolean;
   r_profile?: ResponderProfile;
