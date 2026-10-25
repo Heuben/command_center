@@ -131,6 +131,62 @@ describe('API Service', () => {
   });
 
   describe('auditLogs', () => {
+    it('serializes audit filters using the controller query names', async () => {
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [], nextCursor: null }),
+        status: 200
+      } as Response);
+
+      await api.auditLogs({
+        limit: 50,
+        commandCenterId: '7cb70f0a-777a-4048-9c11-10d7da83e985',
+        category: ['user_account', 'session'],
+        action: ['ACTIVATE_ACCOUNT', 'LOGIN'],
+        actorId: '628bacfd-7e4c-4240-a5a9-38793c590a48',
+        from: '2026-10-18',
+        to: '2026-10-19'
+      });
+
+      const requestUrl = new URL(String(mockedFetch.mock.calls[0][0]));
+      expect(requestUrl.pathname).toBe('/api/v1/audit-logs');
+      expect(requestUrl.searchParams.getAll('category')).toEqual(['user_account', 'session']);
+      expect(requestUrl.searchParams.getAll('action')).toEqual(['ACTIVATE_ACCOUNT', 'LOGIN']);
+      expect(requestUrl.searchParams.get('actorId')).toBe('628bacfd-7e4c-4240-a5a9-38793c590a48');
+      expect(requestUrl.searchParams.get('commandCenterId')).toBe('7cb70f0a-777a-4048-9c11-10d7da83e985');
+      expect(requestUrl.searchParams.get('from')).toBe('2026-10-18');
+      expect(requestUrl.searchParams.get('to')).toBe('2026-10-19');
+    });
+
+    it('requests a single audit log with createdAt and superadmin commandCenterId', async () => {
+      mockedFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'b30c7eb8-f036-4d5e-8d7a-68713443bfab',
+          actorId: null,
+          actorName: null,
+          commandCenterId: '7cb70f0a-777a-4048-9c11-10d7da83e985',
+          action: 'LOGIN',
+          targetEntity: 'session',
+          targetId: '628bacfd-7e4c-4240-a5a9-38793c590a48',
+          oldPayload: null,
+          newPayload: null,
+          createdAt: '2026-10-18T19:25:14.889Z'
+        }),
+        status: 200
+      } as Response);
+
+      await api.auditLog('b30c7eb8-f036-4d5e-8d7a-68713443bfab', {
+        createdAt: '2026-10-18T19:25:14.889Z',
+        commandCenterId: '7cb70f0a-777a-4048-9c11-10d7da83e985'
+      });
+
+      const requestUrl = new URL(String(mockedFetch.mock.calls[0][0]));
+      expect(requestUrl.pathname).toBe('/api/v1/audit-logs/b30c7eb8-f036-4d5e-8d7a-68713443bfab');
+      expect(requestUrl.searchParams.get('createdAt')).toBe('2026-10-18T19:25:14.889Z');
+      expect(requestUrl.searchParams.get('commandCenterId')).toBe('7cb70f0a-777a-4048-9c11-10d7da83e985');
+    });
+
     it('sends the stored access token and maps the camelCase API response', async () => {
       window.localStorage.setItem('bantai-access-token', 'audit-access-token');
       mockedFetch.mockResolvedValueOnce({
@@ -153,7 +209,15 @@ describe('API Service', () => {
         status: 200
       } as Response);
 
-      const result = await api.auditLogs(50, null, '7cb70f0a-777a-4048-9c11-10d7da83e985');
+      const result = await api.auditLogs({
+        limit: 50,
+        commandCenterId: '7cb70f0a-777a-4048-9c11-10d7da83e985',
+        category: ['user_account', 'session'],
+        action: ['ACTIVATE_ACCOUNT', 'LOGIN'],
+        actorId: '628bacfd-7e4c-4240-a5a9-38793c590a48',
+        from: '2026-10-18',
+        to: '2026-10-19'
+      });
 
       expect(new Headers(mockedFetch.mock.calls[0][1]?.headers).get('Authorization'))
         .toBe('Bearer audit-access-token');
@@ -210,11 +274,11 @@ describe('API Service', () => {
       };
       mockedFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: {}, tempPassword: 'temporary' }),
+        json: async () => 'created-user-id',
         status: 201
       } as Response);
 
-      await api.createResponder(payload);
+      await expect(api.createResponder(payload)).resolves.toBe('created-user-id');
 
       expect(mockedFetch).toHaveBeenCalledWith(
         'https://www.bantai.online/api/v1/responders',

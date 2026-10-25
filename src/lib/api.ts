@@ -9,7 +9,7 @@ export class ApiError extends Error {
 // Hardcoded base URL for the Bantai ICC API as requested
 const API_BASE_URL = 'https://www.bantai.online/api/v1';
 
-import type { SystemAuditLog, UserAccount, CommandCenter, AuditCategory, AuditAction, AuditTargetEntity, Agency } from '../types';
+import type { SystemAuditLog, UserAccount, CommandCenter, AuditAction, AuditTargetEntity, Agency } from '../types';
 
 export interface AuthTokens {
   accessToken: string;
@@ -329,9 +329,41 @@ interface AuditLogDto {
   createdAt: string;
 }
 
+function mapAuditLog(row: AuditLogDto): SystemAuditLog {
+  return {
+    id: row.id,
+    actor_id: row.actorId,
+    actor_name: row.actorName,
+    command_center_id: row.commandCenterId,
+    action: row.action,
+    target_entity: row.targetEntity,
+    target_id: row.targetId,
+    reference: row.targetId,
+    created_at: row.createdAt,
+    old_value: row.oldPayload,
+    new_value: row.newPayload
+  };
+}
+
 interface AuditLogsResponse {
   data: AuditLogDto[];
   nextCursor: string | null;
+}
+
+export interface AuditLogFilters {
+  limit?: number;
+  cursor?: string | null;
+  commandCenterId?: string;
+  category?: AuditTargetEntity[];
+  action?: AuditAction[];
+  actorId?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface AuditLogDetailFilters {
+  createdAt?: string;
+  commandCenterId?: string;
 }
 
 export const api = {
@@ -376,34 +408,29 @@ export const api = {
   },
 
   // Audit logs
-  auditLogs: async (limit?: number, cursor?: string | null, commandCenterId?: string, category?: AuditCategory, action?: AuditAction, actor?: string | null, from?: string, to?: string): Promise<PaginatedAuditLogs> => {
+  auditLogs: async (filters: AuditLogFilters = {}): Promise<PaginatedAuditLogs> => {
     const url = new URL('/audit-logs', API_BASE_URL);
-    if (limit !== undefined) url.searchParams.set('limit', String(limit));
-    if (cursor !== null && cursor !== undefined) url.searchParams.set('cursor', cursor);
-    if (commandCenterId !== undefined) url.searchParams.set('commandCenterId', commandCenterId);
-    if (category !== undefined) url.searchParams.set('category', category);
-    if (action !== undefined) url.searchParams.set('action', action);
-    if (actor !== null && actor !== undefined) url.searchParams.set('actor', actor);
-    if (from !== undefined && from !== '') url.searchParams.set('from', from);
-    if (to !== undefined && to !== '') url.searchParams.set('to', to);
+    if (filters.limit !== undefined) url.searchParams.set('limit', String(filters.limit));
+    if (filters.cursor) url.searchParams.set('cursor', filters.cursor);
+    if (filters.commandCenterId) url.searchParams.set('commandCenterId', filters.commandCenterId);
+    filters.category?.forEach((category) => url.searchParams.append('category', category));
+    filters.action?.forEach((action) => url.searchParams.append('action', action));
+    if (filters.actorId) url.searchParams.set('actorId', filters.actorId);
+    if (filters.from) url.searchParams.set('from', filters.from);
+    if (filters.to) url.searchParams.set('to', filters.to);
     const response = await request<AuditLogsResponse>(url.pathname + url.search, { method: 'GET' });
     return {
-      data: (response.data ?? []).map((row) => ({
-        id: row.id,
-        actor_id: row.actorId,
-        actor_name: row.actorName,
-        command_center_id: row.commandCenterId,
-        action: row.action,
-        target_entity: row.targetEntity,
-        target_id: row.targetId,
-        reference: row.targetId,
-        created_at: row.createdAt,
-        old_value: row.oldPayload,
-        new_value: row.newPayload
-      })),
+      data: (response.data ?? []).map(mapAuditLog),
       cursor: response.nextCursor ?? null,
       hasNextPage: !!response.nextCursor
     };
+  },
+  auditLog: async (id: string, filters: AuditLogDetailFilters = {}): Promise<SystemAuditLog> => {
+    const url = new URL(`/audit-logs/${encodeURIComponent(id)}`, API_BASE_URL);
+    if (filters.createdAt) url.searchParams.set('createdAt', filters.createdAt);
+    if (filters.commandCenterId) url.searchParams.set('commandCenterId', filters.commandCenterId);
+    const response = await request<AuditLogDto>(url.pathname + url.search, { method: 'GET' });
+    return mapAuditLog(response);
   },
 
   // Personnel management: get all users or branch-scoped responders
@@ -630,7 +657,7 @@ export const api = {
       body: JSON.stringify(body)
     }),
   createResponder: (body: CreateResponderDto) =>
-    request<{user: UserAccount;tempPassword: string}>('/responders', {
+    request<string>('/responders', {
       method: 'POST',
       body: JSON.stringify(body)
     }),

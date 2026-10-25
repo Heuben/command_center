@@ -36,26 +36,31 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || (isSuperadmin && !scopeCenterId)) {
       setStats(null);
+      setError(null);
       setLoading(false);
       return;
     }
+    let cancelled = false;
     const fetchStats = async () => {
       setLoading(true);
       setError(null);
       try {
-        // If the user is a superadmin and has a scoped center (branchFilter not 'all'), we pass the scopeCenterId
-        // Otherwise, we pass undefined to get overall stats (or we could pass the user's command_center_id if not superadmin)
-        const data = await api.dashboardStats(scopeCenterId && !isSuperadmin ? scopeCenterId : undefined);
-        setStats(data);
+        const data = await api.dashboardStats(isSuperadmin ? scopeCenterId ?? undefined : undefined);
+        if (!cancelled) setStats(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load dashboard stats');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load dashboard stats');
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-    fetchStats();
+    void fetchStats();
+    return () => {
+      cancelled = true;
+    };
   }, [user, scopeCenterId, isSuperadmin]);
 
   if (loading) {
@@ -70,6 +75,25 @@ export function Dashboard() {
     return (
       <div className="mx-auto w-full max-w-6xl space-y-5 sm:space-y-6">
         <p className="text-center text-danger">{error}</p>
+      </div>
+    );
+  }
+
+  if (isSuperadmin && !scopeCenterId) {
+    return (
+      <div className="mx-auto w-full max-w-6xl space-y-5 sm:space-y-6">
+        <header>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+            Command Center
+          </p>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-ink sm:text-2xl">Dashboard</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-muted">
+            Review incident records, manage personnel, and check system activity.
+          </p>
+        </header>
+        <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-muted">
+          Select a branch from the branch context menu to view its dashboard statistics.
+        </p>
       </div>
     );
   }

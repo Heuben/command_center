@@ -10,8 +10,9 @@ import {
   XCircleIcon
 } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
+import { useCommandCenters } from '../contexts/CommandCenterContext';
 import { api } from '../lib/api';
-import type { UserAccount } from '../types';
+import type { CommandCenter, UserAccount } from '../types';
 import { agencyLabel, agencyShort, fullName, rankDisplay, roleLabel } from '../utils/labels';
 import { DataTable } from '../components/ui/DataTable';
 import type { Column } from '../components/ui/DataTable';
@@ -38,6 +39,7 @@ type PersonnelStatusPage = {users: UserAccount[];cursor: string | null;hasMore: 
 
 export function Personnel() {
   const { scopeCenterId, isSuperadmin, user } = useSession();
+  const { commandCenters } = useCommandCenters();
   const personnelCenterId = scopeCenterId ?? user?.command_center_id ?? null;
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [statusPages, setStatusPages] = useState<Record<PagedPersonnelStatus, PersonnelStatusPage>>({
@@ -47,7 +49,6 @@ export function Personnel() {
   });
   const [statusPageLoading, setStatusPageLoading] = useState(false);
   const [loadingMoreStatusPage, setLoadingMoreStatusPage] = useState(false);
-  const [commandCenters, setCommandCenters] = useState<any[]>([]); // We'll type as CommandCenter[] later
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
@@ -67,13 +68,6 @@ export function Personnel() {
       setError(null);
       try {
         const centerId = personnelCenterId;
-        const centersData = centerId
-          ? [{ id: centerId, name: 'Selected command center' }]
-          : [];
-        if (!cancelled) {
-          setCommandCenters(centersData);
-        }
-
         const nextUsers = centerId
           ? await api.getBranchResponders(centerId)
           : [];
@@ -427,8 +421,7 @@ export function Personnel() {
             </div>
             <Button
             variant="primary"
-            onClick={() => setAddOpen(true)}
-            disabled={isSuperadmin && !scopeCenterId}>
+            onClick={() => setAddOpen(true)}>
               <PlusIcon className="h-4 w-4" />
               Add Personnel
             </Button>
@@ -444,8 +437,7 @@ export function Personnel() {
           exit={{ opacity: 0, transition: { duration: DUR.fast, ease: EASE.in } }}
           role="status"
           className="mb-4 mt-2 rounded-lg border border-success/30 bg-success-soft px-4 py-3 text-[13px] text-success">
-          {created} was provisioned. Share the temporary password and require a change at first
-          sign-in.
+          {created}
           </motion.div>
         )}
       </AnimatePresence>
@@ -487,13 +479,14 @@ export function Personnel() {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         isSuperadmin={isSuperadmin}
-        onCreated={(name, tempPassword) => {
-          setCreated(`${name} · temporary password ${tempPassword}`);
+        onCreated={(name, recipientEmail) => {
+          setCreated(`${name} was created. An activation link will be sent to ${recipientEmail}.`);
           setAddOpen(false);
-          toast.success(`${name} provisioned. Temporary password: ${tempPassword}`);
+          toast.success(`An activation link will be sent to ${recipientEmail}.`);
         }}
         onError={(msg) => toast.error(msg)}
-        lockedCenterId={scopeCenterId ?? (isSuperadmin ? null : user?.command_center_id ?? null)}
+        defaultCenterId={scopeCenterId}
+        lockedCenterId={isSuperadmin ? null : user?.command_center_id ?? null}
         commandCenters={commandCenters} />
 
       </motion.div>);
@@ -505,16 +498,18 @@ function AddResponderModal({
   isSuperadmin,
   onCreated,
   onError,
+  defaultCenterId,
   lockedCenterId,
   commandCenters
 }: {
   open: boolean;
   onClose: () => void;
   isSuperadmin: boolean;
-  onCreated: (name: string, tempPassword: string) => void;
+  onCreated: (name: string, recipientEmail: string) => void;
   onError: (msg: string) => void;
+  defaultCenterId: string | null;
   lockedCenterId: string | null;
-  commandCenters: any[];
+  commandCenters: CommandCenter[];
 }) {
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
@@ -523,7 +518,7 @@ function AddResponderModal({
   const [agency, setAgency] = useState<'barangay_tanod' | 'police' | 'mdrrmo'>('barangay_tanod');
   const [callSign, setCallSign] = useState('');
   const [rank, setRank] = useState('');
-  const [center, setCenter] = useState(lockedCenterId ?? (commandCenters[0]?.id ?? ''));
+  const [center, setCenter] = useState(lockedCenterId ?? defaultCenterId ?? '');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -535,10 +530,16 @@ function AddResponderModal({
       setAgency('barangay_tanod');
       setCallSign('');
       setRank('');
-      setCenter(lockedCenterId ?? (commandCenters[0]?.id ?? ''));
+      setCenter(lockedCenterId ?? defaultCenterId ?? '');
       setSubmitting(false);
     }
-  }, [open, lockedCenterId, commandCenters]);
+  }, [open, lockedCenterId, defaultCenterId]);
+
+  useEffect(() => {
+    if (open && isSuperadmin && !center && commandCenters.length > 0) {
+      setCenter(commandCenters[0].id);
+    }
+  }, [open, isSuperadmin, center, commandCenters]);
 
   const emailValid = email.trim().length <= 150 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const nameValid = (value: string) =>
@@ -602,8 +603,8 @@ function AddResponderModal({
           ...(agency === 'police' && rank.trim() ? { rank: rank.trim() } : {})
         } : {})
       };
-      const result = await api.createResponder(payload);
-      onCreated(`${first.trim()} ${last.trim()}`, result.tempPassword);
+      await api.createResponder(payload);
+      onCreated(`${first.trim()} ${last.trim()}`, email.trim().toLowerCase());
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to create account.';
       onError(msg);
@@ -616,7 +617,7 @@ function AddResponderModal({
       open={open}
       onClose={onClose}
       title="Add Personnel"
-      subtitle="Provisions a command-center account with a temporary password."
+      subtitle="Create a command-center account."
       footer={
       <>
           <Button onClick={onClose} disabled={submitting}>
@@ -707,10 +708,8 @@ function AddResponderModal({
           </Select>
         </div>}
         <div className="col-span-2 rounded-md border border-line bg-canvas px-3 py-2.5">
-          <p className="text-[11px] uppercase tracking-wide text-ink-faint">Temporary Password</p>
-          <p className="mt-1 text-[13px] text-ink">A one-time password will be generated on create.</p>
-          <p className="mt-1 text-[12px] text-ink-muted">
-            Copy it from the confirmation toast. The responder must change it at first sign-in.
+          <p className="text-[13px] text-ink">
+            An activation link will be sent to the email address you entered.
           </p>
         </div>
       </div>

@@ -2,12 +2,9 @@ import React, {useEffect, useState} from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  BrainCircuitIcon,
-  Globe2Icon,
   LogOutIcon,
   MoonIcon,
-  SunIcon,
-  WebhookIcon
+  SunIcon
 } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
 import { api } from '../lib/api';
@@ -15,34 +12,11 @@ import { Button, Card, Input, Label, PageHeader, SectionTitle } from '../compone
 import { Badge } from '../components/ui/Badge';
 import { Modal } from '../components/ui/Modal';
 import { DUR, EASE } from '../lib/motion';
-import { useToast } from '../hooks/useToast';
 import { roleLabel } from '../utils/labels';
-
-type GlobalSettings = {
-  infrastructureRegion: string;
-  apiBaseUrl: string;
-  webhookUrl: string;
-  aiConfidenceThreshold: number;
-  defaultRoutingMode: 'nearest' | 'balanced';
-  branchProvisioning: 'manual' | 'approved';
-};
 
 export function Settings() {
   const { user, theme, setTheme, signOut, isSuperadmin } = useSession();
-  const toast = useToast();
   const navigate = useNavigate();
-
-  // Global settings from API
-  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
-    infrastructureRegion: 'Metro Manila Operations',
-    apiBaseUrl: 'https://api.bantai.gov.ph/v1',
-    webhookUrl: 'https://hooks.bantai.gov.ph/alerts',
-    aiConfidenceThreshold: 80,
-    defaultRoutingMode: 'nearest',
-    branchProvisioning: 'approved'
-  });
-  const [globalLoading, setGlobalLoading] = useState(true);
-  const [globalError, setGlobalError] = useState<string | null>(null);
 
   // Local form state — seeded from the current user record.
   const [first, setFirst] = useState('');
@@ -52,35 +26,6 @@ export function Settings() {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
-
-  // Fetch global settings on mount and when user changes (if needed)
-  useEffect(() => {
-    let cancelled = false;
-    const fetchGlobalSettings = async () => {
-      setGlobalLoading(true);
-      setGlobalError(null);
-      try {
-        const data = await api.getSettings();
-        if (!cancelled) {
-          setGlobalSettings(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setGlobalError(err instanceof Error ? err.message : 'Failed to load global settings');
-          // Keep the default settings if API fails
-        }
-      } finally {
-        if (!cancelled) {
-          setGlobalLoading(false);
-        }
-      }
-    };
-    fetchGlobalSettings();
-    return () => {
-      cancelled = true;
-    };
-  }, []); // We can refetch if the user changes? Not necessary for now.
 
   // Local form state — seeded from the current user record.
   useEffect(() => {
@@ -137,47 +82,11 @@ export function Settings() {
     })();
   };
 
-  const handleSaveSettings = async () => {
-    if (!isSuperadmin) {
-      toast.error('Superadmin restricted: global settings cannot be changed by admins.');
-      return;
-    }
-    setSavingSettings(true);
-    try {
-      await api.updateSettings(globalSettings);
-      toast.success('System settings saved.');
-    } catch {
-      toast.error('Settings could not be saved.');
-    } finally {
-      setSavingSettings(false);
-    }
-  };
-
-  const updateGlobal = <K extends keyof GlobalSettings>(key: K, value: GlobalSettings[K]) => {
-    if (!isSuperadmin) {
-      toast.error('Superadmin restricted: this setting is read-only for admins.');
-      return;
-    }
-    setGlobalSettings((prev) => ({ ...prev, [key]: value }));
-  };
-
   return (
     <div className="w-full">
       <PageHeader
         title="Settings"
         subtitle="Your profile, workstation preferences, and session." />
-
-      {globalLoading && (
-        <div className="mb-4 rounded-lg border border-line bg-surface px-4 py-3 text-[13px] text-ink-muted">
-          Loading system settings…
-        </div>
-      )}
-
-      {globalError && (
-        <div className="mb-4 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-[13px] text-danger" role="alert">
-          {globalError}
-        </div>
-      )}
 
       <AnimatePresence>
         {savedAt !== null && (
@@ -204,79 +113,6 @@ export function Settings() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {isSuperadmin &&
-      <div className="mb-5 grid gap-5 xl:grid-cols-2">
-        <Card>
-          <SectionTitle>
-            <span className="inline-flex items-center gap-2"><WebhookIcon className="h-4 w-4" /> API / Webhook Config</span>
-          </SectionTitle>
-          <div className="p-4">
-            <Label htmlFor="webhook-url">Alert Webhook URL</Label>
-            <Input
-              id="webhook-url"
-              value={globalSettings.webhookUrl}
-              onChange={(e) => updateGlobal('webhookUrl', e.target.value)} />
-            <p className="mt-1.5 text-[12px] text-ink-muted">Used by all branches for outbound incident notifications.</p>
-          </div>
-        </Card>
-
-        <Card>
-          <SectionTitle>
-            <span className="inline-flex items-center gap-2"><Globe2Icon className="h-4 w-4" /> Cross-Branch Defaults</span>
-          </SectionTitle>
-          <div className="grid gap-4 p-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="routing-mode">Default responder routing</Label>
-              <select
-                id="routing-mode"
-                value={globalSettings.defaultRoutingMode}
-                onChange={(e) => updateGlobal('defaultRoutingMode', e.target.value as GlobalSettings['defaultRoutingMode'])}
-                className="h-9 w-full rounded-md border border-line bg-surface px-2.5 text-sm text-ink">
-                <option value="nearest">Nearest available unit</option>
-                <option value="balanced">Balanced branch coverage</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="branch-provisioning">Branch provisioning</Label>
-              <select
-                id="branch-provisioning"
-                value={globalSettings.branchProvisioning}
-                onChange={(e) => updateGlobal('branchProvisioning', e.target.value as GlobalSettings['branchProvisioning'])}
-                className="h-9 w-full rounded-md border border-line bg-surface px-2.5 text-sm text-ink">
-                <option value="approved">Requires approval</option>
-                <option value="manual">Superadmin only</option>
-              </select>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <SectionTitle>
-            <span className="inline-flex items-center gap-2"><BrainCircuitIcon className="h-4 w-4" /> AI Model Confidence</span>
-          </SectionTitle>
-          <div className="p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <Label htmlFor="ai-threshold" className="mb-0">Minimum confidence threshold</Label>
-              <span className="text-[13px] font-semibold tabular-nums text-ink">{globalSettings.aiConfidenceThreshold}%</span>
-            </div>
-            <input
-              id="ai-threshold"
-              type="range"
-              min={50}
-              max={100}
-              value={globalSettings.aiConfidenceThreshold}
-              onChange={(e) => updateGlobal('aiConfidenceThreshold', Number(e.target.value))}
-              className="w-full accent-[rgb(var(--primary))]" />
-          </div>
-        </Card>
-
-        <div className="flex justify-end xl:col-span-2">
-            <Button type="button" variant="primary" disabled={savingSettings} onClick={handleSaveSettings}>
-              {savingSettings ? 'Saving…' : 'Save System Settings'}
-            </Button>
-        </div>
-      </div>}
 
       <div className="gap-5 xl:grid-cols-3">
         <form onSubmit={submitProfile} className="xl:col-span-2">

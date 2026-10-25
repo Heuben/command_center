@@ -85,4 +85,28 @@ describe('<Settings />', () => {
     expect(screen.queryByText(/siren volume/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /test siren/i })).not.toBeInTheDocument();
   });
+
+  it('does not render the system configuration cards', async () => {
+    mockUseSession.mockReturnValue({
+      user: mockUser,
+      theme: 'light',
+      setTheme: mockSetTheme,
+      sirenVolume: 70,
+      setSirenVolume: mockSetSirenVolume,
+      signOut: mockSignOut,
+      isSuperadmin: true,
+    });
+
+    render(
+      <MemoryRouter>
+        <Settings />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole('heading', { name: /^Profile$/i })).toBeInTheDocument();
+    expect(screen.queryByText(/api \/ webhook config/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/cross-branch defaults/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ai model confidence/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /save system settings/i })).not.toBeInTheDocument();
+  });
 });

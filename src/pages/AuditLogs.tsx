@@ -4,7 +4,7 @@ import { CogIcon, DownloadIcon, UserSearchIcon, XIcon } from 'lucide-react';
 import { useSession } from '../contexts/SessionContext';
 import { useCommandCenters } from '../contexts/CommandCenterContext';
 import { api } from '../lib/api';
-import type { AuditAction, AuditCategory, SystemAuditLog } from '../types';
+import type { AuditAction, AuditCategory, AuditTargetEntity, SystemAuditLog } from '../types';
 import {
   actionCategory,
   actionLabel,
@@ -46,8 +46,6 @@ const categoryTone: Record<
   system: 'neutral'
 };
 
-const ACTOR_SYSTEM = '__system__';
-
 export function AuditLogs() {
   const { isSuperadmin, scopeCenterId } = useSession();
   const { centerName, ready: commandCentersReady } = useCommandCenters();
@@ -56,27 +54,33 @@ export function AuditLogs() {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fetchRequestId = useRef(0);
 
   // Filter states
   const [categories, setCategories] = useState<string[]>([]);
   const [actions, setActions] = useState<string[]>([]);
-  const [actors, setActors] = useState<string[]>([]); // stores actor_id or ACTOR_SYSTEM
-  const [actorOptions, setActorOptions] = useState<MultiSelectOption[]>([
-    { value: ACTOR_SYSTEM, label: 'System (automated)' }
-  ]);
+  const [actors, setActors] = useState<string[]>([]);
+  const [actorOptions, setActorOptions] = useState<MultiSelectOption[]>([]);
   const [actorOptionsLoading, setActorOptionsLoading] = useState(false);
   const [actorOptionsError, setActorOptionsError] = useState<string | null>(null);
   const actorOptionsRequestId = useRef(0);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [selected, setSelected] = useState<SystemAuditLog | null>(null);
+  const [selectedLoading, setSelectedLoading] = useState(false);
+  const [selectedError, setSelectedError] = useState<string | null>(null);
+  const selectedRequestId = useRef(0);
 
   useEffect(() => {
     actorOptionsRequestId.current += 1;
+    selectedRequestId.current += 1;
     setActors([]);
-    setActorOptions([{ value: ACTOR_SYSTEM, label: 'System (automated)' }]);
+    setActorOptions([]);
     setActorOptionsError(null);
     setActorOptionsLoading(false);
+    setSelected(null);
+    setSelectedLoading(false);
+    setSelectedError(null);
   }, [scopeCenterId]);
 
   const loadActorOptions = useCallback(async () => {
@@ -91,10 +95,7 @@ export function AuditLogs() {
     try {
       const branchActors = await api.getBranchActors(scopeCenterId);
       if (requestId === actorOptionsRequestId.current) {
-        setActorOptions([
-          { value: ACTOR_SYSTEM, label: 'System (automated)' },
-          ...branchActors.map(({ id, name }) => ({ value: id, label: name }))
-        ]);
+        setActorOptions(branchActors.map(({ id, name }) => ({ value: id, label: name })));
       }
     } catch (err) {
       if (requestId === actorOptionsRequestId.current) {
@@ -107,18 +108,27 @@ export function AuditLogs() {
     }
   }, [scopeCenterId]);
 
-  // Build filter object for API
   const filters = {
-    category: categories.length ? categories[0] as AuditCategory : undefined, // We'll take the first category for simplicity, but note: MultiSelect allows multiple
-    action: actions.length ? actions[0] as AuditAction : undefined, // Similarly, we'll take the first action
-    actor: actors.length ? (actors[0] === ACTOR_SYSTEM ? null : actors[0]) : undefined,
-    from: from ? new Date(from).toISOString() : undefined,
-    to: to ? new Date(`${to}T23:59:59Z`).toISOString() : undefined,
-    commandCenterId: scopeCenterId ?? undefined
+    category: categories as AuditTargetEntity[],
+    action: actions as AuditAction[],
+    actorId: actors[0],
+    from: from || undefined,
+    to: to || undefined,
+    commandCenterId: isSuperadmin ? scopeCenterId ?? undefined : undefined
   };
 
-  // Fetch logs function
   const fetchLogs = useCallback(async (reset = false) => {
+    if (isSuperadmin && !scopeCenterId) {
+      fetchRequestId.current += 1;
+      setLogs([]);
+      cursorRef.current = null;
+      setHasNextPage(false);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    const requestId = ++fetchRequestId.current;
     if (reset) {
       cursorRef.current = null;
       setHasNextPage(false);
@@ -126,32 +136,36 @@ export function AuditLogs() {
     setLoading(true);
     setError(null);
     try {
-      const limit = 50; // Page size
-      const result = await api.auditLogs(
-        limit,
-        cursorRef.current,
-        filters.commandCenterId,
-        filters.category,
-        filters.action,
-        filters.actor,
-        filters.from,
-        filters.to
-      );
-      setLogs(prev => reset ? result.data : [...prev, ...result.data]);
+      const result = await api.auditLogs({
+        limit: 50,
+        cursor: cursorRef.current,
+        commandCenterId: filters.commandCenterId,
+        category: filters.category,
+        action: filters.action,
+        actorId: filters.actorId,
+        from: filters.from,
+        to: filters.to
+      });
+      if (requestId !== fetchRequestId.current) return;
+      setLogs((prev) => reset ? result.data : [...prev, ...result.data]);
       cursorRef.current = result.cursor;
       setHasNextPage(result.hasNextPage);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load audit logs');
+      if (requestId === fetchRequestId.current) {
+        setError(err instanceof Error ? err.message : 'Failed to load audit logs');
+      }
     } finally {
-      setLoading(false);
+      if (requestId === fetchRequestId.current) setLoading(false);
     }
   }, [
     filters.action,
-    filters.actor,
+    filters.actorId,
     filters.category,
     filters.commandCenterId,
     filters.from,
-    filters.to
+    filters.to,
+    isSuperadmin,
+    scopeCenterId
   ]);
 
   // Refetch when filters change
@@ -164,6 +178,33 @@ export function AuditLogs() {
     if (hasNextPage && !loading) {
       fetchLogs(false);
     }
+  };
+
+  const openAuditLog = useCallback(async (log: SystemAuditLog) => {
+    const requestId = ++selectedRequestId.current;
+    setSelected(log);
+    setSelectedLoading(true);
+    setSelectedError(null);
+    try {
+      const detail = await api.auditLog(log.id, {
+        createdAt: log.created_at,
+        commandCenterId: isSuperadmin ? scopeCenterId ?? undefined : undefined
+      });
+      if (requestId === selectedRequestId.current) setSelected(detail);
+    } catch (err) {
+      if (requestId === selectedRequestId.current) {
+        setSelectedError(err instanceof Error ? err.message : 'Failed to load audit log details.');
+      }
+    } finally {
+      if (requestId === selectedRequestId.current) setSelectedLoading(false);
+    }
+  }, [isSuperadmin, scopeCenterId]);
+
+  const closeAuditLog = () => {
+    selectedRequestId.current += 1;
+    setSelected(null);
+    setSelectedLoading(false);
+    setSelectedError(null);
   };
 
   const filterCount =
@@ -187,10 +228,7 @@ export function AuditLogs() {
       category: categoryLabel[actionCategory[l.action]],
       target_entity: targetEntityLabel[l.target_entity],
       reference: l.reference,
-      branch: l.command_center_id ? (() => {
-        // We don't have centerName function here
-        return l.command_center_id;
-      })() : 'System-wide'
+      branch: l.command_center_id ? centerName(l.command_center_id) : 'System-wide'
     }));
     downloadCsv(
       `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`,
@@ -297,7 +335,7 @@ export function AuditLogs() {
     render: (l: SystemAuditLog) =>
     <div className={cellStack}>
         <p className="truncate text-[13px] leading-[1.25] text-ink-muted">
-          {l.command_center_id ? l.command_center_id : 'System-wide'}
+          {l.command_center_id ? centerName(l.command_center_id) : 'System-wide'}
         </p>
         {spacer}
       </div>
@@ -315,7 +353,7 @@ export function AuditLogs() {
         isSuperadmin ?
         scopeCenterId ?
         `Every recorded action at ${centerName(scopeCenterId)}` :
-        'Every recorded action across all command centers' :
+        'Select a command center to view audit logs' :
         `Every recorded action at ${
           scopeCenterId
             ? commandCentersReady
@@ -325,6 +363,12 @@ export function AuditLogs() {
         }`
         } />
 
+      {isSuperadmin && !scopeCenterId && (
+        <p className="mb-4 rounded-lg border border-line bg-surface px-4 py-3 text-[13px] text-ink-muted">
+          Select a command center from Branch Context to load its audit logs.
+        </p>
+      )}
+
       <Card className="mb-4 p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="w-full min-w-0 sm:w-[180px]">
@@ -332,11 +376,10 @@ export function AuditLogs() {
             <MultiSelect
               ariaLabel="Filter by category"
               placeholder="All Categories"
-              options={Object.keys(categoryLabel).map((c) => ({
-                value: c,
-                label: categoryLabel[c as AuditCategory],
-                hint: '' // We don't have hint now because we don't have the logs array to count
-              })) as {value: AuditCategory; label: string; hint: string}[]}
+              options={Object.keys(targetEntityLabel).map((entity) => ({
+                value: entity,
+                label: targetEntityLabel[entity as AuditTargetEntity]
+              }))}
               selected={categories}
               onChange={setCategories} />
           </div>
@@ -384,7 +427,7 @@ export function AuditLogs() {
               icon={<UserSearchIcon className="h-4 w-4 shrink-0 opacity-70" />}
               options={actorOptions}
               selected={actors}
-              onChange={setActors}
+              onChange={(selectedActors) => setActors(selectedActors.slice(-1))}
               onOpen={() => void loadActorOptions()}
               statusMessage={
                 actorOptionsLoading
@@ -413,7 +456,7 @@ export function AuditLogs() {
                 {categories.map((c) =>
                   <Chip
                     key={`c-${c}`}
-                    label={`Category: ${categoryLabel[c as AuditCategory]}`}
+                    label={`Category: ${targetEntityLabel[c as AuditTargetEntity]}`}
                     onRemove={() => setCategories(categories.filter((v) => v !== c))} />
                 )}
                 {actions.map((a) =>
@@ -425,7 +468,7 @@ export function AuditLogs() {
                 {actors.map((a) =>
                   <Chip
                     key={`u-${a}`}
-                    label={`Actor: ${a === ACTOR_SYSTEM ? 'System' : a}`}
+                    label={`Actor: ${actorOptions.find((option) => option.value === a)?.label ?? a}`}
                     onRemove={() => setActors(actors.filter((v) => v !== a))} />
                 )}
                 {from && <Chip label={`From: ${from}`} onRemove={() => setFrom('')} />}
@@ -458,7 +501,7 @@ export function AuditLogs() {
           columns={columns}
           rows={logs}
           rowKey={(l) => l.id}
-          onRowClick={(l) => setSelected(l)}
+          onRowClick={(l) => void openAuditLog(l)}
           defaultSort={{ key: 'timestamp', dir: 'desc' }}
           empty={
           <EmptyState
@@ -476,7 +519,7 @@ export function AuditLogs() {
 
       <Drawer
         open={!!selected}
-        onClose={() => setSelected(null)}
+        onClose={closeAuditLog}
         title={selected ? actionLabel[selected.action] : ''}
         subtitle={selected ?
           `${categoryLabel[actionCategory[selected.action]]} · ${targetEntityLabel[selected.target_entity]} · ${selected.reference}` :
@@ -484,6 +527,14 @@ export function AuditLogs() {
         }>
         {selected &&
         <div className="space-y-5">
+            {selectedLoading && (
+              <p className="text-[13px] text-ink-muted">Loading audit log details…</p>
+            )}
+            {selectedError && (
+              <p role="alert" className="rounded-md border border-danger/25 bg-danger-soft/50 px-3 py-2 text-[13px] text-danger">
+                {selectedError}
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="mb-1 text-[11px] uppercase tracking-wide text-ink-faint">Actor</p>
@@ -515,7 +566,7 @@ export function AuditLogs() {
                 <p className="mb-1 text-[11px] uppercase tracking-wide text-ink-faint">Branch</p>
                 <p className="text-[13px] text-ink">
                   {selected.command_center_id ?
-                  selected.command_center_id :
+                  centerName(selected.command_center_id) :
                   'System-wide'}
                 </p>
               </div>
