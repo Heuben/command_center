@@ -1150,4 +1150,17 @@ export const api = {
       `/incidents/${encodeURIComponent(incidentId)}/timeline`,
       { method: 'GET' },
     ),
+
+  // ==========================================================================
+  // NEW: Storage (Download URLs)
+  // ==========================================================================
+
+  getDownloadUrl: (key: string, bucket: 'profile' | 'evidence') => {
+    const url = new URL('/storage/download-url', API_BASE_URL);
+    url.searchParams.set('key', key);
+    url.searchParams.set('bucket', bucket);
+    return request<{ downloadUrl: string }>(url.pathname + url.search, {
+      method: 'GET',
+    });
+  },
 };

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -185,11 +185,12 @@ export function IncidentHistory() {
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
       };
+
       const [summaryRes, listRes] = await Promise.all([
-        api.incidentReportsSummary({
-          ...commonFilters,
-          statuses: statusesForTab(tab),
-        }),
+        // 1. Fetch GLOBAL summary counts (Ignore the active tab)
+        api.incidentReportsSummary(commonFilters),
+        
+        // 2. Fetch the LIST for the current tab (Pass the active tab's statuses)
         api.listIncidentReports({
           ...commonFilters,
           statuses: statusesForTab(tab),
@@ -199,6 +200,7 @@ export function IncidentHistory() {
           offset,
         }),
       ]);
+
       setSummary(summaryRes);
       setReports(listRes.items);
       setTotal(listRes.total);
@@ -823,20 +825,11 @@ function ReportDrawer({
                   <div className="text-[11px] font-medium text-ink-muted">
                     Evidence
                   </div>
-                  <ul className="mt-1 space-y-1">
-                    {report.evidence_urls.map((url) => (
-                      <li key={url}>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="break-all text-blue-600 underline hover:text-blue-800"
-                        >
-                          {url}
-                        </a>
-                      </li>
+                  <div className="mt-1 space-y-3">
+                    {report.evidence_urls.map((key) => (
+                      <EvidenceItem key={key} objectKey={key} />
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
@@ -1080,5 +1073,60 @@ function OutcomeButton({
       <div className="text-xs font-semibold text-ink">{title}</div>
       <div className="mt-0.5 text-[11px] text-ink-muted">{subtitle}</div>
     </button>
+  );
+}
+
+// ============================================================================
+// EvidenceItem
+// ============================================================================
+
+function EvidenceItem({ objectKey }: { objectKey: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    api.getDownloadUrl(objectKey, 'evidence')
+      .then((res) => {
+        if (active) setUrl(res.downloadUrl);
+      })
+      .catch(() => {
+        if (active) setError(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [objectKey]);
+
+  if (loading) {
+    return <div className="text-xs text-ink-muted p-2 border rounded bg-gray-50">Loading evidence…</div>;
+  }
+  if (error || !url) {
+    return <div className="text-xs text-urgent p-2 border rounded bg-red-50">Failed to load evidence</div>;
+  }
+
+  // Check if it's a video based on extension (mp4, mov, webm)
+  const isVideo = objectKey.match(/\.(mp4|mov|webm)$/i);
+
+  if (isVideo) {
+    return (
+      <div className="mt-2 overflow-hidden rounded-md border border-line bg-black">
+        <video src={url} controls className="w-full max-h-64 object-contain" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 overflow-hidden rounded-md border border-line">
+      <img
+        src={url}
+        alt="Incident Evidence"
+        className="w-full max-h-64 object-contain bg-gray-50"
+      />
+    </div>
   );
 }
