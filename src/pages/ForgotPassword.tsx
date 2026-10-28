@@ -1,0 +1,420 @@
+import React, { useEffect, useId, useRef, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import {
+  AlertCircleIcon,
+  Loader2Icon,
+  LockIcon,
+  MailIcon,
+  CheckCircleIcon,
+  ArrowLeftIcon
+} from 'lucide-react';
+import bantaiIcon from '../bantai_logo_pic_icons/bantai_icon2.png';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSession } from '../contexts/SessionContext';
+import { Button, Input, Label } from '../components/ui/primitives';
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function emailError(value: string): string | null {
+  if (!value.trim()) return null;
+  if (!EMAIL_RE.test(value.trim())) return 'Enter a valid email address.';
+  return null;
+}
+
+function GeoGrid() {
+  return (
+    <svg
+      className="absolute inset-0 h-full w-full opacity-[0.08] text-white"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <pattern id="geo-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+          <path
+            d="M 48 0 L 0 0 0 48"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="0.8"
+          />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#geo-grid)" />
+    </svg>
+  );
+}
+
+function ErrorIcon() {
+  return <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />;
+}
+
+function Spinner() {
+  return <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden="true" />;
+}
+
+function FadeIn({
+  children,
+  delay = 0,
+  reduced,
+  className
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  reduced: boolean;
+  className?: string;
+}) {
+  if (reduced) {
+    return <div className={className}>{children}</div>;
+  }
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+export function ForgotPassword() {
+  const { user, ready } = useSession();
+  const reduced = usePrefersReducedMotion();
+
+  const [email, setEmail] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const emailFieldError = emailError(email);
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  const emailId = useId();
+  const errorId = useId();
+  const emailErrorId = useId();
+
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-canvas text-[13px] text-ink-muted">
+        Loading…
+      </div>
+    );
+  }
+  if (user) return <Navigate to="/" replace />;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      setFormError('Enter your work email address.');
+      return;
+    }
+    if (emailFieldError) {
+      setFormError(emailFieldError);
+      return;
+    }
+
+    setBusy(true);
+    setFormError(null);
+    
+    try {
+      // Simulate API call - replace with actual password reset API
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
+      // TODO: Replace with actual API call
+      // await api.sendOTP(email.trim());
+      
+      setBusy(false);
+      setSuccess(true);
+    } catch (error: any) {
+      setBusy(false);
+      setFormError(
+        error.message || 
+        'Unable to process your request. Please contact your superadmin for assistance.'
+      );
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="grid min-h-screen w-full grid-cols-1 bg-canvas lg:h-[100dvh] lg:grid-cols-[38%_62%] lg:overflow-hidden">
+        {/* Left branding panel */}
+        <aside
+          className="relative hidden flex-col justify-between overflow-hidden bg-[#991b1b] p-8 text-white lg:flex xl:p-12"
+          style={{ minHeight: '100dvh' }}
+          aria-hidden="true"
+        >
+          <GeoGrid />
+          <FadeIn reduced={reduced} delay={0.05} className="relative z-10">
+            <div className="flex items-center gap-3">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#df5b62] p-2">
+                <img src={bantaiIcon} alt="BANTAI" className="h-full w-full object-contain" />
+              </span>
+              <div>
+                <p className="text-sm font-bold tracking-[0.14em] text-white">B.A.N.T.A.I.</p>
+                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
+                  Command Center
+                </p>
+              </div>
+            </div>
+          </FadeIn>
+
+          <FadeIn reduced={reduced} delay={0.18} className="relative z-10 max-w-lg">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+              Secure operations platform
+            </p>
+            <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight text-white xl:text-4xl">
+              Prepared teams.<br />Stronger communities.
+            </h1>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75 xl:text-base">
+              A secure workspace for authorized personnel to coordinate information and manage
+              command center operations.
+            </p>
+          </FadeIn>
+
+          <FadeIn reduced={reduced} delay={0.32} className="relative z-10 border-t border-white/20 pt-5">
+            <p className="text-[11px] text-white/65">
+              © 2026 BANTAI Command Center
+            </p>
+          </FadeIn>
+        </aside>
+
+        {/* Right success panel */}
+        <main className="flex min-h-screen w-full flex-col items-center justify-center bg-canvas px-4 py-8 sm:px-6 lg:min-h-0 lg:h-full lg:overflow-y-auto lg:px-10 lg:py-8 xl:px-16">
+          {/* Mobile logo */}
+          <FadeIn reduced={reduced} delay={0.05} className="mb-6 flex items-center gap-3 lg:hidden">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#df5b62] p-1.5">
+              <img src={bantaiIcon} alt="BANTAI" className="h-full w-full object-contain" />
+            </span>
+            <div>
+              <h1 className="text-sm font-bold tracking-[0.12em] text-ink">B.A.N.T.A.I.</h1>
+              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
+                Command Center
+              </p>
+            </div>
+          </FadeIn>
+
+          <div className="mx-auto w-full max-w-[440px] rounded-lg border border-line bg-surface p-5 sm:p-7">
+            <FadeIn reduced={reduced} delay={0.1} className="mb-6 text-center">
+              <div className="mb-4 flex justify-center">
+                <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
+                  <CheckCircleIcon className="h-8 w-8 text-green-600" aria-hidden="true" />
+                </span>
+              </div>
+              <h2 className="text-2xl font-semibold leading-tight tracking-tight text-ink">
+                Check your email
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+                We've sent a one-time password (OTP) to <strong className="font-semibold text-ink">{email}</strong>
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+                Use this OTP to reset your password. If you don't see it within a few minutes, check your spam folder.
+              </p>
+            </FadeIn>
+
+            <FadeIn reduced={reduced} delay={0.2}>
+              <Link to="/login">
+                <Button
+                  type="button"
+                  variant="danger"
+                  className="h-11 w-full text-sm font-semibold focus-visible:ring-danger/50"
+                >
+                  <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
+                  Back to sign in
+                </Button>
+              </Link>
+            </FadeIn>
+
+            <FadeIn reduced={reduced} delay={0.3} className="mt-5 text-center">
+              <p className="text-xs leading-relaxed text-ink-faint">
+                Didn't receive the email?{' '}
+                <button
+                  type="button"
+                  onClick={() => setSuccess(false)}
+                  className="font-medium text-danger hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas"
+                >
+                  Try again
+                </button>
+              </p>
+            </FadeIn>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid min-h-screen w-full grid-cols-1 bg-canvas lg:h-[100dvh] lg:grid-cols-[38%_62%] lg:overflow-hidden">
+      {/* Left branding panel */}
+      <aside
+        className="relative hidden flex-col justify-between overflow-hidden bg-[#991b1b] p-8 text-white lg:flex xl:p-12"
+        style={{ minHeight: '100dvh' }}
+        aria-hidden="true"
+      >
+        <GeoGrid />
+        <FadeIn reduced={reduced} delay={0.05} className="relative z-10">
+          <div className="flex items-center gap-3">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#df5b62] p-2">
+              <img src={bantaiIcon} alt="BANTAI" className="h-full w-full object-contain" />
+            </span>
+            <div>
+              <p className="text-sm font-bold tracking-[0.14em] text-white">B.A.N.T.A.I.</p>
+              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">
+                Command Center
+              </p>
+            </div>
+          </div>
+        </FadeIn>
+
+        <FadeIn reduced={reduced} delay={0.18} className="relative z-10 max-w-lg">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/65">
+            Secure operations platform
+          </p>
+          <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight text-white xl:text-4xl">
+            Prepared teams.<br />Stronger communities.
+          </h1>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-white/75 xl:text-base">
+            A secure workspace for authorized personnel to coordinate information and manage
+            command center operations.
+          </p>
+        </FadeIn>
+
+        <FadeIn reduced={reduced} delay={0.32} className="relative z-10 border-t border-white/20 pt-5">
+          <p className="text-[11px] text-white/65">
+            © 2026 BANTAI Command Center
+          </p>
+        </FadeIn>
+      </aside>
+
+      {/* Right form panel */}
+      <main className="flex min-h-screen w-full flex-col items-center justify-center bg-canvas px-4 py-8 sm:px-6 lg:min-h-0 lg:h-full lg:overflow-y-auto lg:px-10 lg:py-8 xl:px-16">
+        {/* Mobile logo */}
+        <FadeIn reduced={reduced} delay={0.05} className="mb-6 flex items-center gap-3 lg:hidden">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#df5b62] p-1.5">
+            <img src={bantaiIcon} alt="BANTAI" className="h-full w-full object-contain" />
+          </span>
+          <div>
+            <h1 className="text-sm font-bold tracking-[0.12em] text-ink">B.A.N.T.A.I.</h1>
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
+              Command Center
+            </p>
+          </div>
+        </FadeIn>
+
+        <div className="mx-auto w-full max-w-[440px] rounded-lg border border-line bg-surface p-5 sm:p-7">
+          <FadeIn reduced={reduced} delay={0.1} className="mb-6">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-md border border-danger/20 bg-danger/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-danger">
+              <LockIcon className="h-3 w-3" aria-hidden="true" />
+              Password Recovery
+            </div>
+            <h2 className="text-2xl font-semibold leading-tight tracking-tight text-ink">
+              Reset your password
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+              Enter your work email and we'll send you a one-time password (OTP) to reset your password.
+            </p>
+          </FadeIn>
+
+          <form onSubmit={submit} noValidate className="space-y-4" aria-describedby={formError ? errorId : undefined}>
+            {/* Email */}
+            <FadeIn reduced={reduced} delay={0.15}>
+              <div className="space-y-1.5">
+                <Label htmlFor={emailId} className="text-[13px]">Email</Label>
+                <div className="relative">
+                  <MailIcon
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    ref={emailRef}
+                    id={emailId}
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (formError) setFormError(null);
+                    }}
+                    placeholder="name@station.bantai.gov.ph"
+                    className="h-11 pl-9"
+                    invalid={!!emailFieldError}
+                    aria-invalid={!!emailFieldError}
+                    aria-describedby={emailFieldError ? emailErrorId : undefined}
+                    disabled={busy}
+                  />
+                </div>
+                {emailFieldError && (
+                  <p id={emailErrorId} className="text-[12px] font-medium text-danger">
+                    {emailFieldError}
+                  </p>
+                )}
+              </div>
+            </FadeIn>
+
+            {/* Form-level error */}
+            <AnimatePresence>
+              {formError && (
+                <motion.div
+                  key="form-error"
+                  id={errorId}
+                  role="alert"
+                  aria-live="assertive"
+                  initial={reduced ? false : { opacity: 0, y: -6, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={reduced ? { opacity: 0 } : { opacity: 0, y: -6, height: 0 }}
+                  transition={{ duration: 0.22, ease: 'easeOut' }}
+                  className="flex items-start gap-2 overflow-hidden rounded-lg border border-danger/20 bg-danger/5 px-3 py-2.5"
+                >
+                  <ErrorIcon />
+                  <p className="text-[12px] font-medium leading-snug text-danger">{formError}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Submit */}
+            <FadeIn reduced={reduced} delay={0.22}>
+              <Button
+                type="submit"
+                variant="danger"
+                className="h-11 w-full text-sm font-semibold focus-visible:ring-danger/50"
+                disabled={busy}
+                aria-busy={busy}
+              >
+                {busy ? (
+                  <>
+                    <Spinner />
+                    Sending OTP…
+                  </>
+                ) : (
+                  'Send OTP'
+                )}
+              </Button>
+            </FadeIn>
+
+            {/* Back to login */}
+            <FadeIn reduced={reduced} delay={0.28}>
+              <Link to="/login">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="h-10 w-full text-[13px] font-semibold"
+                  disabled={busy}
+                >
+                  <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
+                  Back to sign in
+                </Button>
+              </Link>
+            </FadeIn>
+          </form>
+        </div>
+      </main>
+    </div>
+  );
+}

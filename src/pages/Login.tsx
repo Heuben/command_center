@@ -1,5 +1,5 @@
 import React, {useEffect, useId, useRef, useState} from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
   EyeIcon,
   EyeOffIcon,
@@ -318,12 +318,12 @@ export function Login() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor={passwordId} className="text-[13px]">Password</Label>
-                  <button
-                    type="button"
+                  <Link
+                    to="/forgot-password"
                     className="rounded px-1 text-[11px] font-medium text-danger hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:ring-offset-1 focus-visible:ring-offset-canvas"
                   >
                     Forgot password?
-                  </button>
+                  </Link>
                 </div>
                 <div className="relative">
                   <LockIcon
@@ -440,20 +440,6 @@ export function Login() {
               </FadeIn>
             )}
           </form>
-
-          {/* Trust signal */}
-          <FadeIn reduced={reduced} delay={0.4} className="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-ink-faint">
-            <LockIcon className="h-3 w-3" aria-hidden="true" />
-            <span>Secure connection · TLS 1.3</span>
-          </FadeIn>
-
-          {/* Footer */}
-          <FadeIn reduced={reduced} delay={0.52} className="mt-3 text-center">
-            <p className="text-xs leading-relaxed text-ink-faint">
-              Accounts are provisioned internally.{' '}
-              <span className="font-medium text-ink-muted">Contact your superadmin for access.</span>
-            </p>
-          </FadeIn>
         </div>
       </main>
     </div>
